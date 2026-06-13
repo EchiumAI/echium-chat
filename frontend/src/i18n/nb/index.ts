@@ -35,7 +35,7 @@ const translation = {
           error: 'Feil',
         },
         app: {
-          name: 'Bedrock Chat',
+          name: 'EchiumAI',
           inputMessage: 'Send en melding',
           pinnedBots: 'Faste boter',
           starredBots: 'Favorittbot',

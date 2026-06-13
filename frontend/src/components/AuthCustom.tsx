@@ -55,11 +55,20 @@ const AuthCustom: React.FC<Props> = ({ children }) => {
           </div>
         </div>
       ) : !authenticated ? (
-        <div className="flex flex-col items-center gap-4">
-          <div className="mb-5 mt-10 text-4xl text-aws-sea-blue-light">
-            {t('app.name')}
+        <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-black px-6">
+          <div className="flex items-center gap-4">
+            <img
+              src="/images/echium_icon_192.png"
+              alt=""
+              className="h-16 w-16 rounded-full shadow-lg shadow-white/10"
+            />
+            <div className="text-4xl font-medium tracking-wide text-white/60">
+              {t('app.name')}
+            </div>
           </div>
-          <Button onClick={() => handleSignIn()} className="px-20 text-xl">
+          <Button
+            onClick={() => handleSignIn()}
+            className="mt-2 border-0 bg-aws-sea-blue-light px-20 py-2 text-xl font-medium text-white hover:bg-aws-sea-blue-hover-light hover:brightness-100">
             {t('signIn.button.login')}
           </Button>
         </div>

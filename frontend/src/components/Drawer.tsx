@@ -296,21 +296,24 @@ const Drawer: React.FC<Props> = (props) => {
           className={`lg:visible lg:w-64 ${
             opened ? 'visible w-64' : 'invisible w-0'
           } text-sm  text-white transition-width`}>
-          {logoSrc && (
-            <div className="sticky top-0 z-10 flex items-center justify-center border-b border-white/10 bg-aws-squid-ink-light px-4 py-6 dark:bg-aws-squid-ink-dark">
-              <button
-                type="button"
-                onClick={onClickLogo}
-                className="flex w-full items-center justify-center focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-transparent">
+          <div className="sticky top-0 z-10 flex items-center justify-center border-b border-white/10 bg-aws-squid-ink-light px-4 py-6 dark:bg-aws-squid-ink-dark">
+            <button
+              type="button"
+              onClick={onClickLogo}
+              className="flex w-full items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-transparent">
+              {logoSrc && (
                 <img
                   src={logoSrc}
-                  alt={t('app.name')}
-                  className="h-10 w-auto max-w-[170px]"
+                  alt=""
+                  className="h-8 w-8 shrink-0 rounded-full"
                   loading="lazy"
                 />
-              </button>
-            </div>
-          )}
+              )}
+              <span className="truncate text-base font-semibold text-white">
+                {t('app.name')}
+              </span>
+            </button>
+          </div>
           {!isAdminPanel && (
             <>
               {drawerOptions.show.newChat && (

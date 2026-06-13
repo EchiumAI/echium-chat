@@ -1,0 +1,5 @@
+{
+    "UserId": "AROA254VKCX2E252JD7BF:i-0dddb0d6e38584dd0",
+    "Account": "751395542516",
+    "Arn": "arn:aws:sts::751395542516:assumed-role/EC2AccessToS3Buckets/i-0dddb0d6e38584dd0"
+}

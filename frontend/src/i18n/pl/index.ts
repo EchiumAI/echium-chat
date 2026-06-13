@@ -6,7 +6,7 @@ const translation = {
       },
     },
     app: {
-      name: 'Bedrock Chat',
+      name: 'EchiumAI',
       inputMessage: 'Jak mogę pomóc?',
       pinnedBots: 'Przypięte boty',
       starredBots: 'Ulubione Boty',

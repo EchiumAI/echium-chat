@@ -82,6 +82,7 @@
     "tokenValidMinutes": 30,
     "alternateDomainName": "",
     "hostedZoneId": "",
-    "devAccessIamRoleArn": ""
+    "devAccessIamRoleArn": "",
+    "logoPath": "images/echium_icon_192.png"
   }
 }

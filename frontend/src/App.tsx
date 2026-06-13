@@ -1,5 +1,9 @@
 import React, { useEffect } from 'react';
-import { translations } from '@aws-amplify/ui-react';
+import {
+  translations,
+  ThemeProvider,
+  Theme,
+} from '@aws-amplify/ui-react';
 import { Amplify } from 'aws-amplify';
 import { I18n } from 'aws-amplify/utils';
 import '@aws-amplify/ui-react/styles.css';
@@ -19,12 +23,41 @@ const socialProviderFromEnv = import.meta.env.VITE_APP_SOCIAL_PROVIDERS?.split(
   ','
 ).filter(validateSocialProvider);
 
+// EchiumAI brand theme for Amplify UI components (Authenticator, etc.).
+// Overrides the default Amplify green/teal accent with the EchiumAI violet
+// scale so the sign-in screen matches the rest of the rebranded app.
+const echiumTheme: Theme = {
+  name: 'echium-ai',
+  tokens: {
+    colors: {
+      brand: {
+        primary: {
+          10: { value: '#F5F3FF' },
+          20: { value: '#EDE9FE' },
+          40: { value: '#C4B5FD' },
+          60: { value: '#A78BFA' },
+          80: { value: '#7C3AED' },
+          90: { value: '#6D28D9' },
+          100: { value: '#5B21B6' },
+        },
+      },
+      font: {
+        interactive: { value: '#7C3AED' },
+        hover: { value: '#6D28D9' },
+      },
+      border: {
+        focus: { value: '#7C3AED' },
+      },
+    },
+  },
+};
+
 const App: React.FC = () => {
   const { t, i18n } = useTranslation();
 
   useEffect(() => {
     // set header title
-    document.title = t('app.name')
+    document.title = t('app.name');
   }, [t]);
 
   Amplify.configure({
@@ -50,17 +83,19 @@ const App: React.FC = () => {
 
   return (
     <ErrorBoundary fallback={<ErrorFallback />}>
-      {customProviderEnabled ? (
-        <AuthCustom>
-          <AppContent />
-        </AuthCustom>
-      ) : (
-        <Authenticator.Provider>
-          <AuthAmplify socialProviders={socialProviderFromEnv}>
+      <ThemeProvider theme={echiumTheme}>
+        {customProviderEnabled ? (
+          <AuthCustom>
             <AppContent />
-          </AuthAmplify>
-        </Authenticator.Provider>
-      )}
+          </AuthCustom>
+        ) : (
+          <Authenticator.Provider>
+            <AuthAmplify socialProviders={socialProviderFromEnv}>
+              <AppContent />
+            </AuthAmplify>
+          </Authenticator.Provider>
+        )}
+      </ThemeProvider>
     </ErrorBoundary>
   );
 };

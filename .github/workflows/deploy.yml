@@ -1,0 +1,145 @@
+name: Deploy
+
+# CI runs on every push to a working branch and on PRs.
+# A real deploy runs only when a `vX.Y.Z` tag is pushed (or via manual dispatch).
+on:
+  push:
+    branches: [main, v3]
+    tags: ['v*.*.*']
+  pull_request:
+    branches: [main, v3]
+  workflow_dispatch: {}
+
+# OIDC needs id-token: write to assume the AWS role; nothing else needs write.
+permissions:
+  id-token: write
+  contents: read
+
+# Adjust these defaults if you change the AWS account, region, or stack name.
+env:
+  AWS_REGION: eu-west-1
+  AWS_ROLE_ARN: arn:aws:iam::888284248988:role/github-actions-echium-deploy
+  NODE_VERSION: '22.x'
+  NPM_VERSION: '11'
+  PYTHON_VERSION: '3.13'
+
+jobs:
+  # ----- CI: tests & synth (run on every event) -----
+
+  test-frontend:
+    name: Test frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Pin npm to 11
+        # Match the lockfile resolver used by Dependabot. See frontend.yml for context.
+        run: npm install -g npm@${{ env.NPM_VERSION }}
+      - name: Install
+        working-directory: frontend
+        run: npm ci
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+  test-cdk:
+    name: Test CDK (synth + unit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install
+        working-directory: cdk
+        run: npm ci
+      - name: Synth
+        working-directory: cdk
+        run: npx cdk synth --quiet
+      - name: Unit tests
+        working-directory: cdk
+        run: npm run test
+
+  test-backend:
+    name: Test backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install
+        working-directory: backend
+        run: |
+          pip install poetry
+          poetry install
+      - name: Type check
+        working-directory: backend
+        run: poetry run mypy --config-file mypy.ini .
+      - name: Format check
+        working-directory: backend
+        run: poetry run black --check .
+
+  # ----- Deploy: only on `vX.Y.Z` tag or manual dispatch -----
+
+  deploy:
+    name: Deploy to AWS
+    needs: [test-frontend, test-cdk, test-backend]
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    # The `prod` environment can hold required reviewers, wait timers, and
+    # branch/tag protections in the repo's GitHub Settings → Environments.
+    environment: prod
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: github-actions-${{ github.run_id }}
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Pin npm to 11
+        run: npm install -g npm@${{ env.NPM_VERSION }}
+
+      - name: Set up Python (for backend Lambda packaging)
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install CDK deps
+        working-directory: cdk
+        run: npm ci
+
+      - name: CDK diff (visibility before deploy)
+        working-directory: cdk
+        run: npx cdk diff --all || true
+
+      - name: CDK deploy
+        working-directory: cdk
+        # The CDK construct in this repo runs `npm run build` on the frontend
+        # and packages the backend Lambda automatically during deploy, so we
+        # don't need to build them as separate steps.
+        run: npx cdk deploy --all --require-approval never --concurrency 4
+
+      - name: Print frontend URL
+        if: success()
+        run: |
+          echo "Deploy succeeded. CloudFront URL is in the stack outputs."
+          aws cloudformation describe-stacks \
+            --query "Stacks[?contains(StackName, 'BedrockChat')].Outputs[?OutputKey=='FrontendURL'].OutputValue | [0]" \
+            --output text || true
