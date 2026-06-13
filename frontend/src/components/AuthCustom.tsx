@@ -60,7 +60,7 @@ const AuthCustom: React.FC<Props> = ({ children }) => {
             <img
               src="/images/echium_icon_192.png"
               alt=""
-              className="h-16 w-16 rounded-full shadow-lg shadow-white/10"
+              className="size-16 rounded-full shadow-lg shadow-white/10"
             />
             <div className="text-4xl font-medium tracking-wide text-white/60">
               {t('app.name')}

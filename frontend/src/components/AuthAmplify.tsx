@@ -24,7 +24,7 @@ const AuthAmplify: React.FC<Props> = ({ socialProviders, children }) => {
               <img
                 src="/images/echium_icon_192.png"
                 alt=""
-                className="h-12 w-12 rounded-full shadow-lg shadow-white/10"
+              className="size-12 rounded-full shadow-lg shadow-white/10"
               />
               <div className="text-3xl font-medium tracking-wide text-white/60">
                 {t('app.name')}

@@ -305,7 +305,7 @@ const Drawer: React.FC<Props> = (props) => {
                 <img
                   src={logoSrc}
                   alt=""
-                  className="h-8 w-8 shrink-0 rounded-full"
+                  className="size-8 shrink-0 rounded-full"
                   loading="lazy"
                 />
               )}
