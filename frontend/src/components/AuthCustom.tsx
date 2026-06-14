@@ -55,7 +55,7 @@ const AuthCustom: React.FC<Props> = ({ children }) => {
           </div>
         </div>
       ) : !authenticated ? (
-        <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-black px-6">
+        <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-zinc-900 px-6">
           <div className="flex items-center gap-4">
             <img
               src="/images/echium_icon_192.png"
