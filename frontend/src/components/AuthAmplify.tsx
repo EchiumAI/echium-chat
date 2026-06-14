@@ -15,7 +15,7 @@ const AuthAmplify: React.FC<Props> = ({ socialProviders, children }) => {
   const { signOut } = useAuthenticator();
 
   return (
-    <div className="auth-dark flex min-h-dvh flex-col items-center justify-center bg-black px-6 py-10">
+    <div className="auth-dark flex min-h-dvh flex-col items-center justify-center bg-zinc-900 px-6 py-10">
       <Authenticator
         socialProviders={socialProviders}
         formFields={{
