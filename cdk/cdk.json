@@ -80,7 +80,7 @@
     "botStoreLanguage": "en",
     "globalAvailableModels": [],
     "tokenValidMinutes": 30,
-    "alternateDomainName": "chat.echiumai.com",
+    "alternateDomainName": "chat.echium.ai",
     "hostedZoneId": "",
     "certificateArn": "arn:aws:acm:us-east-1:888284248988:certificate/f95a2e4c-be39-411d-84ce-427832d241ad",
     "devAccessIamRoleArn": "",
