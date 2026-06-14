@@ -1,5 +1,34 @@
 const translation = {
   translation: {
+    auth: {
+      hero: {
+        title: 'Echium AI',
+        subtitle:
+          'Un espace de travail IA privé avec chat multi-modèle, bases de connaissances personnalisées et agents adaptés à votre équipe.',
+      },
+      features: {
+        multiModel: 'Multi-modèle',
+        knowledgeBases: 'Bases de connaissances',
+        agents: 'Agents configurables',
+      },
+      origin: 'Conçu à Madrid · Union Européenne',
+      email: {
+        label: 'E-mail',
+        placeholder: 'nom@exemple.com',
+      },
+      password: {
+        label: 'Mot de passe',
+        placeholder: 'Saisissez votre mot de passe',
+      },
+      confirmPassword: {
+        label: 'Confirmer le mot de passe',
+        placeholder: 'Saisissez à nouveau votre mot de passe',
+      },
+      newPassword: {
+        label: 'Nouveau mot de passe',
+        placeholder: 'Saisissez votre nouveau mot de passe',
+      },
+    },
     app: {
       name: 'EchiumAI',
       inputMessage: 'Envoyer un message',

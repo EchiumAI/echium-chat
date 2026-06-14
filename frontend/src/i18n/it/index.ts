@@ -5,6 +5,35 @@ const translation = {
         login: 'Login',
       },
     },
+    auth: {
+      hero: {
+        title: 'Echium AI',
+        subtitle:
+          'Uno spazio di lavoro AI privato con chat multi-modello, basi di conoscenza personalizzate e agenti su misura per il tuo team.',
+      },
+      features: {
+        multiModel: 'Multi-modello',
+        knowledgeBases: 'Basi di conoscenza',
+        agents: 'Agenti configurabili',
+      },
+      origin: 'Made in Madrid · Unione Europea',
+      email: {
+        label: 'Email',
+        placeholder: 'nome@esempio.com',
+      },
+      password: {
+        label: 'Password',
+        placeholder: 'Inserisci la tua password',
+      },
+      confirmPassword: {
+        label: 'Conferma password',
+        placeholder: 'Reinserisci la tua password',
+      },
+      newPassword: {
+        label: 'Nuova password',
+        placeholder: 'Inserisci la nuova password',
+      },
+    },
     app: {
       name: 'EchiumAI',
       inputMessage: 'Come posso aiutarti?',
