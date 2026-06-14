@@ -12,7 +12,7 @@ Updated: 2026-06-14
 **Why:** Right now verification emails come from `no-reply@verificationemail.com`
 and almost always land in spam. Hurts conversion on the sign-up flow.
 
-**Plan + steps:** see `scripts/EMAIL-SETUP.md`. Two tracks:
+**Plan + steps:** see [`email-setup.md`](./email-setup.md). Two tracks:
 
 - [ ] **Track 1 (DNS / AWS, ~10 min clicking + ~24–72h waiting)**
   - [ ] Verify `echium.ai` in SES (eu-west-1) with Easy DKIM
@@ -38,7 +38,7 @@ Tighter would be tags only.
 - [ ] Confirm a tag push still deploys; main push CI runs but no longer
       deploys (which it already doesn't, the workflow has its own tag gate too).
 
-### Update SETUP-PIPELINE.md
+### Update pipeline-setup.md
 
 **Why:** Step 2 only bootstraps `eu-west-1`. The `FrontendWafStack` is forced into
 `us-east-1` (CloudFront WAF requirement). Anyone replaying this guide hits the
@@ -129,5 +129,5 @@ Analytics, Mixpanel, Meta Pixel, etc., we need a consent banner.
 - ✅ Anthropic-style hero with tagline + feature pills — v0.1.10
 - ✅ ja/de/es i18n keys to satisfy `typeof en` strict type — v0.1.11
 - ✅ "Made in Madrid · European Union" origin badge with Madrid + EU flag SVGs — v0.1.12
-- ✅ EMAIL-SETUP.md doc with SES + Cognito branded email plan
-- ✅ SETUP-PIPELINE.md doc (initial CI/CD bootstrap guide)
+- ✅ EMAIL-SETUP.md doc with SES + Cognito branded email plan (now at `docs/ops/email-setup.md`)
+- ✅ SETUP-PIPELINE.md doc, initial CI/CD bootstrap guide (now at `docs/ops/pipeline-setup.md`)

@@ -317,5 +317,5 @@ project-pinned version).
 | `.github/workflows/frontend.yml` | Pre-existing CI: lint + build on PR |
 | `.github/workflows/backend.yml` | Pre-existing CI: mypy + black + Docker build on PR |
 | `scripts/github-oidc-bootstrap.yml` | CloudFormation: GitHub OIDC provider + IAM role |
-| `scripts/SETUP-PIPELINE.md` | This document |
+| `docs/ops/pipeline-setup.md` | This document |
 | `cdk/cdk.json` | CDK app config — also holds `logoPath` for the EchiumAI sidebar logo |
