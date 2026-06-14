@@ -99,6 +99,7 @@ const chat = new BedrockChatStack(
     enableLambdaSnapStart: params.enableLambdaSnapStart,
     alternateDomainName: params.alternateDomainName,
     hostedZoneId: params.hostedZoneId,
+    certificateArn: params.certificateArn,
     enableBotStore: params.enableBotStore,
     enableBotStoreReplicas: params.enableBotStoreReplicas,
     botStoreLanguage: params.botStoreLanguage,

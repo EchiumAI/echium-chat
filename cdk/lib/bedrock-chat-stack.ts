@@ -58,6 +58,7 @@ export interface BedrockChatStackProps extends StackProps {
   readonly tokenValidMinutes: number;
   readonly alternateDomainName?: string;
   readonly hostedZoneId?: string;
+  readonly certificateArn?: string;
   readonly devAccessIamRoleArn?: string;
   readonly allowedCountries?: string[];
   readonly logoPath?: string;
@@ -164,6 +165,7 @@ export class BedrockChatStack extends cdk.Stack {
       enableIpV6: props.enableIpV6,
       alternateDomainName: props.alternateDomainName,
       hostedZoneId: props.hostedZoneId,
+      certificateArn: props.certificateArn,
       allowedCountries: props.allowedCountries,
     });
 

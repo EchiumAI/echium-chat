@@ -31,10 +31,18 @@ export interface FrontendProps {
    */
   readonly alternateDomainName?: string;
   /**
-   * Route53 hosted zone ID where the alternate domain records will be created
-   * Required if alternateDomainName is provided
+   * Route53 hosted zone ID where the alternate domain records will be created.
+   * Optional. Provide this when you want CDK to issue the ACM certificate
+   * via Route 53 DNS validation AND create the alias records automatically.
    */
   readonly hostedZoneId?: string;
+  /**
+   * ARN of a pre-issued ACM certificate in us-east-1 covering alternateDomainName.
+   * Optional. Provide this when DNS is managed outside Route 53 (e.g. Cloudflare):
+   * issue the cert manually, then pass the ARN here. If set, no Route 53 records
+   * are created.
+   */
+  readonly certificateArn?: string;
   /**
    * List of allowed countries for the CloudFront distribution, specified as ISO 3166-1 alpha-2 codes (e.g., "US", "CA").
    * If empty, all countries will be allowed.
@@ -68,7 +76,15 @@ export class Frontend extends Construct {
       serverAccessLogsPrefix: "AssetBucket",
     });
 
-    if (props.alternateDomainName && props.hostedZoneId) {
+    if (props.alternateDomainName && props.certificateArn) {
+      // Externally managed DNS path (e.g. Cloudflare): use a pre-issued ACM cert.
+      // No hosted zone, no Route 53 records — caller adds the CNAME at their DNS provider.
+      this.certificate = acm.Certificate.fromCertificateArn(
+        this,
+        'Certificate',
+        props.certificateArn
+      );
+    } else if (props.alternateDomainName && props.hostedZoneId) {
       this.hostedZone = route53.HostedZone.fromHostedZoneAttributes(this, 'HostedZone', {
         hostedZoneId: props.hostedZoneId,
         zoneName: this.getDomainZoneName(props.alternateDomainName),

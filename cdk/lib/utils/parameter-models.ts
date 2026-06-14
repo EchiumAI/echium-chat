@@ -102,6 +102,9 @@ const BedrockChatParametersSchema = BaseParametersSchema.extend({
   // Custom domain configuration
   alternateDomainName: z.string().default(""),
   hostedZoneId: z.string().default(""),
+  // ACM certificate ARN (us-east-1) when DNS is managed outside Route 53
+  // (e.g. Cloudflare). Mutually exclusive with hostedZoneId.
+  certificateArn: z.string().default(""),
 
   // BotStore
   enableBotStore: z.boolean().default(true),
@@ -272,6 +275,7 @@ export function resolveBedrockChatParameters(
     enableLambdaSnapStart: app.node.tryGetContext("enableLambdaSnapStart"),
     alternateDomainName: app.node.tryGetContext("alternateDomainName"),
     hostedZoneId: app.node.tryGetContext("hostedZoneId"),
+    certificateArn: app.node.tryGetContext("certificateArn"),
     enableBotStore: app.node.tryGetContext("enableBotStore"),
     enableBotStoreReplicas: app.node.tryGetContext("EnableBotStoreReplicas"),
     botStoreLanguage: app.node.tryGetContext("botStoreLanguage"),
