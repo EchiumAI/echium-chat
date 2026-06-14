@@ -190,18 +190,28 @@
 
 /* Link-style buttons inside the Authenticator (Resend code, Forgot password,
    Back to sign-in, etc.). Same issue as the eye icon: they default to a
-   muted color that vanishes on the dark surface until hover. Force them to
-   our brand-purple-tinted accent so they're readable at rest. */
-.auth-dark .amplify-button--link,
-.auth-dark .amplify-button[data-variation='link'],
-.auth-dark .amplify-button[data-fullwidth='true'][data-variation='link'] {
-  color: #c4b5fd !important;
-  background: transparent !important;
+   muted color that vanishes on the dark surface until hover.
+
+   Amplify v6 uses several variant class names depending on which form
+   you're on, so the safest path is to set a visible default for every
+   .amplify-button under .auth-dark and explicitly preserve the primary
+   submit buttons brand styling. */
+.auth-dark .amplify-button {
+  color: rgba(255, 255, 255, 0.85) !important;
+  background-color: transparent;
 }
-.auth-dark .amplify-button--link:hover,
-.auth-dark .amplify-button[data-variation='link']:hover {
+.auth-dark .amplify-button:hover {
   color: #ffffff !important;
-  background: rgba(255, 255, 255, 0.04) !important;
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+.auth-dark .amplify-button--primary,
+.auth-dark .amplify-button.amplify-button--primary {
+  color: #ffffff !important;
+  background-color: #7c3aed !important;
+}
+.auth-dark .amplify-button--primary:hover,
+.auth-dark .amplify-button.amplify-button--primary:hover {
+  background-color: #6d28d9 !important;
 }
 
 /* Headings inside the Authenticator card ("We Emailed You", "Verify your
