@@ -172,7 +172,7 @@
 .auth-dark input:-webkit-autofill:focus,
 .auth-dark input:-webkit-autofill:active {
   -webkit-text-fill-color: #ffffff !important;
-  -webkit-box-shadow: 0 0 0 1000px rgba(20, 20, 20, 0.95) inset !important;
+  -webkit-box-shadow: 0 0 0 1000px rgba(24, 24, 27, 0.95) inset !important;
   caret-color: #ffffff !important;
   transition: background-color 5000s ease-in-out 0s;
 }
