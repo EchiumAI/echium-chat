@@ -129,6 +129,36 @@
   border-radius: 0.75rem;
 }
 
+/* Force input text to white even when typing on the dark auth screen.
+   Some browsers ignore the CSS variable for the field control color, so
+   set it explicitly with high specificity. */
+.auth-dark .amplify-input,
+.auth-dark .amplify-field-group input,
+.auth-dark input[type='email'],
+.auth-dark input[type='password'],
+.auth-dark input[type='text'],
+.auth-dark input[type='tel'] {
+  color: #ffffff !important;
+  caret-color: #ffffff;
+}
+
+/* Override Chrome/Safari autofill, which forces its own light yellow background
+   and dark gray text regardless of CSS. The text-fill-color trick keeps text
+   readable; the inset shadow swaps the autofill yellow for our dark surface. */
+.auth-dark .amplify-input:-webkit-autofill,
+.auth-dark .amplify-input:-webkit-autofill:hover,
+.auth-dark .amplify-input:-webkit-autofill:focus,
+.auth-dark .amplify-input:-webkit-autofill:active,
+.auth-dark input:-webkit-autofill,
+.auth-dark input:-webkit-autofill:hover,
+.auth-dark input:-webkit-autofill:focus,
+.auth-dark input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0 1000px rgba(20, 20, 20, 0.95) inset !important;
+  caret-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
 /* tailwindの設定で上書きされてしまうので、importantを設定する */
 .amplify-button--primary {
   background-color: var(
