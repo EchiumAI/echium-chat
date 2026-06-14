@@ -9,10 +9,12 @@ import {
   ProviderAttribute,
   UserPool,
   UserPoolClient,
+  UserPoolEmail,
   UserPoolOperation,
   UserPoolIdentityProviderGoogle,
   CfnUserPoolGroup,
   UserPoolIdentityProviderOidc,
+  VerificationEmailStyle,
 } from "aws-cdk-lib/aws-cognito";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
@@ -54,6 +56,75 @@ export class Auth extends Construct {
       signInAliases: {
         username: false,
         email: true,
+      },
+      // Send Cognito emails via SES so we get our own From address, branded
+      // HTML, DKIM/SPF aligned with echium.ai, and headroom beyond Cognitos
+      // 50/day default. SES domain identity must already be verified in
+      // eu-west-1; bootstrapped manually under docs/ops/email-setup.md.
+      email: UserPoolEmail.withSES({
+        sesRegion: "eu-west-1",
+        fromEmail: "noreply@echium.ai",
+        fromName: "Echium AI",
+        sesVerifiedDomain: "echium.ai",
+      }),
+      // Branded sign-up verification email. Logo loaded from the public
+      // CloudFront asset path so all email clients render the same image.
+      // {####} is Cognitos verification-code placeholder; required by CFN
+      // validation when emailStyle is CODE.
+      userVerification: {
+        emailSubject: "Verify your Echium AI account",
+        emailStyle: VerificationEmailStyle.CODE,
+        emailBody: `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Verify your Echium AI account</title>
+  </head>
+  <body style="margin:0;padding:0;background:#0b0b0f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#e5e7eb;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0b0b0f;padding:40px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:480px;margin:0 auto;background:#18181b;border:1px solid rgba(255,255,255,0.08);border-radius:16px;overflow:hidden;">
+            <tr>
+              <td align="center" style="padding:40px 40px 24px 40px;">
+                <img src="https://chat.echium.ai/images/echium_icon_192.png" alt="Echium AI" width="56" height="56" style="display:block;border-radius:14px;border:0;" />
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:0 40px 8px 40px;font-size:22px;font-weight:600;color:#ffffff;">
+                Verify your account
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:0 40px 24px 40px;font-size:14px;line-height:1.6;color:rgba(255,255,255,0.7);">
+                Welcome to Echium AI. Use this code to finish setting up your account:
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:0 40px 28px 40px;">
+                <div style="display:inline-block;padding:14px 24px;background:rgba(124,58,237,0.18);border:1px solid rgba(124,58,237,0.45);border-radius:12px;font-size:28px;letter-spacing:6px;font-weight:600;color:#ffffff;">
+                  {####}
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:0 40px 32px 40px;font-size:12px;line-height:1.6;color:rgba(255,255,255,0.45);">
+                This code expires in 24 hours.<br />
+                If you did not sign up for Echium AI, you can safely ignore this email.
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:24px 40px;border-top:1px solid rgba(255,255,255,0.06);font-size:11px;color:rgba(255,255,255,0.35);letter-spacing:0.04em;text-transform:uppercase;">
+                Echium AI &middot; Madrid &middot; European Union
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`,
       },
       removalPolicy: RemovalPolicy.DESTROY,
     });
