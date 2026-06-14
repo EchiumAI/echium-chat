@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 540" role="img" aria-label="Flag of the European Union">
+  <defs>
+    <g id="star">
+      <path d="M0,-30 L8.82,-9.27 L29.39,-9.27 L12.93,3.54 L18.17,27.27 L0,14.32 L-18.17,27.27 L-12.93,3.54 L-29.39,-9.27 L-8.82,-9.27 Z"/>
+    </g>
+  </defs>
+  <rect width="810" height="540" fill="#003399"/>
+  <g fill="#FFCC00">
+    <use href="#star" x="405" y="90"/>
+    <use href="#star" x="495" y="114.11"/>
+    <use href="#star" x="560.88" y="180"/>
+    <use href="#star" x="585" y="270"/>
+    <use href="#star" x="560.88" y="360"/>
+    <use href="#star" x="495" y="425.88"/>
+    <use href="#star" x="405" y="450"/>
+    <use href="#star" x="315" y="425.88"/>
+    <use href="#star" x="249.11" y="360"/>
+    <use href="#star" x="225" y="270"/>
+    <use href="#star" x="249.11" y="180"/>
+    <use href="#star" x="315" y="114.11"/>
+  </g>
+</svg>

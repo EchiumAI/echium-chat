@@ -102,6 +102,21 @@ const AuthAmplify: React.FC<Props> = ({ socialProviders, children }) => {
         </span>
         <span>{t('auth.features.agents')}</span>
       </div>
+
+      {/* Origin badge — Made in Madrid, European Union */}
+      <div className="relative z-10 mt-5 flex items-center justify-center gap-2 text-[11px] uppercase tracking-wider text-white/40">
+        <img
+          src="/images/flags/madrid.svg"
+          alt="Madrid"
+          className="h-3.5 w-auto rounded-sm shadow-sm shadow-black/40"
+        />
+        <span>{t('auth.origin')}</span>
+        <img
+          src="/images/flags/eu.svg"
+          alt="European Union"
+          className="h-3.5 w-auto rounded-sm shadow-sm shadow-black/40"
+        />
+      </div>
     </div>
   );
 };

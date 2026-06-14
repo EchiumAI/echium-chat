@@ -16,6 +16,7 @@ const translation = {
         knowledgeBases: 'Custom knowledge bases',
         agents: 'Configurable agents',
       },
+      origin: 'Made in Madrid · European Union',
       email: {
         label: 'Email',
         placeholder: 'name@example.com',

@@ -19,6 +19,7 @@ const translation: typeof en = {
         knowledgeBases: 'カスタムナレッジベース',
         agents: '設定可能なエージェント',
       },
+      origin: 'マドリード発 · 欧州連合',
       email: {
         label: 'メールアドレス',
         placeholder: 'name@example.com',
