@@ -5,6 +5,34 @@ const translation = {
         login: 'Iniciar sesión',
       },
     },
+    auth: {
+      hero: {
+        title: 'Echium AI',
+        subtitle:
+          'Un espacio de IA privado con chat multimodelo, bases de conocimiento personalizadas y agentes adaptados a tu equipo.',
+      },
+      features: {
+        multiModel: 'Multimodelo',
+        knowledgeBases: 'Bases de conocimiento',
+        agents: 'Agentes configurables',
+      },
+      email: {
+        label: 'Correo electrónico',
+        placeholder: 'nombre@ejemplo.com',
+      },
+      password: {
+        label: 'Contraseña',
+        placeholder: 'Introduce tu contraseña',
+      },
+      confirmPassword: {
+        label: 'Confirmar contraseña',
+        placeholder: 'Vuelve a introducir tu contraseña',
+      },
+      newPassword: {
+        label: 'Nueva contraseña',
+        placeholder: 'Introduce tu nueva contraseña',
+      },
+    },
     app: {
       name: 'EchiumAI',
       inputMessage: 'Enviar un mensaje',

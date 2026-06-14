@@ -8,6 +8,34 @@ const translation: typeof en = {
         login: 'ログイン',
       },
     },
+    auth: {
+      hero: {
+        title: 'Echium AI',
+        subtitle:
+          'マルチモデルチャット、カスタムナレッジベース、チームに合わせたエージェントを備えたプライベートAIワークスペース。',
+      },
+      features: {
+        multiModel: 'マルチモデル',
+        knowledgeBases: 'カスタムナレッジベース',
+        agents: '設定可能なエージェント',
+      },
+      email: {
+        label: 'メールアドレス',
+        placeholder: 'name@example.com',
+      },
+      password: {
+        label: 'パスワード',
+        placeholder: 'パスワードを入力',
+      },
+      confirmPassword: {
+        label: 'パスワードの確認',
+        placeholder: 'パスワードを再入力',
+      },
+      newPassword: {
+        label: '新しいパスワード',
+        placeholder: '新しいパスワードを入力',
+      },
+    },
     app: {
       name: 'EchiumAI',
       inputMessage: 'お手伝いできることはありますか？',
