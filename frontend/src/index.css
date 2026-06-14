@@ -168,6 +168,73 @@
   color: #fca5a5 !important; /* light red */
 }
 
+/* The eye / eye-off button next to password fields. By default Amplify
+   inherits a low-opacity tertiary color, which disappears on the dark
+   field surface until the user hovers. Lock it to a clearly visible
+   white-ish at rest, brighter on hover. */
+.auth-dark .amplify-field__show-password,
+.auth-dark .amplify-field-group__field-wrapper button {
+  color: rgba(255, 255, 255, 0.7) !important;
+  background: transparent !important;
+}
+.auth-dark .amplify-field__show-password:hover,
+.auth-dark .amplify-field-group__field-wrapper button:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+.auth-dark .amplify-field__show-password svg,
+.auth-dark .amplify-field-group__field-wrapper button svg {
+  fill: currentColor !important;
+  stroke: currentColor !important;
+}
+
+/* Link-style buttons inside the Authenticator (Resend code, Forgot password,
+   Back to sign-in, etc.). Same issue as the eye icon: they default to a
+   muted color that vanishes on the dark surface until hover. Force them to
+   our brand-purple-tinted accent so they're readable at rest. */
+.auth-dark .amplify-button--link,
+.auth-dark .amplify-button[data-variation='link'],
+.auth-dark .amplify-button[data-fullwidth='true'][data-variation='link'] {
+  color: #c4b5fd !important;
+  background: transparent !important;
+}
+.auth-dark .amplify-button--link:hover,
+.auth-dark .amplify-button[data-variation='link']:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Headings inside the Authenticator card ("We Emailed You", "Verify your
+   account", etc.). Amplify renders these with .amplify-heading using a
+   variable that resolves to a low-contrast dark color on our surface. */
+.auth-dark [data-amplify-authenticator] .amplify-heading,
+.auth-dark [data-amplify-authenticator] h1,
+.auth-dark [data-amplify-authenticator] h2,
+.auth-dark [data-amplify-authenticator] h3,
+.auth-dark [data-amplify-authenticator] h4 {
+  color: #ffffff !important;
+}
+
+/* Body paragraph and helper text inside the auth card ("Your code is on
+   the way…", "It may take a minute to arrive."). */
+.auth-dark [data-amplify-authenticator] .amplify-text,
+.auth-dark [data-amplify-authenticator] p {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Link-style buttons inside the auth card: "Resend Code", "Forgot your
+   password?", "Back to Sign In", etc. Brand-purple light at rest,
+   brighter on hover. */
+.auth-dark [data-amplify-authenticator] .amplify-button--link,
+.auth-dark [data-amplify-authenticator] a {
+  color: #c4b5fd !important; /* brand purple, light shade */
+}
+.auth-dark [data-amplify-authenticator] .amplify-button--link:hover,
+.auth-dark [data-amplify-authenticator] a:hover {
+  color: #ffffff !important;
+  background: rgba(196, 181, 253, 0.08) !important;
+}
+
 /* Override Chrome/Safari autofill, which forces its own light yellow background
    and dark gray text regardless of CSS. The text-fill-color trick keeps text
    readable; the inset shadow swaps the autofill yellow for our dark surface. */

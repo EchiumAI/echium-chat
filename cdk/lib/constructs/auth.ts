@@ -109,14 +109,9 @@ export class Auth extends Construct {
               </td>
             </tr>
             <tr>
-              <td align="center" style="padding:0 40px 32px 40px;font-size:12px;line-height:1.6;color:rgba(255,255,255,0.45);">
+              <td align="center" style="padding:0 40px 40px 40px;font-size:12px;line-height:1.6;color:rgba(255,255,255,0.45);">
                 This code expires in 24 hours.<br />
                 If you did not sign up for Echium AI, you can safely ignore this email.
-              </td>
-            </tr>
-            <tr>
-              <td align="center" style="padding:24px 40px;border-top:1px solid rgba(255,255,255,0.06);font-size:11px;color:rgba(255,255,255,0.35);letter-spacing:0.04em;text-transform:uppercase;">
-                Echium AI &middot; Madrid &middot; European Union
               </td>
             </tr>
           </table>
