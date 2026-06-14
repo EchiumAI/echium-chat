@@ -64,7 +64,7 @@ const AuthCustom: React.FC<Props> = ({ children }) => {
 
           {/* Single column: hero, sign-in button, feature pills, origin badge —
               all sharing the same width so visual edges line up. */}
-          <div className="relative z-10 flex w-full max-w-sm flex-col items-center">
+          <div className="relative z-10 flex w-full max-w-md flex-col items-center">
             {/* Hero */}
             <div className="mb-10 flex flex-col items-center text-center">
               <img
@@ -75,7 +75,7 @@ const AuthCustom: React.FC<Props> = ({ children }) => {
               <h1 className="text-4xl font-light tracking-tight text-white">
                 {t('auth.hero.title')}
               </h1>
-              <p className="mt-4 text-balance text-base leading-relaxed text-white/60">
+              <p className="mt-4 max-w-sm text-base leading-relaxed text-white/60">
                 {t('auth.hero.subtitle')}
               </p>
             </div>

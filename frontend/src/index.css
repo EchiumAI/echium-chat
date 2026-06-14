@@ -109,6 +109,14 @@
     0 10px 30px -10px rgba(0, 0, 0, 0.6);
 }
 
+/* Make the Amplify Authenticator fill its parent column so it stays centered
+   inside our layout and doesn't render at its own default width. */
+.auth-dark [data-amplify-authenticator],
+.auth-dark [data-amplify-authenticator] [data-amplify-container] {
+  width: 100%;
+  max-width: 100%;
+}
+
 /* Rounded card for the Amplify Authenticator panel on the dark auth screen. */
 .auth-dark [data-amplify-authenticator] [data-amplify-router] {
   border-radius: 1.25rem;
