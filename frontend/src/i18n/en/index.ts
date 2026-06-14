@@ -5,6 +5,24 @@ const translation = {
         login: 'Login',
       },
     },
+    auth: {
+      email: {
+        label: 'Email',
+        placeholder: 'name@example.com',
+      },
+      password: {
+        label: 'Password',
+        placeholder: 'Enter your password',
+      },
+      confirmPassword: {
+        label: 'Confirm password',
+        placeholder: 'Re-enter your password',
+      },
+      newPassword: {
+        label: 'New password',
+        placeholder: 'Enter your new password',
+      },
+    },
     app: {
       name: 'EchiumAI',
       inputMessage: 'How can I Help You?',

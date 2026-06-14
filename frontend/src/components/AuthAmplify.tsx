@@ -18,6 +18,50 @@ const AuthAmplify: React.FC<Props> = ({ socialProviders, children }) => {
     <div className="auth-dark flex min-h-dvh flex-col items-center justify-center bg-black px-6 py-10">
       <Authenticator
         socialProviders={socialProviders}
+        formFields={{
+          signIn: {
+            username: {
+              label: t('auth.email.label'),
+              placeholder: t('auth.email.placeholder'),
+              type: 'email',
+            },
+          },
+          signUp: {
+            username: {
+              label: t('auth.email.label'),
+              placeholder: t('auth.email.placeholder'),
+              type: 'email',
+              order: 1,
+            },
+            password: {
+              label: t('auth.password.label'),
+              placeholder: t('auth.password.placeholder'),
+              order: 2,
+            },
+            confirm_password: {
+              label: t('auth.confirmPassword.label'),
+              placeholder: t('auth.confirmPassword.placeholder'),
+              order: 3,
+            },
+          },
+          forgotPassword: {
+            username: {
+              label: t('auth.email.label'),
+              placeholder: t('auth.email.placeholder'),
+              type: 'email',
+            },
+          },
+          confirmResetPassword: {
+            password: {
+              label: t('auth.newPassword.label'),
+              placeholder: t('auth.newPassword.placeholder'),
+            },
+            confirm_password: {
+              label: t('auth.confirmPassword.label'),
+              placeholder: t('auth.confirmPassword.placeholder'),
+            },
+          },
+        }}
         components={{
           Header: () => (
             <div className="mb-6 flex items-center justify-center gap-3">

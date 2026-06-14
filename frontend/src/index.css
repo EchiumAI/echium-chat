@@ -142,6 +142,24 @@
   caret-color: #ffffff;
 }
 
+/* Brighten Amplify field labels (Email / Password / Confirm password).
+   Default Amplify maps these to a low-contrast secondary/tertiary color
+   that disappears against the dark auth surface. */
+.auth-dark .amplify-label,
+.auth-dark .amplify-field__label,
+.auth-dark .amplify-field-group__field-wrapper label,
+.auth-dark .amplify-text--tertiary,
+.auth-dark [data-amplify-authenticator] label {
+  color: #ffffff !important;
+  opacity: 1 !important;
+  font-weight: 500;
+}
+
+/* Errors / hint text under fields */
+.auth-dark .amplify-field__error-message {
+  color: #fca5a5 !important; /* light red */
+}
+
 /* Override Chrome/Safari autofill, which forces its own light yellow background
    and dark gray text regardless of CSS. The text-fill-color trick keeps text
    readable; the inset shadow swaps the autofill yellow for our dark surface. */
