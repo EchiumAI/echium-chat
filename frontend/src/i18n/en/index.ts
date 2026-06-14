@@ -6,6 +6,16 @@ const translation = {
       },
     },
     auth: {
+      hero: {
+        title: 'Echium AI',
+        subtitle:
+          'A private AI workspace with multi-model chat, custom knowledge bases, and agents tailored to your team.',
+      },
+      features: {
+        multiModel: 'Multi-model',
+        knowledgeBases: 'Custom knowledge bases',
+        agents: 'Configurable agents',
+      },
       email: {
         label: 'Email',
         placeholder: 'name@example.com',
