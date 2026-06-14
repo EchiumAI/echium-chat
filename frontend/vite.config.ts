@@ -1,10 +1,35 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const xstateV4Path = require.resolve('xstate-v4');
 
 // https://vitejs.dev/config/
 export default defineConfig({
   resolve: { alias: { './runtimeConfig': './runtimeConfig.browser' } },
+  // Vite dev server pre-bundles deps with esbuild, which runs BEFORE the
+  // Rollup plugin pipeline below. We need the same xstate-v4 redirect for
+  // dev mode so `npm run dev` doesn't choke on Amplify UI's xstate-v4
+  // imports being resolved against top-level xstate v5.
+  optimizeDeps: {
+    esbuildOptions: {
+      plugins: [
+        {
+          name: 'resolve-xstate-v4-for-amplify-esbuild',
+          setup(build) {
+            build.onResolve({ filter: /^xstate$/ }, (args) => {
+              if (args.importer.includes('@aws-amplify')) {
+                return { path: xstateV4Path };
+              }
+              return null;
+            });
+          },
+        },
+      ],
+    },
+  },
   plugins: [
     {
       // npm overrides cannot reach @aws-amplify/ui-react's nested copies of
