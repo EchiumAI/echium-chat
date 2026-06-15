@@ -10,10 +10,35 @@ type Props = BaseProps & {
   children: ReactNode;
 };
 
+/**
+ * Outer wrapper. Provides the Authenticator context via Authenticator.Provider
+ * so the inner component can conditionally render either the branded auth
+ * screen (with hero/pills/badge) or the actual app once the user is signed
+ * in. Without the provider gate, the auth-screen chrome leaks into the
+ * post-auth layout and squeezes the chat into a narrow column.
+ */
 const AuthAmplify: React.FC<Props> = ({ socialProviders, children }) => {
-  const { t } = useTranslation();
-  const { signOut } = useAuthenticator();
+  return (
+    <Authenticator.Provider>
+      <AuthAmplifyInner socialProviders={socialProviders}>
+        {children}
+      </AuthAmplifyInner>
+    </Authenticator.Provider>
+  );
+};
 
+const AuthAmplifyInner: React.FC<Props> = ({ socialProviders, children }) => {
+  const { t } = useTranslation();
+  const { authStatus, signOut } = useAuthenticator((context) => [
+    context.authStatus,
+  ]);
+
+  // Once signed in, hand the full viewport to the app. No auth chrome.
+  if (authStatus === 'authenticated') {
+    return <>{cloneElement(children as ReactElement, { signOut })}</>;
+  }
+
+  // Pre-auth (or while configuring): branded sign-in screen.
   return (
     <div className="auth-dark relative flex min-h-dvh items-center justify-center overflow-hidden bg-zinc-900 px-6 py-12">
       {/* Soft brand-purple radial glow anchored to the top of the screen.
@@ -88,9 +113,8 @@ const AuthAmplify: React.FC<Props> = ({ socialProviders, children }) => {
                   placeholder: t('auth.confirmPassword.placeholder'),
                 },
               },
-            }}>
-            <>{cloneElement(children as ReactElement, { signOut })}</>
-          </Authenticator>
+            }}
+          />
         </div>
 
         {/* Feature pills */}
