@@ -11,23 +11,13 @@ type Props = BaseProps & {
 };
 
 /**
- * Outer wrapper. Provides the Authenticator context via Authenticator.Provider
- * so the inner component can conditionally render either the branded auth
- * screen (with hero/pills/badge) or the actual app once the user is signed
- * in. Without the provider gate, the auth-screen chrome leaks into the
- * post-auth layout and squeezes the chat into a narrow column.
+ * App.tsx already wraps this component in <Authenticator.Provider>, so we
+ * just consume the context directly. Splitting the dark/branded sign-in
+ * chrome from the post-auth pass-through here so the chrome only renders
+ * while authStatus !== 'authenticated' — otherwise it would leak into the
+ * post-login layout and squeeze the chat into a narrow column.
  */
 const AuthAmplify: React.FC<Props> = ({ socialProviders, children }) => {
-  return (
-    <Authenticator.Provider>
-      <AuthAmplifyInner socialProviders={socialProviders}>
-        {children}
-      </AuthAmplifyInner>
-    </Authenticator.Provider>
-  );
-};
-
-const AuthAmplifyInner: React.FC<Props> = ({ socialProviders, children }) => {
   const { t } = useTranslation();
   const { authStatus, signOut } = useAuthenticator((context) => [
     context.authStatus,
