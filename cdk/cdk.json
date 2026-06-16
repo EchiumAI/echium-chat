@@ -52,7 +52,7 @@
     "@aws-cdk/aws-autoscaling:generateLaunchTemplateInsteadOfLaunchConfig": true,
     "@aws-cdk/core:includePrefixInUniqueNameGeneration": true,
     "@aws-cdk/aws-opensearchservice:enableOpensearchMultiAzWithStandby": true,
-    "bedrockRegion": "us-east-1",
+    "bedrockRegion": "eu-west-1",
     "enableFrontendIpv6": true,
     "enableFrontendWaf": true,
     "allowedIpV4AddressRanges": ["0.0.0.0/1", "128.0.0.0/1"],
