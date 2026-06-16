@@ -52,10 +52,10 @@ export default {
         'aws-ui-color': {
           dark: '#151515',
         },
-        // Page background: very pale lavender / dark purple-gray
+        // Page background: very pale lavender for light, neutral dark gray for dark
         'aws-paper': {
-          light: '#F5F3FF',
-          dark: '#1E1B2E',
+          light: '#e8e8ec',
+          dark: '#18181b',
         },
         red: '#dc2626',
         'light-red': '#fee2e2',

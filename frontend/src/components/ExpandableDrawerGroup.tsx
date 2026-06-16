@@ -18,13 +18,18 @@ const ExpandableDrawerGroup: React.FC<Props> = ({
   return (
     <div className={twMerge(props.className)}>
       <div
-        className="flex w-full cursor-pointer items-center transition hover:brightness-75"
+        className="group flex w-full cursor-pointer items-center gap-1.5 px-2 py-1.5 text-white/40 transition hover:text-white/80"
         onClick={() => {
           setIsShow(!isShow);
         }}>
-        <PiCaretDown className={`mx-1 text-sm ${isShow ? '' : 'rotate-180'}`} />
-
-        <div className="italic">{props.label}</div>
+        <PiCaretDown
+          className={`text-[10px] transition-transform ${
+            isShow ? '' : '-rotate-90'
+          }`}
+        />
+        <div className="text-[11px] font-medium uppercase tracking-[0.08em]">
+          {props.label}
+        </div>
       </div>
       <div className="">
         <div

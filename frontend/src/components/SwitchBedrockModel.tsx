@@ -69,10 +69,10 @@ const SwitchBedrockModel: React.FC<Props> = (props) => {
             <Popover.Button
               className={`${
                 props.className ?? ''
-              } group inline-flex w-auto whitespace-nowrap rounded border-aws-squid-ink-light/50 dark:border-aws-squid-ink-dark/50 bg-aws-paper-light dark:bg-aws-paper-dark p-2 px-3 text-base hover:brightness-75`}>
-              <div className="flex items-center justify-between text-xl font-bold text-dark-gray dark:text-light-gray">
+              } group inline-flex w-auto whitespace-nowrap rounded-lg border border-aws-squid-ink-light/10 dark:border-white/5 bg-aws-paper-light dark:bg-aws-paper-dark/60 px-3 py-1.5 text-sm transition hover:border-aws-squid-ink-light/30 dark:hover:border-white/15 hover:bg-aws-paper-light/80 dark:hover:bg-aws-paper-dark`}>
+              <div className="flex items-center justify-between gap-2 text-sm font-medium tracking-tight text-aws-font-color-light/85 dark:text-white/85">
                 <span>{modelName}</span>
-                <PiCaretDown className="ml-2" />
+                <PiCaretDown className="text-xs opacity-60 transition group-hover:opacity-100" />
               </div>
             </Popover.Button>
             <Transition

@@ -42,7 +42,7 @@ const AppContent: React.FC<Props> = (props) => {
   const { newChat, isGeneratedTitle } = useChat();
   const { isConversationOrNewChat, pathPattern } = usePageTitlePathPattern();
   const { isAdmin } = useLoginUser();
-  const [theme] = useLocalStorage('theme', 'light');
+  const [theme] = useLocalStorage('theme', 'dark');
   useEffect(() => {
     document.documentElement.className = theme;
   }, [theme]);

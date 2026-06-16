@@ -29,7 +29,7 @@ const MenuSettings: React.FC<Props> = (props) => {
   const [isOpen, setIsOpen] = useState(false);
   // If you want to add a theme, change the type from boolean to string and change the UI from pulldown.
   const [isDarkTheme, setIsDarkTheme] = useState(false);
-  const [theme, setTheme] = useLocalStorage('theme', 'light');
+  const [theme, setTheme] = useLocalStorage('theme', 'dark');
 
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
