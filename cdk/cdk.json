@@ -78,7 +78,16 @@
     "enableBotStore": true,
     "enableBotStoreReplicas": false,
     "botStoreLanguage": "en",
-    "globalAvailableModels": [],
+    "globalAvailableModels": [
+      "claude-v4.6-opus",
+      "claude-v4.6-sonnet",
+      "claude-v4.5-sonnet",
+      "claude-v4.5-haiku",
+      "amazon-nova-pro",
+      "amazon-nova-lite"
+    ],
+    "defaultModel": "claude-v4.5-haiku",
+    "titleModel": "amazon-nova-lite",
     "tokenValidMinutes": 30,
     "alternateDomainName": "chat.echium.ai",
     "hostedZoneId": "",
