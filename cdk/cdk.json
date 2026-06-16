@@ -72,7 +72,7 @@
       "8000:0000:0000:0000:0000:0000:0000:0000/1"
     ],
     "enableRagReplicas": false,
-    "enableBedrockGlobalInference": true,
+    "enableBedrockGlobalInference": false,
     "enableBedrockCrossRegionInference": true,
     "enableLambdaSnapStart": true,
     "enableBotStore": true,
