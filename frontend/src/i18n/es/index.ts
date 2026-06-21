@@ -34,6 +34,35 @@ const translation = {
         placeholder: 'Introduce tu nueva contraseña',
       },
     },
+    landing: {
+      getStarted: 'Empezar',
+      haveAccount: '¿Ya tienes una cuenta?',
+      signIn: 'Iniciar sesión',
+      back: 'Volver',
+      preview: {
+        label: 'Vista previa',
+        user: 'Resume este informe trimestral y redacta un correo para el equipo.',
+        assistant:
+          'Aquí tienes un resumen conciso con las cifras clave, seguido de un correo listo para enviar que puedes ajustar.',
+      },
+      sections: {
+        multiModel: {
+          title: 'Varios modelos, un solo espacio',
+          description:
+            'Cambia entre modelos rápidos y potentes según la tarea, sin alternar entre herramientas distintas.',
+        },
+        knowledge: {
+          title: 'Tu conocimiento, integrado',
+          description:
+            'Fundamenta las respuestas en tus propios documentos y bases de conocimiento, con citas precisas.',
+        },
+        privacy: {
+          title: 'Europeo por diseño',
+          description:
+            'Tus datos se procesan en la UE, con la privacidad y el cumplimiento como prioridad.',
+        },
+      },
+    },
     app: {
       name: 'EchiumAI',
       inputMessage: 'Enviar un mensaje',

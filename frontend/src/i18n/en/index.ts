@@ -34,6 +34,35 @@ const translation = {
         placeholder: 'Enter your new password',
       },
     },
+    landing: {
+      getStarted: 'Get started',
+      haveAccount: 'Already have an account?',
+      signIn: 'Sign in',
+      back: 'Back',
+      preview: {
+        label: 'Preview',
+        user: 'Summarise this quarterly report and draft an email to the team.',
+        assistant:
+          'Here is a concise summary with the key figures, followed by a ready-to-send email you can adjust.',
+      },
+      sections: {
+        multiModel: {
+          title: 'Multiple models, one workspace',
+          description:
+            'Switch between fast and powerful models to match each task — no juggling separate tools.',
+        },
+        knowledge: {
+          title: 'Your knowledge, built in',
+          description:
+            'Ground answers in your own documents and knowledge bases for accurate, cited responses.',
+        },
+        privacy: {
+          title: 'European by design',
+          description:
+            'Your data is processed in the EU, with privacy and compliance at the core.',
+        },
+      },
+    },
     app: {
       name: 'EchiumAI',
       inputMessage: 'How can I Help You?',

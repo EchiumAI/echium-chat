@@ -37,6 +37,35 @@ const translation: typeof en = {
         placeholder: '新しいパスワードを入力',
       },
     },
+    landing: {
+      getStarted: '始める',
+      haveAccount: 'すでにアカウントをお持ちですか？',
+      signIn: 'ログイン',
+      back: '戻る',
+      preview: {
+        label: 'プレビュー',
+        user: 'この四半期レポートを要約して、チーム向けのメールを作成して。',
+        assistant:
+          '主要な数値をまとめた簡潔な要約と、そのまま送信できるメール文面をご用意しました。必要に応じて調整できます。',
+      },
+      sections: {
+        multiModel: {
+          title: '複数のモデルを一つのワークスペースで',
+          description:
+            'タスクに応じて高速なモデルと高性能なモデルを切り替え。複数のツールを使い分ける必要はありません。',
+        },
+        knowledge: {
+          title: 'あなたのナレッジを組み込み',
+          description:
+            '自社のドキュメントやナレッジベースに基づいて回答。出典付きで正確に応答します。',
+        },
+        privacy: {
+          title: '設計段階からヨーロッパ基準',
+          description:
+            'データはEU内で処理され、プライバシーとコンプライアンスを最優先します。',
+        },
+      },
+    },
     app: {
       name: 'EchiumAI',
       inputMessage: 'お手伝いできることはありますか？',

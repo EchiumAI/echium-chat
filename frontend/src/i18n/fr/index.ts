@@ -29,6 +29,35 @@ const translation = {
         placeholder: 'Saisissez votre nouveau mot de passe',
       },
     },
+    landing: {
+      getStarted: 'Commencer',
+      haveAccount: 'Vous avez déjà un compte ?',
+      signIn: 'Se connecter',
+      back: 'Retour',
+      preview: {
+        label: 'Aperçu',
+        user: 'Résume ce rapport trimestriel et rédige un e-mail pour l’équipe.',
+        assistant:
+          'Voici un résumé concis avec les chiffres clés, suivi d’un e-mail prêt à envoyer que vous pouvez ajuster.',
+      },
+      sections: {
+        multiModel: {
+          title: 'Plusieurs modèles, un seul espace',
+          description:
+            'Passez d’un modèle rapide à un modèle puissant selon la tâche, sans jongler entre plusieurs outils.',
+        },
+        knowledge: {
+          title: 'Vos connaissances, intégrées',
+          description:
+            'Ancrez les réponses dans vos propres documents et bases de connaissances, avec des citations précises.',
+        },
+        privacy: {
+          title: 'Européen par conception',
+          description:
+            'Vos données sont traitées dans l’UE, avec la confidentialité et la conformité au cœur du service.',
+        },
+      },
+    },
     app: {
       name: 'EchiumAI',
       inputMessage: 'Envoyer un message',
