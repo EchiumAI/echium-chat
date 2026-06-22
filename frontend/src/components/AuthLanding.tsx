@@ -7,6 +7,7 @@ import {
   PiArrowRight,
 } from 'react-icons/pi';
 import AuthLanguageSwitcher from './AuthLanguageSwitcher';
+import PricingPlans from './PricingPlans';
 
 type Props = {
   /** Primary CTA handler — reveals the sign-in form (Amplify) or starts the
@@ -50,15 +51,18 @@ const AuthLanding: React.FC<Props> = ({ onGetStarted, onSignIn }) => {
   ];
 
   return (
-    <div className="relative z-10 flex w-full max-w-md flex-col items-center">
+    <div className="relative z-10 flex w-full max-w-5xl flex-col items-center">
       {/* Language switcher — fixed to the top-right of the viewport so it is
           reachable on every screen size without crowding the hero. */}
       <div className="fixed right-4 top-4 z-20">
         <AuthLanguageSwitcher />
       </div>
 
-      {/* Hero */}
-      <div className="mb-8 flex flex-col items-center text-center">
+      {/* Hero + preview + CTA + features share a narrow centered column so the
+          first impression stays focused; pricing breaks out wider below. */}
+      <div className="flex w-full max-w-md flex-col items-center">
+        {/* Hero */}
+        <div className="mb-8 flex flex-col items-center text-center">
         <img
           src="/images/echium_icon_192.png"
           alt=""
@@ -140,9 +144,15 @@ const AuthLanding: React.FC<Props> = ({ onGetStarted, onSignIn }) => {
           </div>
         ))}
       </div>
+      </div>
+
+      {/* Pricing — wider breakout section below the focused hero column. */}
+      <section className="mt-16 w-full">
+        <PricingPlans onSelectPlan={() => onGetStarted()} />
+      </section>
 
       {/* Origin badge — Made in Madrid, European Union */}
-      <div className="mt-10 flex items-center justify-center gap-2 text-[11px] uppercase tracking-wider text-white/40">
+      <div className="mt-12 flex items-center justify-center gap-2 text-[11px] uppercase tracking-wider text-white/40">
         <img
           src="/images/flags/madrid.svg"
           alt="Madrid"
