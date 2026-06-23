@@ -11,6 +11,7 @@ alongside this folder, untouched.
 | [`pipeline-setup.md`](./pipeline-setup.md) | One-time setup of the GitHub Actions → AWS deploy pipeline (CDK bootstrap, OIDC IAM role, GitHub Environment) |
 | [`email-setup.md`](./email-setup.md) | Branded sign-up / password-reset emails via SES + Cognito (DNS, DKIM/SPF/DMARC, custom HTML template) |
 | [`migration.md`](./migration.md) | Moving the stack between AWS accounts while keeping the same domain (cert reissue, agreements, SES verify, DNS cutover) |
+| [`mobile-strategy.md`](./mobile-strategy.md) | How Echium reaches mobile (EU-first, direct distribution, PWA on iOS / Capacitor on Android, web-first Paddle billing) |
 | [`todo.md`](./todo.md) | Living task tracker for outstanding work and recently shipped items |
 
 ## Conventions
