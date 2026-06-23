@@ -7,6 +7,7 @@ import BotApiSettingsPage from './pages/BotApiSettingsPage.tsx';
 import AdminSharedBotAnalyticsPage from './pages/AdminSharedBotAnalyticsPage.tsx';
 import AdminApiManagementPage from './pages/AdminApiManagementPage.tsx';
 import AdminBotManagementPage from './pages/AdminBotManagementPage.tsx';
+import PublicPricingPage from './pages/PublicPricingPage.tsx';
 import { useTranslation } from 'react-i18next';
 import {
   createBrowserRouter,
@@ -84,6 +85,12 @@ const rootChildren = [
 ] as const;
 
 const routes = [
+  // Public, unauthenticated pricing page — sits OUTSIDE the <App> auth gate so
+  // prospects and payment-provider reviewers can reach it without signing in.
+  {
+    path: '/pricing',
+    element: <PublicPricingPage />,
+  },
   {
     path: '/',
     element: <App />,
