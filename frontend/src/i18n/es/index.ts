@@ -72,6 +72,9 @@ const translation = {
       noCap: 'Sin límite — pago por uso',
       popular: 'Popular',
       messagesPerMonth: '{{formatted}} mensajes / mes',
+      paygFree: '50 mensajes gratis / mes',
+      paygCharging:
+        'Tras tus mensajes gratuitos, pagas solo por lo que usas: se descuenta de tu saldo prepago según el modelo y la longitud de cada mensaje. Recarga cuando quieras; sin cuota mensual.',
       cta: {
         start: 'Empezar',
         choose: 'Elegir plan',
@@ -94,6 +97,39 @@ const translation = {
         fileUpload: 'Subida de archivos',
         priority: 'Acceso prioritario',
       },
+    },
+    payg: {
+      linkLabel: 'Ver detalles del pago por uso',
+      title: 'Pago por uso',
+      intro:
+        'Empieza con {{count}} mensajes gratis cada mes. Después, paga solo por lo que uses: se descuenta de tu saldo prepago según el modelo y la longitud de cada mensaje. Sin cuota mensual ni permanencia.',
+      perks: {
+        allModels: 'Acceso a todos los modelos, incluido Claude Opus',
+        noMonthlyFee: 'Sin cuota mensual: pagas solo por lo que usas',
+        priority: 'Acceso prioritario en horas de mayor demanda',
+        topUpAnytime: 'Recarga cuando quieras; recarga automática opcional',
+      },
+      table: {
+        title: 'Qué obtienes con tu saldo',
+        subtitle: 'Mensajes aproximados por recarga, según el modelo.',
+        model: 'Modelo',
+        perMessage: 'Por mensaje',
+        messages: '~{{formatted}}',
+        disclaimer:
+          'Estimaciones basadas en una longitud media de mensaje. Se cobra el uso exacto de cada mensaje, por lo que las cifras reales varían según el tamaño. Los precios incluyen el margen aplicable; precio final pendiente de revisión.',
+      },
+      models: {
+        nova: 'Amazon Nova',
+        haiku: 'Claude Haiku',
+        sonnet: 'Claude Sonnet',
+        opus: 'Claude Opus',
+      },
+    },
+    legal: {
+      terms: 'Términos',
+      privacy: 'Privacidad',
+      refund: 'Reembolsos',
+      copyright: '© {{year}} Echium AI',
     },
     app: {
       name: 'EchiumAI',

@@ -8,6 +8,10 @@ import AdminSharedBotAnalyticsPage from './pages/AdminSharedBotAnalyticsPage.tsx
 import AdminApiManagementPage from './pages/AdminApiManagementPage.tsx';
 import AdminBotManagementPage from './pages/AdminBotManagementPage.tsx';
 import PublicPricingPage from './pages/PublicPricingPage.tsx';
+import PublicPaygPage from './pages/PublicPaygPage.tsx';
+import TermsPage from './pages/legal/TermsPage.tsx';
+import RefundPolicyPage from './pages/legal/RefundPolicyPage.tsx';
+import PrivacyPage from './pages/legal/PrivacyPage.tsx';
 import { useTranslation } from 'react-i18next';
 import {
   createBrowserRouter,
@@ -90,6 +94,23 @@ const routes = [
   {
     path: '/pricing',
     element: <PublicPricingPage />,
+  },
+  {
+    path: '/pricing/pay-as-you-go',
+    element: <PublicPaygPage />,
+  },
+  // Public legal pages — also outside the auth gate (Paddle review + GDPR).
+  {
+    path: '/terms',
+    element: <TermsPage />,
+  },
+  {
+    path: '/refund-policy',
+    element: <RefundPolicyPage />,
+  },
+  {
+    path: '/privacy',
+    element: <PrivacyPage />,
   },
   {
     path: '/',

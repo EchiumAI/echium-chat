@@ -90,6 +90,39 @@ const translation = {
         priority: 'Priorisierter Zugang',
       },
     },
+    payg: {
+      linkLabel: 'Details zur nutzungsbasierten Abrechnung',
+      title: 'Nutzungsbasiert zahlen',
+      intro:
+        'Starte mit {{count}} kostenlosen Nachrichten pro Monat. Danach zahlst du nur, was du nutzt — abgebucht von deinem Prepaid-Guthaben je nach Modell und Länge jeder Nachricht. Keine monatliche Gebühr, keine Bindung.',
+      perks: {
+        allModels: 'Zugang zu allen Modellen, einschließlich Claude Opus',
+        noMonthlyFee: 'Keine monatliche Gebühr — zahle nur, was du nutzt',
+        priority: 'Priorisierter Zugang in Stoßzeiten',
+        topUpAnytime: 'Jederzeit aufladen; automatisches Aufladen optional',
+      },
+      table: {
+        title: 'Was dein Guthaben bringt',
+        subtitle: 'Ungefähre Nachrichten pro Aufladung, nach Modell.',
+        model: 'Modell',
+        perMessage: 'Pro Nachricht',
+        messages: '~{{formatted}}',
+        disclaimer:
+          'Schätzungen auf Basis einer durchschnittlichen Nachrichtenlänge. Abgerechnet wird die tatsächliche Nutzung jeder Nachricht, daher variieren die realen Zahlen je nach Länge. Preise inkl. anwendbarem Aufschlag; endgültiger Preis vorbehaltlich Prüfung.',
+      },
+      models: {
+        nova: 'Amazon Nova',
+        haiku: 'Claude Haiku',
+        sonnet: 'Claude Sonnet',
+        opus: 'Claude Opus',
+      },
+    },
+    legal: {
+      terms: 'AGB',
+      privacy: 'Datenschutz',
+      refund: 'Erstattungen',
+      copyright: '© {{year}} Echium AI',
+    },
     app: {
       name: 'EchiumAI',
       inputMessage: 'Nachricht senden',

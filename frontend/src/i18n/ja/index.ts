@@ -75,6 +75,9 @@ const translation: typeof en = {
       noCap: '上限なし — 従量課金',
       popular: '人気',
       messagesPerMonth: '月{{formatted}}メッセージ',
+      paygFree: '毎月50メッセージ無料',
+      paygCharging:
+        '無料分を使い切った後は、使った分だけお支払い。モデルとメッセージの長さに応じてプリペイド残高から課金されます。いつでもチャージ可能、月額料金はありません。',
       cta: {
         start: '始める',
         choose: 'プランを選択',
@@ -97,6 +100,39 @@ const translation: typeof en = {
         fileUpload: 'ファイルアップロード',
         priority: '優先アクセス',
       },
+    },
+    payg: {
+      linkLabel: '従量課金の詳細を見る',
+      title: '従量課金（Pay as you go）',
+      intro:
+        '毎月{{count}}メッセージまで無料。それ以降は使った分だけお支払い — モデルとメッセージの長さに応じてプリペイド残高から課金されます。月額料金や縛りはありません。',
+      perks: {
+        allModels: 'Claude Opusを含む全モデルにアクセス',
+        noMonthlyFee: '月額料金なし — 使った分だけ支払い',
+        priority: '混雑時の優先アクセス',
+        topUpAnytime: 'いつでもチャージ可能、自動チャージも選択可',
+      },
+      table: {
+        title: 'クレジットで使える量',
+        subtitle: 'チャージ額ごとのおおよそのメッセージ数（モデル別）。',
+        model: 'モデル',
+        perMessage: '1メッセージあたり',
+        messages: '約{{formatted}}',
+        disclaimer:
+          '平均的なメッセージ長に基づく概算です。実際には各メッセージの使用量で課金されるため、メッセージの長さによって件数は変動します。価格にはマークアップを含みます。最終価格は確定前です。',
+      },
+      models: {
+        nova: 'Amazon Nova',
+        haiku: 'Claude Haiku',
+        sonnet: 'Claude Sonnet',
+        opus: 'Claude Opus',
+      },
+    },
+    legal: {
+      terms: '利用規約',
+      privacy: 'プライバシー',
+      refund: '返金',
+      copyright: '© {{year}} Echium AI',
     },
     app: {
       name: 'EchiumAI',

@@ -72,6 +72,9 @@ const translation = {
       noCap: 'No cap — pay as you go',
       popular: 'Popular',
       messagesPerMonth: '{{formatted}} messages / month',
+      paygFree: '50 free messages / month',
+      paygCharging:
+        'After your free messages, pay only for what you use — charged from prepaid credit based on the model and the length of each message. Top up anytime; no monthly fee.',
       cta: {
         start: 'Get started',
         choose: 'Choose plan',
@@ -94,6 +97,39 @@ const translation = {
         fileUpload: 'File upload',
         priority: 'Priority access',
       },
+    },
+    payg: {
+      linkLabel: 'See pay-as-you-go details',
+      title: 'Pay as you go',
+      intro:
+        'Start with {{count}} free messages every month. After that, pay only for what you use — billed from prepaid credit based on the model and the length of each message. No monthly fee, no lock-in.',
+      perks: {
+        allModels: 'Access to all models, including Claude Opus',
+        noMonthlyFee: 'No monthly fee — only pay for what you use',
+        priority: 'Priority access during busy periods',
+        topUpAnytime: 'Top up anytime; auto-reload optional',
+      },
+      table: {
+        title: 'What your credit buys',
+        subtitle: 'Approximate messages per top-up, by model.',
+        model: 'Model',
+        perMessage: 'Per message',
+        messages: '~{{formatted}}',
+        disclaimer:
+          'Estimates based on an average message length. You are billed the exact usage of each message, so real counts vary with message size. Prices include applicable markup; final pricing pending review.',
+      },
+      models: {
+        nova: 'Amazon Nova',
+        haiku: 'Claude Haiku',
+        sonnet: 'Claude Sonnet',
+        opus: 'Claude Opus',
+      },
+    },
+    legal: {
+      terms: 'Terms',
+      privacy: 'Privacy',
+      refund: 'Refunds',
+      copyright: '© {{year}} Echium AI',
     },
     app: {
       name: 'EchiumAI',

@@ -95,6 +95,39 @@ const translation = {
         priority: 'Accesso prioritario',
       },
     },
+    payg: {
+      linkLabel: 'Vedi i dettagli del pagamento a consumo',
+      title: 'Pagamento a consumo',
+      intro:
+        'Inizia con {{count}} messaggi gratuiti ogni mese. Poi paghi solo ciò che usi: addebitato dal tuo credito prepagato in base al modello e alla lunghezza di ogni messaggio. Nessun canone mensile, nessun vincolo.',
+      perks: {
+        allModels: 'Accesso a tutti i modelli, incluso Claude Opus',
+        noMonthlyFee: 'Nessun canone mensile: paghi solo ciò che usi',
+        priority: 'Accesso prioritario nei momenti di punta',
+        topUpAnytime: 'Ricarica quando vuoi; ricarica automatica opzionale',
+      },
+      table: {
+        title: 'Cosa ottieni con il credito',
+        subtitle: 'Messaggi approssimativi per ricarica, per modello.',
+        model: 'Modello',
+        perMessage: 'Per messaggio',
+        messages: '~{{formatted}}',
+        disclaimer:
+          'Stime basate su una lunghezza media dei messaggi. Viene addebitato l’uso esatto di ogni messaggio, quindi i numeri reali variano in base alla dimensione. I prezzi includono il margine applicabile; prezzo finale in fase di revisione.',
+      },
+      models: {
+        nova: 'Amazon Nova',
+        haiku: 'Claude Haiku',
+        sonnet: 'Claude Sonnet',
+        opus: 'Claude Opus',
+      },
+    },
+    legal: {
+      terms: 'Termini',
+      privacy: 'Privacy',
+      refund: 'Rimborsi',
+      copyright: '© {{year}} Echium AI',
+    },
     app: {
       name: 'EchiumAI',
       inputMessage: 'Come posso aiutarti?',
