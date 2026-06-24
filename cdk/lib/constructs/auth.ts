@@ -274,33 +274,50 @@ export class Auth extends Construct {
       }
     );
 
+    // Pre Sign-up: reject duplicate accounts that differ only by email
+    // letter-case. Registered via the shared trigger custom resource below
+    // (not addTrigger) so the IAM grant it needs does not create a circular
+    // dependency between the pool and the function.
+    const normalizeEmailFunction = new PythonFunction(this, "NormalizeEmail", {
+      runtime: Runtime.PYTHON_3_13,
+      index: "normalize_email.py",
+      entry: path.join(__dirname, "../../../backend/auth/normalize_email"),
+      timeout: Duration.minutes(1),
+      logRetention: logs.RetentionDays.THREE_MONTHS,
+    });
+    normalizeEmailFunction.addPermission("CognitoPreSignUp", {
+      principal: new iam.ServicePrincipal("cognito-idp.amazonaws.com"),
+      sourceArn: userPool.userPoolArn,
+      scope: userPool,
+    });
+    userPool.grant(normalizeEmailFunction, "cognito-idp:ListUsers");
+
+    // Triggers to register on the pool. PreSignUp (email dedup) is always
+    // present; group-join triggers are added when autoJoinUserGroups is set.
+    const triggers: Record<string, string> = {
+      PreSignUp: normalizeEmailFunction.functionArn,
+    };
+
+    let addUserToGroupsFunction: PythonFunction | undefined;
     if (props.autoJoinUserGroups.length >= 1) {
       /**
-       * Create a Cognito trigger to add a new user to the group specified with `autoJoinUserGroups`.
+       * Add a new user to the groups specified with `autoJoinUserGroups`.
        *
-       * Registering a Lambda function that uses a user pool as a trigger of the user pool itself
-       * results circular reference, so CloudFormation cannot do this when creating a user pool.
-       * Additionally, CloudFormation does not provide the functionality to add triggers to existing user pools.
-       * Therefore, use a custom resource implementing that functionality.
+       * Registering a Lambda that uses a user pool as a trigger of the user
+       * pool itself results in a circular reference, so it is registered via
+       * the custom resource below rather than at pool-creation time.
        */
-      const addUserToGroupsFunction = new PythonFunction(
-        this,
-        "AddUserToGroups",
-        {
-          runtime: Runtime.PYTHON_3_13,
-          index: "add_user_to_groups.py",
-          entry: path.join(
-            __dirname,
-            "../../../backend/auth/add_user_to_groups"
-          ),
-          timeout: Duration.minutes(1),
-          environment: {
-            USER_POOL_ID: userPool.userPoolId,
-            AUTO_JOIN_USER_GROUPS: JSON.stringify(props.autoJoinUserGroups),
-          },
-          logRetention: logs.RetentionDays.THREE_MONTHS,
-        }
-      );
+      addUserToGroupsFunction = new PythonFunction(this, "AddUserToGroups", {
+        runtime: Runtime.PYTHON_3_13,
+        index: "add_user_to_groups.py",
+        entry: path.join(__dirname, "../../../backend/auth/add_user_to_groups"),
+        timeout: Duration.minutes(1),
+        environment: {
+          USER_POOL_ID: userPool.userPoolId,
+          AUTO_JOIN_USER_GROUPS: JSON.stringify(props.autoJoinUserGroups),
+        },
+        logRetention: logs.RetentionDays.THREE_MONTHS,
+      });
       addUserToGroupsFunction.addPermission("CognitoTrigger", {
         principal: new iam.ServicePrincipal("cognito-idp.amazonaws.com"),
         sourceArn: userPool.userPoolArn,
@@ -311,47 +328,50 @@ export class Auth extends Construct {
         "cognito-idp:AdminAddUserToGroup"
       );
 
-      const cognitoTriggerRegistrationFunction = new SingletonFunction(
-        this,
-        "CognitoTriggerRegistrationFunction",
-        {
-          uuid: "a84c6122-180e-48fc-afaf-f4d65da2b370",
-          lambdaPurpose: "CognitoTriggerRegistrationFunction",
-          code: Code.fromInline(
-            fs.readFileSync(
-              path.join(
-                __dirname,
-                "../../custom-resources/cognito-trigger/index.py"
-              ),
-              "utf8"
-            )
-          ),
-          handler: "index.handler",
+      triggers.PostConfirmation = addUserToGroupsFunction.functionArn;
+      triggers.PostAuthentication = addUserToGroupsFunction.functionArn;
+    }
 
-          runtime: Runtime.PYTHON_3_13,
-          environment: {
-            USER_POOL_ID: userPool.userPoolId,
-          },
-
-          timeout: Duration.minutes(1),
-        }
-      );
-      userPool.grant(
-        cognitoTriggerRegistrationFunction,
-        "cognito-idp:UpdateUserPool",
-        "cognito-idp:DescribeUserPool"
-      );
-
-      const cognitoTrigger = new CustomResource(this, "CognitoTrigger", {
-        serviceToken: cognitoTriggerRegistrationFunction.functionArn,
-        resourceType: "Custom::CognitoTrigger",
-        properties: {
-          Triggers: {
-            PostConfirmation: addUserToGroupsFunction.functionArn,
-            PostAuthentication: addUserToGroupsFunction.functionArn,
-          },
+    // Single custom resource registers all triggers (it merges into the
+    // pool's existing LambdaConfig, so triggers never clobber each other).
+    const cognitoTriggerRegistrationFunction = new SingletonFunction(
+      this,
+      "CognitoTriggerRegistrationFunction",
+      {
+        uuid: "a84c6122-180e-48fc-afaf-f4d65da2b370",
+        lambdaPurpose: "CognitoTriggerRegistrationFunction",
+        code: Code.fromInline(
+          fs.readFileSync(
+            path.join(
+              __dirname,
+              "../../custom-resources/cognito-trigger/index.py"
+            ),
+            "utf8"
+          )
+        ),
+        handler: "index.handler",
+        runtime: Runtime.PYTHON_3_13,
+        environment: {
+          USER_POOL_ID: userPool.userPoolId,
         },
-      });
+        timeout: Duration.minutes(1),
+      }
+    );
+    userPool.grant(
+      cognitoTriggerRegistrationFunction,
+      "cognito-idp:UpdateUserPool",
+      "cognito-idp:DescribeUserPool"
+    );
+
+    const cognitoTrigger = new CustomResource(this, "CognitoTrigger", {
+      serviceToken: cognitoTriggerRegistrationFunction.functionArn,
+      resourceType: "Custom::CognitoTrigger",
+      properties: {
+        Triggers: triggers,
+      },
+    });
+    cognitoTrigger.node.addDependency(normalizeEmailFunction);
+    if (addUserToGroupsFunction) {
       cognitoTrigger.node.addDependency(addUserToGroupsFunction);
     }
 
