@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { PiCheck } from 'react-icons/pi';
+import { useNavigate } from 'react-router-dom';
+import { PiCheck, PiArrowRight } from 'react-icons/pi';
 import { twMerge } from 'tailwind-merge';
 import { PLANS, Plan } from '../constants/plans';
 
@@ -20,6 +21,7 @@ type Props = {
  */
 const PricingPlans: React.FC<Props> = ({ onSelectPlan }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const priceLabel = (plan: Plan): string => {
     if (plan.priceEur === null) {
@@ -111,6 +113,17 @@ const PricingPlans: React.FC<Props> = ({ onSelectPlan }) => {
             </button>
           </div>
         ))}
+      </div>
+
+      {/* Pay-as-you-go detail link — appears wherever the grid is shown. */}
+      <div className="mt-6 text-center">
+        <button
+          type="button"
+          onClick={() => navigate('/pricing/pay-as-you-go')}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-300 transition-colors hover:text-violet-200">
+          {t('payg.linkLabel')}
+          <PiArrowRight aria-hidden className="size-3.5" />
+        </button>
       </div>
     </section>
   );

@@ -64,17 +64,6 @@ const PublicPricingPage: React.FC = () => {
         {/* Pricing grid */}
         <PricingPlans onSelectPlan={() => navigate('/')} />
 
-        {/* Pay-as-you-go detail link */}
-        <div className="mt-6 text-center">
-          <button
-            type="button"
-            onClick={() => navigate('/pricing/pay-as-you-go')}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-300 transition-colors hover:text-violet-200">
-            {t('payg.linkLabel')}
-            <PiArrowRight aria-hidden className="size-3.5" />
-          </button>
-        </div>
-
         {/* Footer CTA */}
         <div className="mt-12 flex flex-col items-center text-center">
           <button

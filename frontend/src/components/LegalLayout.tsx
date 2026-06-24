@@ -1,6 +1,7 @@
 import React, { ReactNode, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PiArrowLeft } from 'react-icons/pi';
+import PublicFooter from './PublicFooter';
 
 type Props = {
   /** Page heading, e.g. "Terms of Service". */
@@ -71,9 +72,13 @@ const LegalLayout: React.FC<Props> = ({ title, lastUpdated, children }) => {
         </div>
 
         {/* Body */}
-        <div className="mt-8 space-y-6 pb-16 text-sm leading-relaxed text-white/70">
+        <div className="mt-8 space-y-6 pb-10 text-sm leading-relaxed text-white/70">
           {children}
         </div>
+
+        {/* Footer — cross-links to pricing, pay-as-you-go and the other legal
+            pages, so every legal page links onward. */}
+        <PublicFooter />
       </div>
     </div>
   );

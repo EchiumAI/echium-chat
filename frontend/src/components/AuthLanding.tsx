@@ -8,6 +8,7 @@ import {
 } from 'react-icons/pi';
 import AuthLanguageSwitcher from './AuthLanguageSwitcher';
 import PricingPlans from './PricingPlans';
+import PublicFooter from './PublicFooter';
 
 type Props = {
   /** Primary CTA handler — reveals the sign-in form (Amplify) or starts the
@@ -164,6 +165,11 @@ const AuthLanding: React.FC<Props> = ({ onGetStarted, onSignIn }) => {
           alt="European Union"
           className="h-3.5 w-auto rounded-sm shadow-sm shadow-black/40"
         />
+      </div>
+
+      {/* Footer — pricing, pay-as-you-go and legal links on the front page. */}
+      <div className="w-full">
+        <PublicFooter />
       </div>
     </div>
   );
