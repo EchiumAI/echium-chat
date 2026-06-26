@@ -9,6 +9,7 @@ from requests_aws4auth import AWS4Auth
 DDB_ENDPOINT_URL = os.environ.get("DDB_ENDPOINT_URL")
 CONVERSATION_TABLE_NAME = os.environ.get("CONVERSATION_TABLE_NAME", "")
 BOT_TABLE_NAME = os.environ.get("BOT_TABLE_NAME", "")
+SUBSCRIPTION_TABLE_NAME = os.environ.get("SUBSCRIPTION_TABLE_NAME", "")
 ACCOUNT = os.environ.get("ACCOUNT", "")
 REGION = os.environ.get("REGION", "ap-northeast-1")
 TABLE_ACCESS_ROLE_ARN = os.environ.get("TABLE_ACCESS_ROLE_ARN", "")
@@ -170,6 +171,18 @@ def get_bot_table_client():
     """
     return _get_aws_resource("dynamodb", table_name=BOT_TABLE_NAME).Table(
         BOT_TABLE_NAME
+    )
+
+
+def get_subscription_table_client():
+    """Get a DynamoDB table client for the subscription & usage table.
+
+    Note: no row-level access control at the IAM layer — items are scoped to a
+    user via the PK (USER#{user_id}) and callers must pass the correct user id.
+    The webhook handler also writes here outside any user context.
+    """
+    return _get_aws_resource("dynamodb", table_name=SUBSCRIPTION_TABLE_NAME).Table(
+        SUBSCRIPTION_TABLE_NAME
     )
 
 

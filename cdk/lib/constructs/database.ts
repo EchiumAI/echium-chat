@@ -18,6 +18,7 @@ export class Database extends Construct {
   readonly botTable: Table;
   readonly tableAccessRole: Role;
   readonly websocketSessionTable: Table;
+  readonly subscriptionTable: Table;
 
   constructor(scope: Construct, id: string, props?: DatabaseProps) {
     super(scope, id);
@@ -104,16 +105,41 @@ export class Database extends Construct {
       timeToLiveAttribute: "expire",
     });
 
+    // Subscription & usage table.
+    // Single-table design keyed by user:
+    //   PK = USER#{userId}
+    //   SK = SUBSCRIPTION                 -> plan, status, Paddle ids, credit balance
+    //   SK = USAGE#{YYYY-MM}              -> per-period message/token/cost counters
+    //   SK = LEDGER#{ISO8601}#{uuid}      -> PAYG credit transactions (top-ups, debits)
+    // GSI resolves a Paddle customer id back to the user when webhooks arrive.
+    const subscriptionTable = new Table(this, "SubscriptionTableV1", {
+      partitionKey: { name: "PK", type: AttributeType.STRING },
+      sortKey: { name: "SK", type: AttributeType.STRING },
+      billingMode: BillingMode.PAY_PER_REQUEST,
+      removalPolicy: RemovalPolicy.DESTROY,
+      encryption: TableEncryption.AWS_MANAGED,
+      pointInTimeRecovery: true,
+    });
+    // GSI: look up the owning user by Paddle customer id (webhook processing).
+    subscriptionTable.addGlobalSecondaryIndex({
+      indexName: "PaddleCustomerIdIndex",
+      partitionKey: { name: "PaddleCustomerId", type: AttributeType.STRING },
+    });
+
     this.conversationTable = conversationTable;
     this.botTable = botTable;
     this.tableAccessRole = tableAccessRole;
     this.websocketSessionTable = websocketSessionTable;
+    this.subscriptionTable = subscriptionTable;
 
     new CfnOutput(this, "ConversationTableName", {
       value: conversationTable.tableName,
     });
     new CfnOutput(this, "BotTableName", {
       value: botTable.tableName,
+    });
+    new CfnOutput(this, "SubscriptionTableName", {
+      value: subscriptionTable.tableName,
     });
   }
 }
