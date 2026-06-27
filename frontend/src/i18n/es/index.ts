@@ -95,6 +95,7 @@ const translation = {
         knowledgeBases: 'Bases de conocimiento propias',
         agents: 'Agentes configurables',
         fileUpload: 'Subida de archivos',
+        webSearch: 'Búsqueda en internet',
         priority: 'Acceso prioritario',
       },
     },

@@ -12,12 +12,36 @@
 
 export type PlanId = 'free' | 'starter' | 'pro' | 'business' | 'max' | 'payg';
 
+/**
+ * Model access level per plan. Resolved to concrete model ids by the backend
+ * enforcement layer (see backend/app/plans.py), kept as a coarse tier here so
+ * the frontend doesn't duplicate the model-key list.
+ *  - basic:    Amazon Nova + Claude Haiku (cheap)
+ *  - standard: basic + Claude Sonnet
+ *  - all:      standard + Claude Opus
+ */
+export type ModelTier = 'basic' | 'standard' | 'all';
+
+/** Machine-readable capability flags used for UI gating + (mirrored) backend
+ *  enforcement. Display strings stay in `featureKeys`. */
+export interface PlanCapabilities {
+  modelTier: ModelTier;
+  /** Internet search tool. Pro and up (it is the most expensive feature). */
+  webSearch: boolean;
+  agents: boolean;
+  knowledgeBases: boolean;
+  fileUpload: boolean;
+  priority: boolean;
+}
+
 export interface Plan {
   id: PlanId;
   /** Monthly price in EUR. null = usage-based (PAYG). */
   priceEur: number | null;
   /** Included messages per month. null = no cap (PAYG). */
   messagesPerMonth: number | null;
+  /** Machine-readable entitlements (gating). */
+  capabilities: PlanCapabilities;
   /** i18n keys (under `pricing.features.*`) describing what the plan unlocks. */
   featureKeys: string[];
   /** Visually emphasise this plan in the grid. */
@@ -29,20 +53,45 @@ export const PLANS: Plan[] = [
     id: 'free',
     priceEur: 0,
     messagesPerMonth: 50,
+    capabilities: {
+      modelTier: 'basic',
+      webSearch: false,
+      agents: false,
+      knowledgeBases: false,
+      fileUpload: false,
+      priority: false,
+    },
     featureKeys: ['pricing.features.modelsBasic'],
   },
   {
     id: 'starter',
     priceEur: 5,
     messagesPerMonth: 500,
+    capabilities: {
+      modelTier: 'standard',
+      webSearch: false,
+      agents: false,
+      knowledgeBases: true,
+      fileUpload: false,
+      priority: false,
+    },
     featureKeys: ['pricing.features.modelsSonnet', 'pricing.features.knowledgeBases'],
   },
   {
     id: 'pro',
     priceEur: 20,
     messagesPerMonth: 2000,
+    capabilities: {
+      modelTier: 'all',
+      webSearch: true,
+      agents: true,
+      knowledgeBases: true,
+      fileUpload: true,
+      priority: false,
+    },
     featureKeys: [
       'pricing.features.modelsOpus',
+      'pricing.features.webSearch',
       'pricing.features.knowledgeBases',
       'pricing.features.agents',
       'pricing.features.fileUpload',
@@ -53,8 +102,17 @@ export const PLANS: Plan[] = [
     id: 'business',
     priceEur: 100,
     messagesPerMonth: 12000,
+    capabilities: {
+      modelTier: 'all',
+      webSearch: true,
+      agents: true,
+      knowledgeBases: true,
+      fileUpload: true,
+      priority: true,
+    },
     featureKeys: [
       'pricing.features.modelsAll',
+      'pricing.features.webSearch',
       'pricing.features.agents',
       'pricing.features.fileUpload',
       'pricing.features.priority',
@@ -64,13 +122,37 @@ export const PLANS: Plan[] = [
     id: 'max',
     priceEur: 200,
     messagesPerMonth: 30000,
-    featureKeys: ['pricing.features.modelsAll', 'pricing.features.priority'],
+    capabilities: {
+      modelTier: 'all',
+      webSearch: true,
+      agents: true,
+      knowledgeBases: true,
+      fileUpload: true,
+      priority: true,
+    },
+    featureKeys: [
+      'pricing.features.modelsAll',
+      'pricing.features.webSearch',
+      'pricing.features.priority',
+    ],
   },
   {
     id: 'payg',
     priceEur: null,
     messagesPerMonth: null,
-    featureKeys: ['pricing.features.modelsAll', 'pricing.features.agents'],
+    capabilities: {
+      modelTier: 'all',
+      webSearch: true,
+      agents: true,
+      knowledgeBases: true,
+      fileUpload: true,
+      priority: true,
+    },
+    featureKeys: [
+      'pricing.features.modelsAll',
+      'pricing.features.webSearch',
+      'pricing.features.agents',
+    ],
   },
 ];
 

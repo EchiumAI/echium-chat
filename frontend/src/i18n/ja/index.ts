@@ -98,6 +98,7 @@ const translation: typeof en = {
         knowledgeBases: 'カスタムナレッジベース',
         agents: '設定可能なエージェント',
         fileUpload: 'ファイルアップロード',
+        webSearch: 'インターネット検索',
         priority: '優先アクセス',
       },
     },
