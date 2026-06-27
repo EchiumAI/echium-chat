@@ -128,6 +128,7 @@ const translation = {
       comparePlans: 'Tarife vergleichen',
       changePlan: 'Tarif wechseln',
       choose: 'Wählen',
+      upgrade: 'Upgrade',
       addCredit: 'Nutzungsguthaben aufladen',
       addCreditHint:
         'Prepaid-Guthaben aufladen. Die Nutzung wird vom Guthaben abgebucht; keine monatliche Gebühr.',

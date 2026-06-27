@@ -133,6 +133,7 @@ const translation = {
       comparePlans: 'Confronta i piani',
       changePlan: 'Cambia piano',
       choose: 'Scegli',
+      upgrade: 'Esegui upgrade',
       addCredit: 'Aggiungi credito a consumo',
       addCreditHint:
         'Ricarica il credito prepagato. L’utilizzo viene addebitato dal saldo; nessun canone mensile.',

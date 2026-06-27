@@ -137,6 +137,7 @@ const translation = {
       comparePlans: 'Comparar planes',
       changePlan: 'Cambiar de plan',
       choose: 'Elegir',
+      upgrade: 'Mejorar plan',
       addCredit: 'Añadir saldo de pago por uso',
       addCreditHint:
         'Recarga saldo prepago. El uso se descuenta de tu saldo; sin cuota mensual.',

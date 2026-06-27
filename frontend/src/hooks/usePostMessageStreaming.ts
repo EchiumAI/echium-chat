@@ -8,6 +8,12 @@ import { PostStreamingStatus } from '../constants';
 const WS_ENDPOINT: string = import.meta.env.VITE_APP_WS_ENDPOINT;
 const CHUNK_SIZE = 32 * 1024; //32KB
 
+export interface PlanLimitError {
+  reason: string;
+  requiredPlan: string | null;
+  message: string;
+}
+
 const usePostMessageStreaming = create<{
   post: (params: {
     input: PostMessageRequest;
@@ -15,11 +21,18 @@ const usePostMessageStreaming = create<{
     handleStreamingEvent: (event: StreamingEvent) => void;
   }) => Promise<void>;
   errorDetail: string | null;
+  /** Set when the backend rejects a message due to plan limits, so the UI can
+   *  show a precise upgrade prompt. Cleared on the next send / dismiss. */
+  planLimitError: PlanLimitError | null;
+  clearPlanLimitError: () => void;
 }>((set) => {
   return {
     errorDetail: null,
+    planLimitError: null,
+    clearPlanLimitError: () => set(() => ({ planLimitError: null })),
     post: async ({ input, handleStreamingEvent }) => {
       handleStreamingEvent({ type: 'wakeup' });
+      set(() => ({ planLimitError: null }));
 
       const token = (await fetchAuthSession()).tokens?.idToken?.toString();
       const payloadString = JSON.stringify({
@@ -162,6 +175,21 @@ const usePostMessageStreaming = create<{
                 case PostStreamingStatus.ERROR:
                   ws.close();
                   console.error(data);
+                  if (data.error_code === 'plan_limit') {
+                    // Plan/usage limit — surface a structured upgrade prompt
+                    // instead of a generic error.
+                    set({
+                      planLimitError: {
+                        reason: data.reason,
+                        requiredPlan: data.required_plan ?? null,
+                        message:
+                          data.message ||
+                          i18next.t('error.predict.invalidResponse'),
+                      },
+                    });
+                    handleStreamingEvent({ type: 'reset' });
+                    throw new Error(data.message || data.reason || 'plan_limit');
+                  }
                   set({
                     errorDetail:
                       data.reason || i18next.t('error.predict.invalidResponse'),

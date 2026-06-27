@@ -128,6 +128,7 @@ const translation = {
       comparePlans: 'Comparer les forfaits',
       changePlan: 'Changer de forfait',
       choose: 'Choisir',
+      upgrade: 'Mettre à niveau',
       addCredit: 'Ajouter du crédit à l’usage',
       addCreditHint:
         'Rechargez votre crédit prépayé. L’usage est débité de votre solde ; sans abonnement.',

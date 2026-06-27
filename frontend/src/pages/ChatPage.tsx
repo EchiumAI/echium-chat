@@ -16,10 +16,13 @@ import {
   PiArrowsCounterClockwise,
   PiPenNib,
   PiWarningCircleFill,
+  PiX,
 } from 'react-icons/pi';
 import Button from '../components/Button';
+import ButtonIcon from '../components/ButtonIcon';
 import { useTranslation } from 'react-i18next';
 import SwitchBedrockModel from '../components/SwitchBedrockModel';
+import ConsumptionIndicator from '../components/ConsumptionIndicator';
 import useSnackbar from '../hooks/useSnackbar';
 import useBot from '../hooks/useBot';
 import useConversation from '../hooks/useConversation';
@@ -158,6 +161,10 @@ const ChatPage: React.FC = () => {
   const navigate = useNavigate();
   const { open: openSnackbar } = useSnackbar();
   const { errorDetail } = usePostMessageStreaming();
+  const planLimitError = usePostMessageStreaming((s) => s.planLimitError);
+  const clearPlanLimitError = usePostMessageStreaming(
+    (s) => s.clearPlanLimitError
+  );
   const { isAdmin } = useLoginUser();
   const { pinBot, unpinBot } = useBotPinning();
 
@@ -493,6 +500,11 @@ const ChatPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Live plan/usage readout — always visible during chat. */}
+            <div className="z-20 ml-auto mr-2 flex items-center">
+              <ConsumptionIndicator variant="compact" />
+            </div>
+
             {isLoadingBot && (
               <div className="flex items-center gap-2">
                 <Skeleton className="h-5 w-32" />
@@ -553,6 +565,29 @@ const ChatPage: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* Plan-limit upgrade prompt — shown when the backend blocks a message
+            (e.g. internet search not on the current plan, or cap reached). */}
+        {planLimitError && (
+          <div className="mx-2 mb-2 flex items-center justify-between gap-3 rounded-lg border border-violet-500/40 bg-violet-500/10 px-4 py-2.5 text-sm">
+            <span className="text-aws-font-color-light dark:text-aws-font-color-dark">
+              {planLimitError.message}
+            </span>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button
+                onClick={() => {
+                  clearPlanLimitError();
+                  navigate('/account');
+                }}>
+                {t('billing.upgrade')}
+              </Button>
+              <ButtonIcon onClick={() => clearPlanLimitError()}>
+                <PiX />
+              </ButtonIcon>
+            </div>
+          </div>
+        )}
+
         <section className="relative size-full flex-1 overflow-auto pb-9">
           <div className="h-full">
             <div
