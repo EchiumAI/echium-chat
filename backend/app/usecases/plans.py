@@ -170,6 +170,33 @@ MODEL_TIER: dict[str, str] = {
 def get_plan_limits(plan: PlanId) -> PlanLimits:
     return PLAN_LIMITS.get(plan, PLAN_LIMITS["free"])
 
+
+# Paddle price-id -> plan / credit mapping. SANDBOX ids (see
+# docs/ops/paddle-setup.md). These are config, not secrets. For live, these
+# will differ and should ideally come from env; hardcoded here for the sandbox
+# integration. Keep in sync with the Paddle catalog.
+PADDLE_PRICE_TO_PLAN: dict[str, PlanId] = {
+    "pri_01kw3adt8ttv2qjw1eztcyttqp": "starter",
+    "pri_01kw3a757d1wen071m4vdq15r8": "pro",
+    "pri_01kw3ab0vtq5j04mqmq78aphef": "business",
+    "pri_01kw3a0n4fbyjykcpkqwybp6cq": "max",
+}
+
+# One-time top-up price-id -> credit amount in EUR.
+PADDLE_PRICE_TO_CREDIT_EUR: dict[str, float] = {
+    "pri_01kw3a37f72s0md5theqmqe7f1": 10.0,
+    "pri_01kw3a445znqjd90m9gjsm15qz": 25.0,
+    "pri_01kw3a51rc5f8nbzc0sh6g60x1": 50.0,
+}
+
+
+def plan_for_price_id(price_id: str) -> PlanId | None:
+    return PADDLE_PRICE_TO_PLAN.get(price_id)
+
+
+def credit_for_price_id(price_id: str) -> float | None:
+    return PADDLE_PRICE_TO_CREDIT_EUR.get(price_id)
+
 def model_tier(model_key: str) -> str:
     return MODEL_TIER.get(model_key, MODEL_TIER_BASIC)
 

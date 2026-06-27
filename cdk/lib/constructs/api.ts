@@ -234,6 +234,20 @@ export class Api extends Construct {
         ],
       })
     );
+    // Read access to the Paddle secret (API key + webhook signing secret).
+    handlerRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret",
+        ],
+        resources: [
+          `arn:aws:secretsmanager:${Stack.of(this).region}:${
+            Stack.of(this).account
+          }:secret:echium/paddle*`,
+        ],
+      })
+    );
     props.usageAnalysis?.resultOutputBucket.grantReadWrite(handlerRole);
     props.usageAnalysis?.ddbBucket.grantRead(handlerRole);
     props.largeMessageBucket.grantReadWrite(handlerRole);
@@ -355,6 +369,15 @@ export class Api extends Construct {
     };
 
     api.addRoutes(routeProps);
+
+    // Public webhook route — no Cognito authorizer (Paddle calls it directly;
+    // the Paddle-Signature HMAC is the trust boundary). More specific than the
+    // /{proxy+} catch-all, so it takes precedence for this path.
+    api.addRoutes({
+      path: "/webhooks/paddle",
+      integration,
+      methods: [HttpMethod.POST],
+    });
 
     this.api = api;
     this.handler = handler;

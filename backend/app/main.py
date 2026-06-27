@@ -18,6 +18,7 @@ from app.routes.global_config import router as global_config_router
 from app.routes.published_api import router as published_api_router
 from app.routes.subscription import router as subscription_router
 from app.routes.user import router as user_router
+from app.routes.webhook_paddle import router as webhook_paddle_router
 from app.user import User
 from app.utils import is_running_on_lambda
 from fastapi import Depends, FastAPI, Request
@@ -69,6 +70,7 @@ if not is_published_api:
     app.include_router(bot_store_router)
     app.include_router(global_config_router)
     app.include_router(subscription_router)
+    app.include_router(webhook_paddle_router)
 else:
     app.include_router(published_api_router)
 
