@@ -14,6 +14,27 @@ from typing import Optional
 
 from app.repositories.models.subscription import PlanId
 
+
+class PlanLimitError(Exception):
+    """Raised when an action is not permitted by the user's current plan.
+
+    Carries a machine-readable reason and a suggested upgrade target so the
+    client can show a precise upgrade prompt.
+    """
+
+    def __init__(
+        self,
+        reason: str,
+        message: str,
+        required_plan: PlanId | None = None,
+    ):
+        # reason: "model_not_allowed" | "message_limit_reached"
+        #         | "insufficient_credit" | "web_search_not_allowed"
+        self.reason = reason
+        self.required_plan = required_plan
+        super().__init__(message)
+
+
 # Feature flags that can be gated per plan.
 FEATURE_WEB_SEARCH = "web_search"
 FEATURE_AGENTS = "agents"

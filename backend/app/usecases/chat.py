@@ -220,6 +220,25 @@ def chat(
     user_msg_id, conversation, bot = prepare_conversation(user, chat_input)
     display_citation = bot is not None and bot.display_retrieved_chunks
 
+    # Enforce plan limits before any model spend. Detect whether this message
+    # would use internet search (a bot with the internet tool enabled) so the
+    # web-search feature gate can apply.
+    wants_web_search = False
+    if bot is not None and bot.is_agent_enabled():
+        from app.repositories.models.custom_bot import InternetToolModel
+
+        wants_web_search = any(
+            isinstance(tool, InternetToolModel) for tool in bot.agent.tools
+        )
+    from app.usecases.subscription import check_message_allowed
+
+    check_message_allowed(
+        user_id=user.id,
+        model_key=chat_input.message.model,
+        wants_web_search=wants_web_search,
+        is_admin=user.is_admin(),
+    )
+
     message_map = conversation.message_map
     instructions: list[str] = (
         [

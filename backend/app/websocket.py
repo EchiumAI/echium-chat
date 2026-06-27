@@ -15,6 +15,7 @@ from app.repositories.conversation import RecordNotFoundError
 from app.routes.schemas.conversation import ChatInput
 from app.stream import OnStopInput, OnThinking
 from app.usecases.chat import chat
+from app.usecases.plans import PlanLimitError
 from app.user import User
 from boto3.dynamodb.conditions import Attr, Key
 
@@ -239,6 +240,37 @@ def process_chat_input(
                     )
                 ),
             }
+
+    except PlanLimitError as e:
+        # Plan/usage limit hit. Push a structured error over the socket so the
+        # client can show a precise upgrade prompt, then return.
+        logger.info(f"Plan limit reached for user {user_id}: {e.reason}")
+        try:
+            notificator.notify(
+                payload=json.dumps(
+                    dict(
+                        status="ERROR",
+                        error_code="plan_limit",
+                        reason=e.reason,
+                        required_plan=e.required_plan,
+                        message=str(e),
+                    )
+                ).encode("utf-8")
+            )
+        except Exception as notify_err:  # noqa: BLE001
+            logger.warning(f"Failed to push plan-limit error: {notify_err}")
+        return {
+            "statusCode": 402,
+            "body": json.dumps(
+                dict(
+                    status="ERROR",
+                    error_code="plan_limit",
+                    reason=e.reason,
+                    required_plan=e.required_plan,
+                    message=str(e),
+                )
+            ),
+        }
 
     except Exception as e:
         logger.exception(f"Failed to run stream handler: {e}")
