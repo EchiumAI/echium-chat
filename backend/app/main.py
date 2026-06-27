@@ -16,6 +16,7 @@ from app.routes.bot_store import router as bot_store_router
 from app.routes.conversation import router as conversation_router
 from app.routes.global_config import router as global_config_router
 from app.routes.published_api import router as published_api_router
+from app.routes.subscription import router as subscription_router
 from app.routes.user import router as user_router
 from app.user import User
 from app.utils import is_running_on_lambda
@@ -45,6 +46,7 @@ if not is_published_api:
         {"name": "user", "description": "User API (cognito)"},
         {"name": "bot_store", "description": "Bot Store API"},
         {"name": "config", "description": "Global Configuration API"},
+        {"name": "subscription", "description": "Subscription & usage API"},
     ]
     title = "Bedrock Chat"
 else:
@@ -66,6 +68,7 @@ if not is_published_api:
     app.include_router(user_router)
     app.include_router(bot_store_router)
     app.include_router(global_config_router)
+    app.include_router(subscription_router)
 else:
     app.include_router(published_api_router)
 

@@ -528,6 +528,23 @@ def post_process_result(
     stop_reason = result["stop_reason"]
 
     conversation.total_price += result["price"]
+
+    # Record usage for billing / caps / consumption display. Best-effort: a
+    # metering failure must never break the chat response, so swallow errors.
+    try:
+        from app.repositories.subscription import increment_usage
+        from app.usecases.plans import USD_TO_EUR
+
+        increment_usage(
+            user_id=user.id,
+            messages=1,
+            input_tokens=result["input_token_count"],
+            output_tokens=result["output_token_count"],
+            cost_eur=result["price"] * USD_TO_EUR,
+        )
+    except Exception as e:  # noqa: BLE001 - metering is non-critical
+        logger.warning(f"Failed to record usage for user {user.id}: {e}")
+
     conversation.should_continue = stop_reason == "max_tokens" and is_prefill_supported(
         chat_input.message.model
     )
