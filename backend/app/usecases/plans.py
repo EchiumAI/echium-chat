@@ -197,6 +197,7 @@ def plan_for_price_id(price_id: str) -> PlanId | None:
 def credit_for_price_id(price_id: str) -> float | None:
     return PADDLE_PRICE_TO_CREDIT_EUR.get(price_id)
 
+
 def model_tier(model_key: str) -> str:
     return MODEL_TIER.get(model_key, MODEL_TIER_BASIC)
 

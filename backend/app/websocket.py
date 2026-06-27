@@ -244,7 +244,7 @@ def process_chat_input(
     except PlanLimitError as e:
         # Plan/usage limit hit. Push a structured error over the socket so the
         # client can show a precise upgrade prompt, then return.
-        logger.info(f"Plan limit reached for user {user_id}: {e.reason}")
+        logger.info(f"Plan limit reached for user {user.id}: {e.reason}")
         try:
             notificator.notify(
                 payload=json.dumps(

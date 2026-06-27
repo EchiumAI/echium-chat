@@ -59,9 +59,7 @@ def verify_signature(raw_body: bytes, signature_header: str) -> bool:
     if not secret or not signature_header:
         return False
 
-    parts = dict(
-        kv.split("=", 1) for kv in signature_header.split(";") if "=" in kv
-    )
+    parts = dict(kv.split("=", 1) for kv in signature_header.split(";") if "=" in kv)
     ts = parts.get("ts")
     h1 = parts.get("h1")
     if not ts or not h1:
