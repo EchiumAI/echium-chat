@@ -123,6 +123,20 @@ const translation = {
       refund: 'Erstattungen',
       copyright: '© {{year}} Echium AI',
     },
+    billing: {
+      title: 'Abrechnung & Nutzung',
+      comparePlans: 'Tarife vergleichen',
+      changePlan: 'Tarif wechseln',
+      choose: 'Wählen',
+      addCredit: 'Nutzungsguthaben aufladen',
+      addCreditHint:
+        'Prepaid-Guthaben aufladen. Die Nutzung wird vom Guthaben abgebucht; keine monatliche Gebühr.',
+    },
+    consumption: {
+      viewBilling: 'Abrechnung & Nutzung anzeigen',
+      creditBalance: 'Guthaben',
+      messagesUsed: '{{used}} / {{limit}} Nachrichten',
+    },
     app: {
       name: 'EchiumAI',
       inputMessage: 'Nachricht senden',

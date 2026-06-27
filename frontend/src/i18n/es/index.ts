@@ -132,6 +132,20 @@ const translation = {
       refund: 'Reembolsos',
       copyright: '© {{year}} Echium AI',
     },
+    billing: {
+      title: 'Facturación y uso',
+      comparePlans: 'Comparar planes',
+      changePlan: 'Cambiar de plan',
+      choose: 'Elegir',
+      addCredit: 'Añadir saldo de pago por uso',
+      addCreditHint:
+        'Recarga saldo prepago. El uso se descuenta de tu saldo; sin cuota mensual.',
+    },
+    consumption: {
+      viewBilling: 'Ver facturación y uso',
+      creditBalance: 'Saldo',
+      messagesUsed: '{{used}} / {{limit}} mensajes',
+    },
     app: {
       name: 'EchiumAI',
       inputMessage: 'Enviar un mensaje',

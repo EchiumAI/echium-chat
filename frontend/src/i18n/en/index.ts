@@ -132,6 +132,20 @@ const translation = {
       refund: 'Refunds',
       copyright: '© {{year}} Echium AI',
     },
+    billing: {
+      title: 'Billing & usage',
+      comparePlans: 'Compare plans',
+      changePlan: 'Change plan',
+      choose: 'Choose',
+      addCredit: 'Add pay-as-you-go credit',
+      addCreditHint:
+        'Top up prepaid credit. Usage is billed from your balance; no monthly fee.',
+    },
+    consumption: {
+      viewBilling: 'View billing & usage',
+      creditBalance: 'Credit balance',
+      messagesUsed: '{{used}} / {{limit}} messages',
+    },
     app: {
       name: 'EchiumAI',
       inputMessage: 'How can I Help You?',

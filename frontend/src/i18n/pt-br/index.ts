@@ -128,6 +128,20 @@ const translation = {
       refund: 'Reembolsos',
       copyright: '© {{year}} Echium AI',
     },
+    billing: {
+      title: 'Faturamento e uso',
+      comparePlans: 'Comparar planos',
+      changePlan: 'Mudar de plano',
+      choose: 'Escolher',
+      addCredit: 'Adicionar crédito de pagamento por uso',
+      addCreditHint:
+        'Recarregue o crédito pré-pago. O uso é debitado do seu saldo; sem mensalidade.',
+    },
+    consumption: {
+      viewBilling: 'Ver faturamento e uso',
+      creditBalance: 'Saldo',
+      messagesUsed: '{{used}} / {{limit}} mensagens',
+    },
     app: {
       name: 'EchiumAI',
       inputMessage: 'Como posso te ajudar?',

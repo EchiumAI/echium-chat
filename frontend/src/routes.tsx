@@ -7,6 +7,7 @@ import BotApiSettingsPage from './pages/BotApiSettingsPage.tsx';
 import AdminSharedBotAnalyticsPage from './pages/AdminSharedBotAnalyticsPage.tsx';
 import AdminApiManagementPage from './pages/AdminApiManagementPage.tsx';
 import AdminBotManagementPage from './pages/AdminBotManagementPage.tsx';
+import AccountBillingPage from './pages/AccountBillingPage.tsx';
 import PublicPricingPage from './pages/PublicPricingPage.tsx';
 import PublicPaygPage from './pages/PublicPaygPage.tsx';
 import TermsPage from './pages/legal/TermsPage.tsx';
@@ -65,6 +66,10 @@ const rootChildren = [
   {
     path: '/conversations',
     element: <ConversationHistoryPage />,
+  },
+  {
+    path: '/account',
+    element: <AccountBillingPage />,
   },
   {
     path: '/admin/shared-bot-analytics',

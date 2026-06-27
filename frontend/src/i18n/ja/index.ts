@@ -135,6 +135,20 @@ const translation: typeof en = {
       refund: '返金',
       copyright: '© {{year}} Echium AI',
     },
+    billing: {
+      title: '請求と使用状況',
+      comparePlans: 'プランを比較',
+      changePlan: 'プラン変更',
+      choose: '選択',
+      addCredit: '従量課金クレジットを追加',
+      addCreditHint:
+        'プリペイド残高をチャージします。使用分は残高から課金され、月額料金はありません。',
+    },
+    consumption: {
+      viewBilling: '請求と使用状況を表示',
+      creditBalance: 'クレジット残高',
+      messagesUsed: '{{used}} / {{limit}} メッセージ',
+    },
     app: {
       name: 'EchiumAI',
       inputMessage: 'お手伝いできることはありますか？',
