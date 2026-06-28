@@ -267,7 +267,12 @@ const InputChatContent = forwardRef<HTMLElement, Props>(
             canvas.height = newHeight;
             ctx?.drawImage(img, 0, 0, newWidth, newHeight);
 
-            const resizedImageData = canvas.toDataURL('image/png');
+            // Encode as JPEG (quality 0.85) rather than PNG: photos are ~10x
+            // smaller as JPEG, which keeps them under the inline payload cap.
+            // The media type is parsed from this data URL downstream, and all
+            // vision models accept image/jpeg. (Resolution is already capped
+            // above, which is what governs vision token cost.)
+            const resizedImageData = canvas.toDataURL('image/jpeg', 0.85);
 
             // Total file size check
             if (
