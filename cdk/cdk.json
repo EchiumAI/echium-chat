@@ -95,6 +95,6 @@
     "devAccessIamRoleArn": "",
     "logoPath": "images/echium_icon_192.png",
     "enableMessageEnforcement": true,
-    "ownerEmail": ""
+    "ownerEmail": "echium_users@mercestech.com"
   }
 }
