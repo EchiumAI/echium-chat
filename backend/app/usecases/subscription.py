@@ -73,7 +73,7 @@ def check_message_allowed(
     user_id: str,
     model_key: str,
     wants_web_search: bool = False,
-    is_admin: bool = False,
+    bypass: bool = False,
 ) -> None:
     """Enforce plan limits before a chat message is processed.
 
@@ -83,12 +83,12 @@ def check_message_allowed(
     (pay-as-you-go), or web search is requested without entitlement.
 
     Gated behind ENABLE_PLAN_ENFORCEMENT (default off) so the code can ship
-    before checkout exists without locking everyone to the free tier. Admins
-    always bypass enforcement.
+    before checkout exists without locking everyone to the free tier. `bypass`
+    skips all checks for privileged users (admins and the Unlimited group).
     """
     if os.environ.get("ENABLE_PLAN_ENFORCEMENT", "false").lower() != "true":
         return
-    if is_admin:
+    if bypass:
         return
 
     sub = get_or_create_subscription(user_id)

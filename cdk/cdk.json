@@ -93,6 +93,8 @@
     "hostedZoneId": "",
     "certificateArn": "arn:aws:acm:us-east-1:888284248988:certificate/f95a2e4c-be39-411d-84ce-427832d241ad",
     "devAccessIamRoleArn": "",
-    "logoPath": "images/echium_icon_192.png"
+    "logoPath": "images/echium_icon_192.png",
+    "enableMessageEnforcement": true,
+    "ownerEmail": ""
   }
 }

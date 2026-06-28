@@ -274,6 +274,13 @@ export class Auth extends Construct {
       }
     );
 
+    // Super-user group: members (company staff / developers) bypass all plan
+    // limits and model gating. Manage membership in the Cognito console.
+    const unlimitedGroup = new CfnUserPoolGroup(this, "UnlimitedGroup", {
+      groupName: "Unlimited",
+      userPoolId: userPool.userPoolId,
+    });
+
     // Pre Sign-up: reject duplicate accounts that differ only by email
     // letter-case. Registered via the shared trigger custom resource below
     // (not addTrigger) so the IAM grant it needs does not create a circular
@@ -315,6 +322,9 @@ export class Auth extends Construct {
         environment: {
           USER_POOL_ID: userPool.userPoolId,
           AUTO_JOIN_USER_GROUPS: JSON.stringify(props.autoJoinUserGroups),
+          OWNER_EMAIL: this.node.tryGetContext("ownerEmail") ?? "",
+          SES_REGION: "eu-west-1",
+          NOTIFY_FROM_EMAIL: "noreply@echium.ai",
         },
         logRetention: logs.RetentionDays.THREE_MONTHS,
       });
@@ -326,6 +336,13 @@ export class Auth extends Construct {
       userPool.grant(
         addUserToGroupsFunction,
         "cognito-idp:AdminAddUserToGroup"
+      );
+      // Allow sending the owner a sign-up notification email via SES.
+      addUserToGroupsFunction.addToRolePolicy(
+        new iam.PolicyStatement({
+          actions: ["ses:SendEmail", "ses:SendRawEmail"],
+          resources: ["*"],
+        })
       );
 
       triggers.PostConfirmation = addUserToGroupsFunction.functionArn;

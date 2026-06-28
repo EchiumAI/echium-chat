@@ -124,6 +124,10 @@ export class WebSocket extends Construct {
         CONVERSATION_TABLE_NAME: database.conversationTable.tableName,
         BOT_TABLE_NAME: database.botTable.tableName,
         SUBSCRIPTION_TABLE_NAME: database.subscriptionTable.tableName,
+        ENABLE_PLAN_ENFORCEMENT:
+          this.node.tryGetContext("enableMessageEnforcement") === true
+            ? "true"
+            : "false",
         TABLE_ACCESS_ROLE_ARN: tableAccessRole.roleArn,
         LARGE_MESSAGE_BUCKET: props.largeMessageBucket.bucketName,
         LARGE_PAYLOAD_SUPPORT_BUCKET: largePayloadSupportBucket.bucketName,

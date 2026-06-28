@@ -232,11 +232,15 @@ def chat(
         )
     from app.usecases.subscription import check_message_allowed
 
+    # Admins and the "Unlimited" group (company staff/developers) bypass all
+    # plan limits — full access regardless of subscription.
+    bypass_enforcement = user.is_admin() or "Unlimited" in user.groups
+
     check_message_allowed(
         user_id=user.id,
         model_key=chat_input.message.model,
         wants_web_search=wants_web_search,
-        is_admin=user.is_admin(),
+        bypass=bypass_enforcement,
     )
 
     message_map = conversation.message_map

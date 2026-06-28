@@ -270,6 +270,10 @@ export class Api extends Construct {
         CONVERSATION_TABLE_NAME: database.conversationTable.tableName,
         BOT_TABLE_NAME: database.botTable.tableName,
         SUBSCRIPTION_TABLE_NAME: database.subscriptionTable.tableName,
+        ENABLE_PLAN_ENFORCEMENT:
+          this.node.tryGetContext("enableMessageEnforcement") === true
+            ? "true"
+            : "false",
         ENV_NAME: props.envName,
         ENV_PREFIX: props.envPrefix,
         CORS_ALLOW_ORIGINS: allowOrigins.join(","),
