@@ -138,6 +138,7 @@ const translation = {
       changePlan: 'Change plan',
       choose: 'Choose',
       upgrade: 'Upgrade',
+      plan: 'Plan',
       addCredit: 'Add pay-as-you-go credit',
       addCreditHint:
         'Top up prepaid credit. Usage is billed from your balance; no monthly fee.',

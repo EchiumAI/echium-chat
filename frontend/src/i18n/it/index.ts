@@ -134,6 +134,7 @@ const translation = {
       changePlan: 'Cambia piano',
       choose: 'Scegli',
       upgrade: 'Esegui upgrade',
+      plan: 'Piano',
       addCredit: 'Aggiungi credito a consumo',
       addCreditHint:
         'Ricarica il credito prepagato. L’utilizzo viene addebitato dal saldo; nessun canone mensile.',

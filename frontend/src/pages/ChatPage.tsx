@@ -51,6 +51,7 @@ import {
 import { AVAILABLE_MODEL_KEYS } from '../constants/index';
 import usePostMessageStreaming from '../hooks/usePostMessageStreaming.ts';
 import useLoginUser from '../hooks/useLoginUser';
+import useSubscription from '../hooks/useSubscription';
 import useBotPinning from '../hooks/useBotPinning';
 import Skeleton from '../components/Skeleton.tsx';
 import { twMerge } from 'tailwind-merge';
@@ -191,6 +192,17 @@ const ChatPage: React.FC = () => {
     setReasoningEnabled,
     supportReasoning,
   } = useChat();
+
+  // Refresh the consumption readout each time a prompt finishes so the
+  // "messages used / remaining" meter stays current as the chat goes.
+  const { refresh: refreshSubscription } = useSubscription();
+  const prevPostingRef = useRef(false);
+  useEffect(() => {
+    if (prevPostingRef.current && !postingMessage) {
+      refreshSubscription();
+    }
+    prevPostingRef.current = postingMessage;
+  }, [postingMessage, refreshSubscription]);
 
   // Error Handling
   useEffect(() => {
@@ -500,11 +512,6 @@ const ChatPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Live plan/usage readout — always visible during chat. */}
-            <div className="z-20 ml-auto mr-2 flex items-center">
-              <ConsumptionIndicator variant="compact" />
-            </div>
-
             {isLoadingBot && (
               <div className="flex items-center gap-2">
                 <Skeleton className="h-5 w-32" />
@@ -717,6 +724,10 @@ const ChatPage: React.FC = () => {
             ))}
           </div>
         )}
+
+        <div className="mb-1 flex w-11/12 items-center justify-end md:w-10/12 lg:w-4/6 xl:w-3/6">
+          <ConsumptionIndicator variant="compact" />
+        </div>
 
         <InputChatContent
           className="mb-7 w-11/12 md:w-10/12 lg:w-4/6 xl:w-3/6"

@@ -134,6 +134,7 @@ const translation = {
       changePlan: 'Mudar de plano',
       choose: 'Escolher',
       upgrade: 'Fazer upgrade',
+      plan: 'Plano',
       addCredit: 'Adicionar crédito de pagamento por uso',
       addCreditHint:
         'Recarregue o crédito pré-pago. O uso é debitado do seu saldo; sem mensalidade.',

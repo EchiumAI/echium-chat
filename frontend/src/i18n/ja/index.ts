@@ -141,6 +141,7 @@ const translation: typeof en = {
       changePlan: 'プラン変更',
       choose: '選択',
       upgrade: 'アップグレード',
+      plan: 'プラン',
       addCredit: '従量課金クレジットを追加',
       addCreditHint:
         'プリペイド残高をチャージします。使用分は残高から課金され、月額料金はありません。',
