@@ -3,7 +3,45 @@
 Living list of follow-ups picked up during build-out. Anything that has its own
 deep-dive doc is linked. Tick items as they ship and bump them out of here.
 
-Updated: 2026-06-14
+Updated: 2026-06-28
+
+## Parked from the billing / monetization + mobile build-out (2026-06-28)
+
+Captured so nothing is lost; pick up when ready.
+
+### Admin monitoring console (separate repo / subdomain)
+- [ ] Build a cross-project admin console at `admin.echium.ai` in its **own repo**
+      (decision: data stays with each product; console is a cross-project reader).
+- [ ] In *this* repo, expose a secured `GET /admin/subscriptions` (admin-only)
+      returning per-user email, plan, status, usage this month, cost, credit —
+      for the console to consume.
+- [ ] Staff auth for the console (separate Cognito pool / SSO, not the customer pool).
+
+### Account deletion / GDPR erasure
+- [ ] User-initiated "delete my account" flow (cascading delete: Cognito user +
+      conversation/bot/subscription DynamoDB items keyed by `sub` + S3 objects).
+- [ ] Admin "delete user + data" action (part of the admin console).
+- [ ] Interim: manual via Cognito console + DynamoDB (documented in chat history).
+
+### Mobile apps (EU, no app stores, download from echium site)
+- [ ] **Decision needed:** iOS = (A) PWA only (free, no Apple) vs (B) Apple EU
+      Web Distribution (€99/yr dev account, true downloadable app).
+- [ ] Add **Capacitor** to the existing frontend (same repo) → signed Android APK.
+- [ ] `/download` page (Android APK link + iOS install instructions).
+- [ ] New GitHub Actions mobile-build workflow (Android SDK + signing keystore).
+
+### Billing follow-ups
+- [ ] **Margin review** — €5/500-message tier is loss-making on Sonnet; revisit
+      caps / model gating / cost-allowance model before real customers.
+- [ ] Verify enforcement with a **non-admin** test account (admins bypass).
+- [ ] Unit/integration tests: Paddle signature verification (security-critical),
+      plan/limit logic, webhook event processing, price-id maps.
+- [ ] Legal pages (Terms/Privacy/Refund) need **professional review**; remove the
+      "template" banner before GA.
+- [ ] Large file/image uploads: S3 presigned-URL path to lift the 6MB inline cap
+      (JPEG compression already mitigates the common photo case — v0.1.43).
+- [ ] Swap Paddle sandbox → live (recreate catalog, swap price IDs + secrets,
+      Paddle.js environment) at launch — see [`paddle-setup.md`](./paddle-setup.md).
 
 ## Priority 1 — soon
 
