@@ -76,3 +76,78 @@ Mobile is **not** the current priority. Order of work:
 - Apple Developer (€99/yr) and Google Play (€25 one-time) accounts are **not**
   needed under this plan; only revisit if we change course on stores.
 - PWA polish for mobile: install prompts, offline behaviour, iOS push (16.4+).
+
+---
+
+# Android implementation plan (Capacitor)
+
+Concrete spec for building and distributing the Android app. Lives in the
+**existing `frontend/` repo** (the app wraps the same React web build).
+
+## Architecture
+
+- **Capacitor** wraps the built web app (`frontend/dist`) in a native Android
+  shell. The shell loads the bundled SPA, which talks to the same backend
+  (`VITE_APP_API_ENDPOINT` / WebSocket) as the website. No separate API.
+- App id: `ai.echium.chat` (reverse-DNS). App name: `Echium AI`.
+- Billing stays web-first (Paddle overlay opens in the in-app browser/Custom
+  Tab). Nothing is sold through Google Play — no Play Billing, no cut.
+
+## Repo additions
+
+- `frontend/capacitor.config.ts` — Capacitor config (appId, appName,
+  `webDir: 'dist'`).
+- Capacitor deps in `frontend/package.json`: `@capacitor/core`,
+  `@capacitor/cli`, `@capacitor/android`.
+- `frontend/android/` — the native Gradle project. **Decision:** generate it in
+  CI (`npx cap add android`) rather than committing it, to keep the repo clean,
+  unless/until we need custom native code (then commit it).
+
+## Build + sign (CI)
+
+A dedicated GitHub Actions workflow (`.github/workflows/android.yml`),
+triggered on tags like `android-v*` (separate from the web `deploy.yml`):
+
+1. `npm ci` + `npm run build` (produces `dist`)
+2. `npx cap add android` (if not committed) + `npx cap sync android`
+3. `./gradlew assembleRelease` in `android/`
+4. Sign the APK with a keystore from secrets:
+   - `ANDROID_KEYSTORE_BASE64` (the .jks, base64-encoded)
+   - `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`
+5. Publish the signed APK to a public, versioned location (S3 + CloudFront,
+   e.g. `https://chat.echium.ai/downloads/echium-<version>.apk` and a stable
+   `echium-latest.apk`).
+
+### Keystore (one-time, owner)
+
+Generate a release keystore and store it (never commit it):
+```
+keytool -genkeypair -v -keystore echium-release.jks -keyalg RSA -keysize 2048 \
+  -validity 10000 -alias echium
+```
+Base64 it for the GitHub secret: `base64 -w0 echium-release.jks`.
+Add the four secrets above to the repo (Settings → Secrets → Actions).
+Back up the keystore securely — losing it means a new app identity.
+
+## Distribution + website link
+
+- A public `/download` page on the site (outside the auth gate, like
+  `/pricing`): Android "Download APK" button (→ the published APK URL) +
+  iOS "Add to Home Screen" instructions + a note that the APK is installed
+  outside Google Play (enable "install unknown apps").
+- Link `/download` from the public footer and the landing.
+- Optional later: a QR code to the APK for easy phone install.
+
+## iOS (unchanged)
+
+iOS stays the **PWA** (Add to Home Screen). The `/download` page gives iOS
+users the install instructions. Revisit Apple EU Web Distribution (needs the
+€99/yr Apple Developer account) only if a true downloadable iOS app is needed.
+
+## Decisions still open
+
+- **iOS path:** (A) PWA only [default] vs (B) Apple EU Web Distribution.
+- **Commit `android/` or generate in CI:** default generate-in-CI until custom
+  native code is needed.
+- **APK hosting path:** new S3 bucket + CloudFront behaviour under
+  `chat.echium.ai/downloads/*`, or a separate `downloads.echium.ai`.
