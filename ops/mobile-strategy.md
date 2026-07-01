@@ -154,11 +154,29 @@ Back up the keystore securely — losing it means a new app identity.
   over HTTPS. Stack outputs `DownloadsBucketName` and `DistributionId` let the
   Android workflow find the upload target and issue the invalidation.
 
-## iOS (unchanged)
+## iOS (PWA) — implemented
 
-iOS stays the **PWA** (Add to Home Screen). The `/download` page gives iOS
-users the install instructions. Revisit Apple EU Web Distribution (needs the
-€99/yr Apple Developer account) only if a true downloadable iOS app is needed.
+iOS ships as an installable **PWA** (Add to Home Screen) — zero Apple cost, no
+Developer account. Completed:
+
+- **`apple-*` meta tags** in `frontend/index.html`
+  (`apple-mobile-web-app-capable`, `-status-bar-style`, `-title`, and
+  `apple-touch-icon`) so "Add to Home Screen" launches Echium full-screen with
+  the right title and icon. iOS ignores the web manifest for standalone launch,
+  so these tags — not the manifest — are what matter on iOS.
+- **Web app manifest** (`frontend/vite.config.ts`) aligned to the "Echium AI"
+  brand with `id`/`scope`/`start_url` `/`, `standalone` display,
+  `background_color`, and full icon set (drives Android PWA install + install
+  banners).
+- **`/download` page** gives iOS users the Add-to-Home-Screen steps.
+
+### Native iOS (parked — needs a Mac + Apple account)
+
+A genuine native iOS app (Capacitor iOS) is **not** built: it requires macOS +
+Xcode to compile and an Apple Developer Program membership (~€99/yr) plus
+signing certs/provisioning profiles for distribution — and EU alternative
+distribution still involves Apple terms. Revisit only if the PWA proves
+insufficient.
 
 ## Decisions (resolved)
 
