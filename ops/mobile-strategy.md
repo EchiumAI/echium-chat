@@ -103,20 +103,25 @@ Concrete spec for building and distributing the Android app. Lives in the
   CI (`npx cap add android`) rather than committing it, to keep the repo clean,
   unless/until we need custom native code (then commit it).
 
-## Build + sign (CI)
+## Build + sign (CI)  — implemented in `.github/workflows/android.yml`
 
-A dedicated GitHub Actions workflow (`.github/workflows/android.yml`),
-triggered on tags like `android-v*` (separate from the web `deploy.yml`):
+Triggered on `android-vX.Y.Z` tags (separate from the web `deploy.yml`) or
+manual dispatch. Steps:
 
-1. `npm ci` + `npm run build` (produces `dist`)
-2. `npx cap add android` (if not committed) + `npx cap sync android`
-3. `./gradlew assembleRelease` in `android/`
-4. Sign the APK with a keystore from secrets:
+1. `npm ci` + `npm run build` in `frontend/` (produces `dist`).
+2. `npx cap add android` + `npx cap sync android` (native project regenerated,
+   not committed).
+3. `./gradlew assembleRelease` → unsigned release APK.
+4. Align + sign with the Android build-tools (`zipalign` then `apksigner`),
+   using a keystore decoded from secrets — no edits to the generated Gradle
+   files needed:
    - `ANDROID_KEYSTORE_BASE64` (the .jks, base64-encoded)
    - `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`
-5. Publish the signed APK to a public, versioned location (S3 + CloudFront,
-   e.g. `https://chat.echium.ai/downloads/echium-<version>.apk` and a stable
-   `echium-latest.apk`).
+5. Publish to S3 (via OIDC role) and invalidate CloudFront `/downloads/*`:
+   - versioned, immutable: `downloads/echium-<tag>.apk`
+   - stable pointer (short TTL): `downloads/echium-latest.apk`
+   Both served at `https://chat.echium.ai/downloads/…`. The APK is also
+   attached as a workflow artifact.
 
 ### Keystore (one-time, owner)
 
@@ -129,14 +134,25 @@ Base64 it for the GitHub secret: `base64 -w0 echium-release.jks`.
 Add the four secrets above to the repo (Settings → Secrets → Actions).
 Back up the keystore securely — losing it means a new app identity.
 
-## Distribution + website link
+## Distribution + website link  — implemented
 
-- A public `/download` page on the site (outside the auth gate, like
-  `/pricing`): Android "Download APK" button (→ the published APK URL) +
-  iOS "Add to Home Screen" instructions + a note that the APK is installed
-  outside Google Play (enable "install unknown apps").
-- Link `/download` from the public footer and the landing.
+- Public `/download` page (`frontend/src/pages/PublicDownloadPage.tsx`), routed
+  outside the auth gate like `/pricing`: Android "Download for Android" button
+  (→ `VITE_APP_ANDROID_APK_URL` or the default
+  `https://chat.echium.ai/downloads/echium-latest.apk`) + iOS "Add to Home
+  Screen" steps + an install note (enable "install unknown apps").
+- Linked from `PublicFooter` (label `download.navLabel`). i18n keys `download.*`
+  in en/ja/es/fr/de/it/pt-br.
 - Optional later: a QR code to the APK for easy phone install.
+
+## Hosting infra  — implemented in `cdk/lib/constructs/frontend.ts`
+
+- A **separate `DownloadsBucket`** (private, OAC) holds the APKs, kept apart
+  from the web `AssetBucket` because the web build deploy prunes that bucket and
+  would otherwise wipe uploaded APKs.
+- A CloudFront `additionalBehaviors["/downloads/*"]` serves the downloads bucket
+  over HTTPS. Stack outputs `DownloadsBucketName` and `DistributionId` let the
+  Android workflow find the upload target and issue the invalidation.
 
 ## iOS (unchanged)
 
@@ -144,10 +160,11 @@ iOS stays the **PWA** (Add to Home Screen). The `/download` page gives iOS
 users the install instructions. Revisit Apple EU Web Distribution (needs the
 €99/yr Apple Developer account) only if a true downloadable iOS app is needed.
 
-## Decisions still open
+## Decisions (resolved)
 
-- **iOS path:** (A) PWA only [default] vs (B) Apple EU Web Distribution.
-- **Commit `android/` or generate in CI:** default generate-in-CI until custom
-  native code is needed.
-- **APK hosting path:** new S3 bucket + CloudFront behaviour under
-  `chat.echium.ai/downloads/*`, or a separate `downloads.echium.ai`.
+- **iOS path:** PWA only (Add to Home Screen). Apple EU Web Distribution parked.
+- **`android/` project:** generated in CI, not committed (gitignored) until
+  custom native code is needed.
+- **APK hosting:** separate S3 bucket + CloudFront `/downloads/*` behavior on
+  the existing `chat.echium.ai` distribution.
+
