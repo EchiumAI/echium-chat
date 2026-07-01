@@ -151,6 +151,25 @@ const translation: typeof en = {
       creditBalance: 'クレジット残高',
       messagesUsed: '{{used}} / {{limit}} メッセージ',
     },
+    download: {
+      navLabel: 'アプリ',
+      title: 'Echium AI アプリを入手',
+      intro:
+        'スマホでも Echium AI を。アプリストアを使わず、直接配布しています。',
+      android: {
+        title: 'Android',
+        body: 'アプリをダウンロードして端末に直接インストールします。',
+        cta: 'Android 版をダウンロード',
+        note: 'ダウンロード後、ファイルを開き、必要に応じてブラウザからのインストールを許可してください。',
+      },
+      ios: {
+        title: 'iPhone・iPad',
+        body: 'Safari からホーム画面に Echium AI を追加します:',
+        step1: 'Safari で chat.echium.ai を開く',
+        step2: '共有ボタンをタップ',
+        step3: '「ホーム画面に追加」をタップ',
+      },
+    },
     app: {
       name: 'EchiumAI',
       inputMessage: 'お手伝いできることはありますか？',

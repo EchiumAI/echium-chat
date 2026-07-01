@@ -13,6 +13,11 @@ dist-ssr
 dev-dist
 *.local
 
+# Capacitor native project — regenerated in CI (npx cap add/sync android).
+# Not committed since there is no hand-edited native code yet.
+android
+ios
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -1,0 +1,161 @@
+name: Android APK
+
+# Builds, signs, and publishes the Android APK to the site's /downloads/ path.
+#
+# The native Capacitor project (frontend/android) is NOT committed — it is
+# regenerated here from capacitor.config.ts, so the build is fully reproducible
+# from the web app. Distribution is direct (EU, no Google Play). See
+# docs/ops/mobile-strategy.md.
+#
+# Trigger: push an `android-vX.Y.Z` tag, or run manually.
+#
+# Required repo secrets (Settings → Secrets and variables → Actions):
+#   ANDROID_KEYSTORE_BASE64   base64 of the release keystore (.jks)
+#   ANDROID_KEYSTORE_PASSWORD keystore password
+#   ANDROID_KEY_ALIAS         key alias inside the keystore
+#   ANDROID_KEY_PASSWORD      key password
+on:
+  push:
+    tags: ['android-v*.*.*']
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write # assume the AWS role via OIDC
+  contents: read
+
+env:
+  AWS_REGION: eu-west-1
+  AWS_ROLE_ARN: arn:aws:iam::888284248988:role/github-actions-echium-deploy
+  NODE_VERSION: '22.x'
+  NPM_VERSION: '11'
+  JAVA_VERSION: '17'
+  # Backend endpoints baked into the web build the native shell wraps. The APK
+  # is a thin WebView over the same production frontend, so these mirror the
+  # deployed site. Kept as repo/environment variables where possible.
+  APK_FILENAME: echium-latest.apk
+
+jobs:
+  build:
+    name: Build & publish APK
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Pin npm to 11
+        run: npm install -g npm@${{ env.NPM_VERSION }}
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build web app
+        working-directory: frontend
+        # capacitor.config.ts points the shell at the live production site, so
+        # no VITE endpoint baking is needed here — the build only has to produce
+        # a `dist` for `cap sync` to copy.
+        run: npm run build
+
+      - name: Add Android platform
+        working-directory: frontend
+        run: npx cap add android
+
+      - name: Sync web assets into native project
+        working-directory: frontend
+        run: npx cap sync android
+
+      - name: Assemble release APK (unsigned)
+        working-directory: frontend/android
+        run: ./gradlew --no-daemon assembleRelease
+
+      - name: Sign APK
+        working-directory: frontend/android
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > release.jks
+          BUILD_TOOLS_DIR="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
+          echo "Using build-tools: $BUILD_TOOLS_DIR"
+          UNSIGNED="app/build/outputs/apk/release/app-release-unsigned.apk"
+          "$BUILD_TOOLS_DIR/zipalign" -v -p 4 "$UNSIGNED" app-release-aligned.apk
+          "$BUILD_TOOLS_DIR/apksigner" sign \
+            --ks release.jks \
+            --ks-pass "pass:$ANDROID_KEYSTORE_PASSWORD" \
+            --ks-key-alias "$ANDROID_KEY_ALIAS" \
+            --key-pass "pass:$ANDROID_KEY_PASSWORD" \
+            --out "${{ env.APK_FILENAME }}" \
+            app-release-aligned.apk
+          "$BUILD_TOOLS_DIR/apksigner" verify --verbose "${{ env.APK_FILENAME }}"
+          rm -f release.jks
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: android-publish-${{ github.run_id }}
+
+      - name: Resolve publish targets from stack outputs
+        id: targets
+        run: |
+          set -euo pipefail
+          BUCKET="$(aws cloudformation describe-stacks \
+            --query "Stacks[].Outputs[?ends_with(OutputKey, 'DownloadsBucketName')].OutputValue | [] | [0]" \
+            --output text)"
+          DIST_ID="$(aws cloudformation describe-stacks \
+            --query "Stacks[].Outputs[?ends_with(OutputKey, 'DistributionId')].OutputValue | [] | [0]" \
+            --output text)"
+          if [ -z "$BUCKET" ] || [ "$BUCKET" = "None" ]; then
+            echo "Could not resolve DownloadsBucketName from any stack output." >&2
+            exit 1
+          fi
+          echo "bucket=$BUCKET" >> "$GITHUB_OUTPUT"
+          echo "distId=$DIST_ID" >> "$GITHUB_OUTPUT"
+          echo "Bucket=$BUCKET DistId=$DIST_ID"
+
+      - name: Upload APK to S3
+        working-directory: frontend/android
+        run: |
+          set -euo pipefail
+          BUCKET="${{ steps.targets.outputs.bucket }}"
+          TAG="${GITHUB_REF_NAME}"
+          CT="application/vnd.android.package-archive"
+          # Versioned copy (immutable) + stable "latest" pointer.
+          aws s3 cp "${{ env.APK_FILENAME }}" \
+            "s3://$BUCKET/downloads/echium-${TAG}.apk" \
+            --content-type "$CT" --cache-control "public, max-age=31536000, immutable"
+          aws s3 cp "${{ env.APK_FILENAME }}" \
+            "s3://$BUCKET/downloads/${{ env.APK_FILENAME }}" \
+            --content-type "$CT" --cache-control "public, max-age=300"
+
+      - name: Invalidate CloudFront (/downloads/*)
+        if: steps.targets.outputs.distId != '' && steps.targets.outputs.distId != 'None'
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ steps.targets.outputs.distId }}" \
+            --paths "/downloads/*"
+
+      - name: Upload APK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: echium-android-apk
+          path: frontend/android/${{ env.APK_FILENAME }}
+          if-no-files-found: error

@@ -15,6 +15,7 @@ const PublicFooter: React.FC = () => {
   const links: { labelKey: string; path: string }[] = [
     { labelKey: 'pricing.title', path: '/pricing' },
     { labelKey: 'payg.linkLabel', path: '/pricing/pay-as-you-go' },
+    { labelKey: 'download.navLabel', path: '/download' },
     { labelKey: 'legal.terms', path: '/terms' },
     { labelKey: 'legal.privacy', path: '/privacy' },
     { labelKey: 'legal.refund', path: '/refund-policy' },

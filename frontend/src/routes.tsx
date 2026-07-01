@@ -10,6 +10,7 @@ import AdminBotManagementPage from './pages/AdminBotManagementPage.tsx';
 import AccountBillingPage from './pages/AccountBillingPage.tsx';
 import PublicPricingPage from './pages/PublicPricingPage.tsx';
 import PublicPaygPage from './pages/PublicPaygPage.tsx';
+import PublicDownloadPage from './pages/PublicDownloadPage.tsx';
 import TermsPage from './pages/legal/TermsPage.tsx';
 import RefundPolicyPage from './pages/legal/RefundPolicyPage.tsx';
 import PrivacyPage from './pages/legal/PrivacyPage.tsx';
@@ -103,6 +104,10 @@ const routes = [
   {
     path: '/pricing/pay-as-you-go',
     element: <PublicPaygPage />,
+  },
+  {
+    path: '/download',
+    element: <PublicDownloadPage />,
   },
   // Public legal pages — also outside the auth gate (Paddle review + GDPR).
   {

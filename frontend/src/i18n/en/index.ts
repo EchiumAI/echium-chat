@@ -148,6 +148,25 @@ const translation = {
       creditBalance: 'Credit balance',
       messagesUsed: '{{used}} / {{limit}} messages',
     },
+    download: {
+      navLabel: 'Apps',
+      title: 'Get the Echium AI app',
+      intro:
+        'Use Echium AI on your phone. We distribute directly — no app stores.',
+      android: {
+        title: 'Android',
+        body: 'Download the app and install it directly on your device.',
+        cta: 'Download for Android',
+        note: 'After downloading, open the file and allow installs from your browser if prompted.',
+      },
+      ios: {
+        title: 'iPhone & iPad',
+        body: 'Install Echium AI to your home screen straight from Safari:',
+        step1: 'Open chat.echium.ai in Safari',
+        step2: 'Tap the Share button',
+        step3: 'Tap "Add to Home Screen"',
+      },
+    },
     app: {
       name: 'EchiumAI',
       inputMessage: 'How can I Help You?',

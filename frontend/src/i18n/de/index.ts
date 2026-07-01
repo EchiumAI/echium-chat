@@ -139,6 +139,25 @@ const translation = {
       creditBalance: 'Guthaben',
       messagesUsed: '{{used}} / {{limit}} Nachrichten',
     },
+    download: {
+      navLabel: 'Apps',
+      title: 'Hol dir die Echium AI App',
+      intro:
+        'Nutze Echium AI auf deinem Smartphone. Wir vertreiben direkt — ohne App-Stores.',
+      android: {
+        title: 'Android',
+        body: 'Lade die App herunter und installiere sie direkt auf deinem Gerät.',
+        cta: 'Für Android herunterladen',
+        note: 'Öffne nach dem Download die Datei und erlaube bei Bedarf Installationen aus deinem Browser.',
+      },
+      ios: {
+        title: 'iPhone & iPad',
+        body: 'Füge Echium AI direkt aus Safari zu deinem Home-Bildschirm hinzu:',
+        step1: 'Öffne chat.echium.ai in Safari',
+        step2: 'Tippe auf die Teilen-Schaltfläche',
+        step3: 'Tippe auf „Zum Home-Bildschirm“',
+      },
+    },
     app: {
       name: 'EchiumAI',
       inputMessage: 'Nachricht senden',

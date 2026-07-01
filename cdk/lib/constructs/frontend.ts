@@ -53,6 +53,14 @@ export interface FrontendProps {
 export class Frontend extends Construct {
   readonly cloudFrontWebDistribution: Distribution;
   readonly assetBucket: Bucket;
+  /**
+   * Separate bucket for direct-download artifacts (e.g. the signed Android
+   * APK), served under the `/downloads/*` CloudFront behavior. Kept apart from
+   * `assetBucket` because the web build pruning would otherwise wipe uploaded
+   * APKs on every deploy. The Android CI workflow uploads here. See
+   * docs/ops/mobile-strategy.md.
+   */
+  readonly downloadsBucket: Bucket;
   private readonly certificate?: acm.ICertificate;
   private readonly hostedZone?: route53.IHostedZone;
   /** Alternate domain name for the CloudFront distribution */
@@ -74,6 +82,18 @@ export class Frontend extends Construct {
       autoDeleteObjects: true,
       serverAccessLogsBucket: props.accessLogBucket,
       serverAccessLogsPrefix: "AssetBucket",
+    });
+
+    // Artifacts bucket for direct downloads (Android APK). Not touched by the
+    // web build deploy, so uploaded APKs survive frontend redeploys.
+    const downloadsBucket = new Bucket(this, "DownloadsBucket", {
+      encryption: BucketEncryption.S3_MANAGED,
+      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
+      removalPolicy: RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+      serverAccessLogsBucket: props.accessLogBucket,
+      serverAccessLogsPrefix: "DownloadsBucket",
     });
 
     if (props.alternateDomainName && props.certificateArn) {
@@ -104,6 +124,15 @@ export class Frontend extends Construct {
         origin: S3BucketOrigin.withOriginAccessControl(assetBucket),
         viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
         cachePolicy: CachePolicy.CACHING_OPTIMIZED,
+      },
+      additionalBehaviors: {
+        // Direct-download artifacts (Android APK) served from a separate
+        // bucket so the web build deploy doesn't prune them.
+        "/downloads/*": {
+          origin: S3BucketOrigin.withOriginAccessControl(downloadsBucket),
+          viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
+          cachePolicy: CachePolicy.CACHING_OPTIMIZED,
+        },
       },
       // Apply geo restriction allowlist only when countries are provided
       ...(this.allowedCountries.length
@@ -164,6 +193,19 @@ export class Frontend extends Construct {
 
     this.assetBucket = assetBucket;
     this.cloudFrontWebDistribution = distribution;
+
+    this.downloadsBucket = downloadsBucket;
+
+    // Surfaced so the Android CI workflow can locate the upload target and
+    // issue a CloudFront invalidation after publishing a new APK.
+    new CfnOutput(this, "DownloadsBucketName", {
+      value: downloadsBucket.bucketName,
+      description: "S3 bucket for direct-download artifacts (Android APK)",
+    });
+    new CfnOutput(this, "DistributionId", {
+      value: distribution.distributionId,
+      description: "CloudFront distribution ID (for cache invalidation)",
+    });
 
     if (this.alternateDomainName) {
       new CfnOutput(this, 'AlternateDomain', {
