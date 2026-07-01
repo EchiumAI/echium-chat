@@ -1,11 +1,13 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { QRCodeSVG } from 'qrcode.react';
 import {
   PiArrowRight,
   PiAndroidLogo,
   PiAppleLogo,
   PiDownloadSimple,
+  PiQrCode,
 } from 'react-icons/pi';
 import AuthLanguageSwitcher from '../components/AuthLanguageSwitcher';
 import PublicFooter from '../components/PublicFooter';
@@ -26,6 +28,7 @@ const APK_URL: string =
 const PublicDownloadPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [showQr, setShowQr] = useState(false);
 
   useEffect(() => {
     document.title = `${t('download.title')} · ${t('app.name')}`;
@@ -96,6 +99,29 @@ const PublicDownloadPage: React.FC = () => {
             <p className="mt-3 text-xs text-white/40">
               {t('download.android.note')}
             </p>
+
+            {/* QR code — lets a desktop visitor install on their phone by
+                scanning. Rendered client-side (no network) as an SVG. */}
+            <button
+              type="button"
+              onClick={() => setShowQr((v) => !v)}
+              aria-expanded={showQr}
+              className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10">
+              <PiQrCode aria-hidden className="size-4" />
+              {showQr
+                ? t('download.android.qrHide')
+                : t('download.android.qrShow')}
+            </button>
+            {showQr && (
+              <div className="mt-4 flex flex-col items-center gap-2">
+                <div className="rounded-xl bg-white p-3">
+                  <QRCodeSVG value={APK_URL} size={160} level="M" />
+                </div>
+                <p className="text-xs text-white/40">
+                  {t('download.android.qrHint')}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* iOS */}

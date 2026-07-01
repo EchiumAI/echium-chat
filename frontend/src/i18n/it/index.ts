@@ -154,6 +154,9 @@ const translation = {
         body: 'Scarica l’app e installala direttamente sul tuo dispositivo.',
         cta: 'Scarica per Android',
         note: 'Dopo il download, apri il file e consenti le installazioni dal browser se richiesto.',
+        qrShow: 'Mostra codice QR',
+        qrHide: 'Nascondi codice QR',
+        qrHint: 'Inquadra con il telefono per scaricare',
       },
       ios: {
         title: 'iPhone e iPad',

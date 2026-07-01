@@ -158,6 +158,9 @@ const translation = {
         body: 'Download the app and install it directly on your device.',
         cta: 'Download for Android',
         note: 'After downloading, open the file and allow installs from your browser if prompted.',
+        qrShow: 'Show QR code',
+        qrHide: 'Hide QR code',
+        qrHint: 'Scan with your phone to download',
       },
       ios: {
         title: 'iPhone & iPad',

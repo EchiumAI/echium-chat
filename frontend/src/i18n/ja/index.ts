@@ -161,6 +161,9 @@ const translation: typeof en = {
         body: 'アプリをダウンロードして端末に直接インストールします。',
         cta: 'Android 版をダウンロード',
         note: 'ダウンロード後、ファイルを開き、必要に応じてブラウザからのインストールを許可してください。',
+        qrShow: 'QRコードを表示',
+        qrHide: 'QRコードを隠す',
+        qrHint: 'スマホで読み取ってダウンロード',
       },
       ios: {
         title: 'iPhone・iPad',
