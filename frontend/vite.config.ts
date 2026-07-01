@@ -63,11 +63,18 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
       },
       manifest: {
-        name: 'EchiumAI Chat',
-        short_name: 'EchiumAI Chat',
-        description: 'EchiumAI conversational assistant',
-        start_url: '/index.html',
+        name: 'Echium AI',
+        short_name: 'Echium AI',
+        description:
+          'A private, EU-based AI workspace with multi-model chat, custom knowledge bases, and agents.',
+        id: '/',
+        start_url: '/',
+        scope: '/',
         display: 'standalone',
+        orientation: 'any',
+        lang: 'en',
+        categories: ['productivity', 'business'],
+        background_color: '#1E1438',
         theme_color: '#1E1438',
         icons: [
           {
