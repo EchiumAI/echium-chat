@@ -114,6 +114,36 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           role-session-name: android-publish-${{ github.run_id }}
 
+      - name: Back up signing material to Secrets Manager
+        # Keep the keystore + passwords in Secrets Manager (durable,
+        # access-controlled) in sync with whatever signed this build.
+        # Idempotent: creates echium/android-signing or updates it in place.
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          SECRET_NAME="echium/android-signing"
+          PAYLOAD="$(jq -n \
+            --arg ks "$ANDROID_KEYSTORE_BASE64" \
+            --arg kp "$ANDROID_KEYSTORE_PASSWORD" \
+            --arg al "$ANDROID_KEY_ALIAS" \
+            --arg kyp "$ANDROID_KEY_PASSWORD" \
+            '{keystoreBase64:$ks, keystorePassword:$kp, keyAlias:$al, keyPassword:$kyp}')"
+          if aws secretsmanager describe-secret --secret-id "$SECRET_NAME" >/dev/null 2>&1; then
+            aws secretsmanager put-secret-value \
+              --secret-id "$SECRET_NAME" --secret-string "$PAYLOAD" >/dev/null
+            echo "Updated $SECRET_NAME"
+          else
+            aws secretsmanager create-secret \
+              --name "$SECRET_NAME" \
+              --description "Android release signing keystore (base64) + passwords for the Echium app" \
+              --secret-string "$PAYLOAD" >/dev/null
+            echo "Created $SECRET_NAME"
+          fi
+
       - name: Resolve publish targets from stack outputs
         id: targets
         run: |
