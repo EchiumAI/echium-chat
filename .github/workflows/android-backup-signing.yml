@@ -1,0 +1,63 @@
+name: Backup Android signing to Secrets Manager
+
+# One-shot (manual) utility: copies the Android signing material from GitHub
+# Actions secrets into AWS Secrets Manager in the deploy account, so the
+# keystore has a durable, access-controlled home alongside other app secrets
+# (e.g. echium/paddle). Safe to re-run — it updates the secret in place.
+#
+# Secret name: echium/android-signing (eu-west-1)
+# Shape: { keystoreBase64, keystorePassword, keyAlias, keyPassword }
+on:
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: eu-west-1
+  AWS_ROLE_ARN: arn:aws:iam::888284248988:role/github-actions-echium-deploy
+  SECRET_NAME: echium/android-signing
+
+jobs:
+  backup:
+    name: Store signing material
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: android-signing-backup-${{ github.run_id }}
+
+      - name: Write signing material to Secrets Manager
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          # Build the JSON payload safely (jq escapes values).
+          PAYLOAD="$(jq -n \
+            --arg ks "$ANDROID_KEYSTORE_BASE64" \
+            --arg kp "$ANDROID_KEYSTORE_PASSWORD" \
+            --arg al "$ANDROID_KEY_ALIAS" \
+            --arg kyp "$ANDROID_KEY_PASSWORD" \
+            '{keystoreBase64:$ks, keystorePassword:$kp, keyAlias:$al, keyPassword:$kyp}')"
+
+          if aws secretsmanager describe-secret --secret-id "$SECRET_NAME" >/dev/null 2>&1; then
+            echo "Secret exists — updating value."
+            aws secretsmanager put-secret-value \
+              --secret-id "$SECRET_NAME" \
+              --secret-string "$PAYLOAD" >/dev/null
+          else
+            echo "Secret does not exist — creating."
+            aws secretsmanager create-secret \
+              --name "$SECRET_NAME" \
+              --description "Android release signing keystore (base64) + passwords for the Echium app" \
+              --secret-string "$PAYLOAD" >/dev/null
+          fi
+          echo "Stored signing material in Secrets Manager: $SECRET_NAME"
