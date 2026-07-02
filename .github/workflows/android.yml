@@ -98,6 +98,7 @@ jobs:
           "$BUILD_TOOLS_DIR/zipalign" -v -p 4 "$UNSIGNED" app-release-aligned.apk
           "$BUILD_TOOLS_DIR/apksigner" sign \
             --ks release.jks \
+            --ks-type PKCS12 \
             --ks-pass "pass:$ANDROID_KEYSTORE_PASSWORD" \
             --ks-key-alias "$ANDROID_KEY_ALIAS" \
             --key-pass "pass:$ANDROID_KEY_PASSWORD" \
@@ -117,14 +118,25 @@ jobs:
         id: targets
         run: |
           set -euo pipefail
-          BUCKET="$(aws cloudformation describe-stacks \
-            --query "Stacks[].Outputs[?ends_with(OutputKey, 'DownloadsBucketName')].OutputValue | [] | [0]" \
+          # The main stack's name contains "BedrockChat" (same convention as
+          # deploy.yml). Our outputs live in the Frontend construct, so their
+          # logical IDs may carry a construct prefix/suffix — match by substring
+          # rather than an exact key.
+          STACK="$(aws cloudformation describe-stacks \
+            --query "Stacks[?contains(StackName, 'BedrockChat')].StackName | [0]" \
             --output text)"
-          DIST_ID="$(aws cloudformation describe-stacks \
-            --query "Stacks[].Outputs[?ends_with(OutputKey, 'DistributionId')].OutputValue | [] | [0]" \
+          echo "Main stack: $STACK"
+          echo "All outputs on the stack:"
+          aws cloudformation describe-stacks --stack-name "$STACK" \
+            --query "Stacks[0].Outputs[].OutputKey" --output text || true
+          BUCKET="$(aws cloudformation describe-stacks --stack-name "$STACK" \
+            --query "Stacks[0].Outputs[?contains(OutputKey, 'DownloadsBucket')].OutputValue | [0]" \
+            --output text)"
+          DIST_ID="$(aws cloudformation describe-stacks --stack-name "$STACK" \
+            --query "Stacks[0].Outputs[?contains(OutputKey, 'DistributionId')].OutputValue | [0]" \
             --output text)"
           if [ -z "$BUCKET" ] || [ "$BUCKET" = "None" ]; then
-            echo "Could not resolve DownloadsBucketName from any stack output." >&2
+            echo "Could not resolve the downloads bucket from stack outputs." >&2
             exit 1
           fi
           echo "bucket=$BUCKET" >> "$GITHUB_OUTPUT"
