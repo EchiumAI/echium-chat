@@ -74,6 +74,13 @@ jobs:
         working-directory: frontend
         run: npx cap add android
 
+      - name: Generate app icon + splash (Echium branding)
+        working-directory: frontend
+        # Reads frontend/assets/{icon,icon-foreground,icon-background,splash}.png
+        # and writes Android launcher (adaptive) icons + splash into the native
+        # project, replacing Capacitor's defaults.
+        run: npx capacitor-assets generate --android
+
       - name: Sync web assets into native project
         working-directory: frontend
         run: npx cap sync android
