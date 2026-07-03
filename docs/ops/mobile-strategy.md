@@ -145,6 +145,25 @@ Back up the keystore securely — losing it means a new app identity.
   in en/ja/es/fr/de/it/pt-br.
 - Optional later: a QR code to the APK for easy phone install.
 
+## App branding (icon + splash) — implemented
+
+Source assets live in `frontend/assets/` (`icon.png`, adaptive
+`icon-foreground.png` / `icon-background.png`, `splash.png` /
+`splash-dark.png`), generated from the Echium logo on the brand background
+(`#1E1438`). The Android CI runs `@capacitor/assets generate --android` after
+`cap add android`, producing the launcher (adaptive) icons and splash and
+replacing Capacitor's defaults. Regenerate the sources if the logo changes.
+
+## Signing material backup — implemented
+
+The release keystore is generated once and its four values live in **GitHub
+Actions secrets** (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`,
+`ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`) — the build's source of truth. The
+Android workflow also mirrors them into **AWS Secrets Manager**
+(`echium/android-signing`, eu-west-1) on every release for a durable,
+access-controlled backup. Losing the keystore means a new app identity, so keep
+an offline copy too.
+
 ## Hosting infra  — implemented in `cdk/lib/constructs/frontend.ts`
 
 - A **separate `DownloadsBucket`** (private, OAC) holds the APKs, kept apart
