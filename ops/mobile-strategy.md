@@ -189,13 +189,28 @@ Developer account. Completed:
   banners).
 - **`/download` page** gives iOS users the Add-to-Home-Screen steps.
 
-### Native iOS (parked — needs a Mac + Apple account)
+### Native iOS (scaffolded; distribution decision pending)
 
-A genuine native iOS app (Capacitor iOS) is **not** built: it requires macOS +
-Xcode to compile and an Apple Developer Program membership (~€99/yr) plus
-signing certs/provisioning profiles for distribution — and EU alternative
-distribution still involves Apple terms. Revisit only if the PWA proves
-insufficient.
+The native iOS target is now scaffolded and builds in CI:
+
+- `@capacitor/ios` dependency; the native `ios/` project is regenerated in CI
+  (gitignored), same as Android.
+- `.github/workflows/ios.yml` runs on a **macOS** runner (iOS can only be
+  compiled on macOS + Xcode), triggered by `ios-vX.Y.Z` tags. It builds the app
+  **unsigned** to validate compilation and applies the Echium icon/splash.
+
+What's still required to ship (any route) — all involve Apple regardless of the
+DMA: **Apple Developer Program (€99/yr)**, Apple **notarization** of the app,
+opting into Apple's EU **alternative business terms**, and signing
+certs/provisioning. Only then can the workflow be extended to archive, sign,
+notarize, and export a distributable `.ipa`.
+
+Distribution options in the EU (decide later):
+- **App Store** — review + EU external-payment steering (Paddle).
+- **Alternative marketplace** (e.g. AltStore PAL) — non-App-Store, available to
+  a new developer; users install the marketplace first, then our source.
+- **Web Distribution** (download from our own site, the Android equivalent) —
+  blocked for now: Apple requires 2+ years membership AND 1M+ EU installs/yr.
 
 ## Decisions (resolved)
 
