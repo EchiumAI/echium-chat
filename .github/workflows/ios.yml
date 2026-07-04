@@ -1,0 +1,87 @@
+name: iOS App
+
+# Builds the iOS app from the same web app the Android build uses. Runs on a
+# macOS runner (iOS can only be compiled on macOS + Xcode).
+#
+# CURRENT STATE: unsigned build — validates that the app compiles and produces
+# an app bundle, so everything is ready the moment an Apple Developer Program
+# account (€99/yr) + signing certificates exist. Real signing, notarization,
+# and distribution (App Store or an EU alternative marketplace such as AltStore
+# PAL) are added later once those credentials are available. See
+# docs/ops/mobile-strategy.md.
+#
+# The native iOS project (frontend/ios) is NOT committed — it's regenerated
+# here from capacitor.config.ts, exactly like Android.
+#
+# Trigger: push an `ios-vX.Y.Z` tag, or run manually (once on default branch).
+on:
+  push:
+    tags: ['ios-v*.*.*']
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '22.x'
+  NPM_VERSION: '11'
+
+jobs:
+  build:
+    name: Build iOS app (unsigned)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Pin npm to 11
+        run: npm install -g npm@${{ env.NPM_VERSION }}
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build web app
+        working-directory: frontend
+        # capacitor.config.ts points the shell at the live production site, so
+        # the build only needs to produce a `dist` for `cap sync` to copy.
+        run: npm run build
+
+      - name: Add iOS platform
+        working-directory: frontend
+        run: npx cap add ios
+
+      - name: Generate app icon + splash (Echium branding)
+        working-directory: frontend
+        run: npx capacitor-assets generate --ios
+
+      - name: Sync web assets into native project
+        working-directory: frontend
+        run: npx cap sync ios
+
+      - name: Build (unsigned) to validate compilation
+        working-directory: frontend/ios/App
+        # No signing certs yet, so disable code signing and build for a real
+        # device SDK. This proves the app compiles and links; a signed,
+        # notarized .ipa step is added once Apple credentials exist.
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            clean build
+
+      - name: Summarize
+        run: |
+          echo "iOS app compiled successfully (unsigned)."
+          echo "Next: enroll in Apple Developer Program (€99/yr), add signing"
+          echo "certs + provisioning, then extend this workflow to archive,"
+          echo "sign, notarize, and export a distributable .ipa."

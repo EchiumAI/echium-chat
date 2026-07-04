@@ -15,6 +15,7 @@
     "@aws-amplify/ui-react": "^6.15.3",
     "@capacitor/android": "^6.2.1",
     "@capacitor/core": "^6.2.1",
+    "@capacitor/ios": "^6.2.1",
     "@headlessui/react": "^1.7.15",
     "@ladle/react": "^5.0.1",
     "@paddle/paddle-js": "^1.6.4",
