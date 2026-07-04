@@ -125,6 +125,10 @@ export class Database extends Construct {
       indexName: "PaddleCustomerIdIndex",
       partitionKey: { name: "PaddleCustomerId", type: AttributeType.STRING },
     });
+    // The backend assumes tableAccessRole (DynamoDBSession) to read/write the
+    // subscription + usage data during chat (plan enforcement, metering), so it
+    // needs access to this table and its GSI just like the others.
+    subscriptionTable.grantReadWriteData(tableAccessRole);
 
     this.conversationTable = conversationTable;
     this.botTable = botTable;
