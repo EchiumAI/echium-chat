@@ -66,6 +66,11 @@ const translation = {
     pricing: {
       title: 'Plans & pricing',
       subtitle: 'Start free. Upgrade anytime. Cancel whenever.',
+      modelLocked: 'Not in your plan',
+      upgradeTitle: 'Upgrade to use this model',
+      upgradeBody:
+        "{{model}} isn't included in your current plan. Upgrade to unlock it.",
+      upgradeCta: 'View plans',
       perMonth: '/mo',
       free: 'Free',
       usageBased: 'Usage-based',
@@ -173,6 +178,7 @@ const translation = {
     app: {
       name: 'EchiumAI',
       inputMessage: 'How can I Help You?',
+      waitingResponse: 'Please wait for the response to finish…',
       myBots: 'My Bots',
       discoverBots: 'Discover Bots',
       pinnedBots: 'Pinned Bots',

@@ -69,6 +69,10 @@ const translation: typeof en = {
     pricing: {
       title: 'プランと料金',
       subtitle: '無料で開始。いつでもアップグレード・解約可能。',
+      modelLocked: '現在のプラン対象外',
+      upgradeTitle: 'このモデルを使うにはアップグレード',
+      upgradeBody: '{{model}} は現在のプランに含まれていません。アップグレードすると利用できます。',
+      upgradeCta: 'プランを見る',
       perMonth: '/月',
       free: '無料',
       usageBased: '従量課金',
@@ -176,6 +180,7 @@ const translation: typeof en = {
     app: {
       name: 'EchiumAI',
       inputMessage: 'お手伝いできることはありますか？',
+      waitingResponse: '応答が完了するまでお待ちください…',
       myBots: 'マイボット',
       discoverBots: 'ボットを探す',
       pinnedBots: 'ピン留めボット',

@@ -1,8 +1,9 @@
 import useHttp from './useHttp';
-import { PlanId, ModelTier } from '../constants/plans';
+import { PlanId, ModelAccessTier } from '../constants/plans';
 
 export interface SubscriptionCapabilities {
-  modelTiers: ModelTier[];
+  /** Model tiers this plan may use ('basic' | 'sonnet' | 'opus'). */
+  modelTiers: ModelAccessTier[];
   webSearch: boolean;
   agents: boolean;
   knowledgeBases: boolean;
@@ -20,6 +21,10 @@ export interface SubscriptionOverview {
   meteredOverage: boolean;
   creditBalanceEur: number;
   costThisPeriodEur: number;
+  /** Whether plan limits are actually enforced server-side. */
+  enforcementEnabled: boolean;
+  /** True for privileged users (admin / Unlimited) who bypass enforcement. */
+  unlimited: boolean;
   capabilities: SubscriptionCapabilities;
 }
 

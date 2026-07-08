@@ -28,11 +28,19 @@ from app.usecases.plans import (
 logger = logging.getLogger(__name__)
 
 
-def get_subscription_overview(user_id: str) -> dict:
+def _enforcement_enabled() -> bool:
+    return os.environ.get("ENABLE_PLAN_ENFORCEMENT", "false").lower() == "true"
+
+
+def get_subscription_overview(user_id: str, bypass: bool = False) -> dict:
     """Assemble the user's current plan, usage and entitlements.
 
     Returned as camelCase JSON for the frontend (billing page + the in-chat
     consumption indicator). Creates a default free subscription on first call.
+
+    `bypass` is True for privileged users (admins / Unlimited group) who are not
+    subject to enforcement; the UI uses it (with `enforcementEnabled`) to decide
+    whether to gate models/features in the interface.
     """
     sub = get_or_create_subscription(user_id)
     usage = get_usage(user_id, current_period())
@@ -51,6 +59,11 @@ def get_subscription_overview(user_id: str) -> dict:
         "meteredOverage": limits.metered_overage,
         "creditBalanceEur": round(sub.credit_balance_eur, 4),
         "costThisPeriodEur": round(usage.cost_eur, 4),
+        # Whether plan limits are actually enforced server-side, and whether
+        # this user bypasses them. The UI only gates the interface when
+        # enforcement is on and the user does not bypass.
+        "enforcementEnabled": _enforcement_enabled(),
+        "unlimited": bypass,
         "capabilities": {
             "modelTiers": sorted(limits.model_tiers),
             "webSearch": FEATURE_WEB_SEARCH in limits.features,

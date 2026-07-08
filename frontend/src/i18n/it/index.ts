@@ -66,6 +66,11 @@ const translation = {
     pricing: {
       title: 'Piani e prezzi',
       subtitle: 'Inizia gratis. Passa a un piano superiore quando vuoi. Disdici quando vuoi.',
+      modelLocked: 'Non incluso nel tuo piano',
+      upgradeTitle: 'Passa a un piano superiore per usare questo modello',
+      upgradeBody:
+        '{{model}} non è incluso nel tuo piano attuale. Esegui l’upgrade per sbloccarlo.',
+      upgradeCta: 'Vedi i piani',
       perMonth: '/mese',
       free: 'Gratis',
       usageBased: 'A consumo',
@@ -169,6 +174,7 @@ const translation = {
     app: {
       name: 'EchiumAI',
       inputMessage: 'Come posso aiutarti?',
+      waitingResponse: 'Attendi il completamento della risposta…',
       pinnedBots: 'Bot fissati',
       starredBots: 'Bot preferiti',
       recentlyUsedBots: 'Bot utilizzati di recente',

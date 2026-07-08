@@ -205,3 +205,52 @@ export const messagesForCredit = (
   creditEur: number,
   rate: PaygModelRate
 ): number => Math.floor(creditEur / rate.pricePerMessageEur);
+
+/**
+ * Per-model access tier — MUST mirror the backend `MODEL_TIER` map in
+ * backend/app/usecases/plans.py. Any model not listed defaults to 'basic',
+ * matching the backend, so a new model never silently unlocks a higher tier.
+ * Values match what GET /subscription returns in `capabilities.modelTiers`
+ * ('basic' | 'sonnet' | 'opus').
+ */
+export type ModelAccessTier = 'basic' | 'sonnet' | 'opus';
+
+export const MODEL_ACCESS_TIER: Record<string, ModelAccessTier> = {
+  // Opus
+  'claude-v4-opus': 'opus',
+  'claude-v4.1-opus': 'opus',
+  'claude-v4.5-opus': 'opus',
+  'claude-v4.6-opus': 'opus',
+  'claude-v3-opus': 'opus',
+  // Sonnet
+  'claude-v4-sonnet': 'sonnet',
+  'claude-v4.5-sonnet': 'sonnet',
+  'claude-v4.6-sonnet': 'sonnet',
+  'claude-v3.5-sonnet': 'sonnet',
+  'claude-v3.5-sonnet-v2': 'sonnet',
+  'claude-v3.7-sonnet': 'sonnet',
+  // Basic (Haiku / Nova / others default to basic)
+  'claude-v4.5-haiku': 'basic',
+  'claude-v3-haiku': 'basic',
+  'claude-v3.5-haiku': 'basic',
+  'amazon-nova-pro': 'basic',
+  'amazon-nova-lite': 'basic',
+  'amazon-nova-micro': 'basic',
+};
+
+/** Tier of a given model key (defaults to 'basic', mirroring the backend). */
+export const modelAccessTier = (modelId: string): ModelAccessTier =>
+  MODEL_ACCESS_TIER[modelId] ?? 'basic';
+
+/** Lowest plan that unlocks each model tier — used to suggest an upgrade. */
+export const MIN_PLAN_FOR_TIER: Record<ModelAccessTier, PlanId> = {
+  basic: 'free',
+  sonnet: 'starter',
+  opus: 'pro',
+};
+
+/** Whether a model is usable given the plan's allowed tiers (from the API). */
+export const isModelAllowedByTiers = (
+  modelId: string,
+  allowedTiers: ModelAccessTier[]
+): boolean => allowedTiers.includes(modelAccessTier(modelId));

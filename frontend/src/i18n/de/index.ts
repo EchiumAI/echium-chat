@@ -61,6 +61,11 @@ const translation = {
     pricing: {
       title: 'Tarife & Preise',
       subtitle: 'Kostenlos starten. Jederzeit upgraden. Jederzeit kündbar.',
+      modelLocked: 'Nicht in deinem Tarif',
+      upgradeTitle: 'Upgrade, um dieses Modell zu nutzen',
+      upgradeBody:
+        '{{model}} ist in deinem aktuellen Tarif nicht enthalten. Mit einem Upgrade schaltest du es frei.',
+      upgradeCta: 'Tarife ansehen',
       perMonth: '/Mon.',
       free: 'Kostenlos',
       usageBased: 'Nutzungsbasiert',
@@ -164,6 +169,7 @@ const translation = {
     app: {
       name: 'EchiumAI',
       inputMessage: 'Nachricht senden',
+      waitingResponse: 'Bitte warte, bis die Antwort fertig ist…',
       pinnedBots: 'Angeheftete Bots',
       starredBots: 'Favorisierte Bots',
       recentlyUsedBots: 'Zuletzt genutzte Bots',

@@ -61,6 +61,11 @@ const translation = {
     pricing: {
       title: 'Forfaits et tarifs',
       subtitle: 'Commencez gratuitement. Évoluez quand vous voulez. Annulez à tout moment.',
+      modelLocked: 'Hors de votre forfait',
+      upgradeTitle: 'Passez à un forfait supérieur pour ce modèle',
+      upgradeBody:
+        "{{model}} n'est pas inclus dans votre forfait actuel. Améliorez-le pour le débloquer.",
+      upgradeCta: 'Voir les forfaits',
       perMonth: '/mois',
       free: 'Gratuit',
       usageBased: 'À l’usage',
@@ -164,6 +169,7 @@ const translation = {
     app: {
       name: 'EchiumAI',
       inputMessage: 'Envoyer un message',
+      waitingResponse: 'Veuillez attendre la fin de la réponse…',
       pinnedBots: 'Bots épinglés',
       starredBots: 'Epingler un bot',
       recentlyUsedBots: 'Bot utilisé récemment',

@@ -485,8 +485,14 @@ const InputChatContent = forwardRef<HTMLElement, Props>(
             <Textarea
               key={`textarea-${props.isNewChat}`} // Add a key to force re-render
               className="m-1 bg-transparent pr-12 scrollbar-thin scrollbar-thumb-light-gray"
-              placeholder={t('app.inputMessage')}
-              disabled={props.disabled}
+              placeholder={
+                props.isLoading
+                  ? t('app.waitingResponse')
+                  : t('app.inputMessage')
+              }
+              // Lock input while a response is streaming so users can't queue
+              // up or interleave a second message mid-generation.
+              disabled={props.disabled || props.isLoading}
               noBorder
               rows={props.isNewChat ? 3 : 1}
               value={content}
