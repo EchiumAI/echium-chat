@@ -70,6 +70,7 @@ const translation: typeof en = {
       title: 'プランと料金',
       subtitle: '無料で開始。いつでもアップグレード・解約可能。',
       modelLocked: '現在のプラン対象外',
+      modelLockedWith: '{{plan}}で利用可能',
       upgradeTitle: 'このモデルを使うにはアップグレード',
       upgradeBody: '{{model}} は現在のプランに含まれていません。アップグレードすると利用できます。',
       upgradeCta: 'プランを見る',

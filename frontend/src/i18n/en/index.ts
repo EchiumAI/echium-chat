@@ -67,6 +67,7 @@ const translation = {
       title: 'Plans & pricing',
       subtitle: 'Start free. Upgrade anytime. Cancel whenever.',
       modelLocked: 'Not in your plan',
+      modelLockedWith: 'Available with {{plan}}',
       upgradeTitle: 'Upgrade to use this model',
       upgradeBody:
         "{{model}} isn't included in your current plan. Upgrade to unlock it.",

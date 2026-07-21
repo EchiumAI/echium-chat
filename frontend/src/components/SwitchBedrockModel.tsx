@@ -9,7 +9,11 @@ import { useNavigate } from 'react-router-dom';
 import { ActiveModels } from '../@types/bot';
 import { toCamelCase } from '../utils/StringUtils';
 import useSubscription from '../hooks/useSubscription';
-import { isModelAllowedByTiers } from '../constants/plans';
+import {
+  isModelAllowedByTiers,
+  modelAccessTier,
+  MIN_PLAN_FOR_TIER,
+} from '../constants/plans';
 import ModalDialog from './ModalDialog';
 import Button from './Button';
 
@@ -46,6 +50,15 @@ const SwitchBedrockModel: React.FC<Props> = (props) => {
 
   // Model whose upgrade dialog is open (null = closed).
   const [lockedModelLabel, setLockedModelLabel] = useState<string | null>(null);
+
+  // Display name of the lowest plan that unlocks a given model, e.g. "Pro".
+  const requiredPlanName = useMemo(
+    () => (id: string) => {
+      const planId = MIN_PLAN_FOR_TIER[modelAccessTier(id)];
+      return t(`pricing.plans.${planId}.name` as never);
+    },
+    [t]
+  );
 
   const availableModels = useMemo(() => {
     return allModels.filter((model) => {
@@ -148,7 +161,9 @@ const SwitchBedrockModel: React.FC<Props> = (props) => {
                               <span>{model.label}</span>
                               {locked && (
                                 <span className="ml-2 text-xs font-normal text-amber-500">
-                                  {t('pricing.modelLocked')}
+                                  {t('pricing.modelLockedWith', {
+                                    plan: requiredPlanName(model.modelId),
+                                  })}
                                 </span>
                               )}
                             </div>
