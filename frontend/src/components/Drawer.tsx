@@ -43,6 +43,12 @@ import { isPinnedBot } from '../utils/BotUtils';
 import IconPinnedBot from './IconPinnedBot';
 import useGlobalConfig from '../hooks/useGlobalConfig';
 
+// Bots are not part of the current product offering. Hide every bot-related
+// section (My Bots, Discover, Pinned, Starred, Recently Used) in the sidebar
+// regardless of the user's drawer preferences. Flip to `true` to bring the
+// full bot experience back.
+const BOTS_ENABLED = false;
+
 type Props = BaseProps & {
   isAdmin: boolean;
   conversations?: ConversationMeta[];
@@ -325,7 +331,7 @@ const Drawer: React.FC<Props> = (props) => {
                   labelComponent={t('button.newChat')}
                 />
               )}
-              {drawerOptions.show.myBots && (
+              {BOTS_ENABLED && drawerOptions.show.myBots && (
                 <DrawerItem
                   isActive={false}
                   icon={<PiListBullets />}
@@ -334,7 +340,7 @@ const Drawer: React.FC<Props> = (props) => {
                   onClick={closeSmallDrawer}
                 />
               )}
-              {drawerOptions.show.discoverBots && (
+              {BOTS_ENABLED && drawerOptions.show.discoverBots && (
                 <DrawerItem
                   isActive={false}
                   icon={<PiCompass />}
@@ -344,7 +350,8 @@ const Drawer: React.FC<Props> = (props) => {
                 />
               )}
 
-              {drawerOptions.show.pinnedBots &&
+              {BOTS_ENABLED &&
+              drawerOptions.show.pinnedBots &&
                 pinnedBots?.filter((bot) => bot.available).length ? (
                   <ExpandableDrawerGroup
                     label={t('app.pinnedBots')}
@@ -364,7 +371,7 @@ const Drawer: React.FC<Props> = (props) => {
                   </ExpandableDrawerGroup>
                 ) : null}
 
-              {drawerOptions.show.starredBots && (
+              {BOTS_ENABLED && drawerOptions.show.starredBots && (
                 <ExpandableDrawerGroup
                   label={t('app.starredBots')}
                   className="border-t bg-aws-squid-ink-light pt-1 dark:bg-aws-squid-ink-dark">
@@ -411,7 +418,7 @@ const Drawer: React.FC<Props> = (props) => {
                 </ExpandableDrawerGroup>
               )}
 
-              {drawerOptions.show.recentlyUsedBots && (
+              {BOTS_ENABLED && drawerOptions.show.recentlyUsedBots && (
                 <ExpandableDrawerGroup
                   label={t('app.recentlyUsedBots')}
                   className="border-t bg-aws-squid-ink-light pt-1 dark:bg-aws-squid-ink-dark ">

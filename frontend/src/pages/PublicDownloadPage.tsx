@@ -6,7 +6,6 @@ import {
   PiArrowRight,
   PiAndroidLogo,
   PiAppleLogo,
-  PiDownloadSimple,
   PiQrCode,
 } from 'react-icons/pi';
 import AuthLanguageSwitcher from '../components/AuthLanguageSwitcher';
@@ -92,9 +91,20 @@ const PublicDownloadPage: React.FC = () => {
             </p>
             <a
               href={APK_URL}
-              className="group flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-violet-500">
-              <PiDownloadSimple aria-hidden className="size-4" />
-              {t('download.android.cta')}
+              className="group flex items-center justify-center gap-3 rounded-xl bg-black px-5 py-3 text-white ring-1 ring-white/15 transition-colors hover:bg-zinc-800">
+              <PiAndroidLogo
+                aria-hidden
+                className="size-7"
+                style={{ color: '#3DDC84' }}
+              />
+              <span className="flex flex-col items-start leading-tight">
+                <span className="text-[10px] uppercase tracking-wider text-white/60">
+                  {t('download.directDownload')}
+                </span>
+                <span className="text-sm font-semibold">
+                  {t('download.android.cta')}
+                </span>
+              </span>
             </a>
             <p className="mt-3 text-xs text-white/40">
               {t('download.android.note')}

@@ -158,6 +158,8 @@ const translation: typeof en = {
     },
     download: {
       navLabel: 'アプリ',
+      menuLabel: 'アプリを入手',
+      directDownload: '直接ダウンロード',
       title: 'Echium AI アプリを入手',
       intro:
         'スマホでも Echium AI を。アプリストアを使わず、直接配布しています。',

@@ -6,6 +6,7 @@ import {
   PiSignOut,
   PiTranslate,
   PiTrash,
+  PiDeviceMobile,
 } from 'react-icons/pi';
 import { useTranslation } from 'react-i18next';
 import { BaseProps } from '../@types/common';
@@ -113,6 +114,16 @@ const MenuSettings: React.FC<Props> = (props) => {
             }}>
             <PiCreditCard className="mr-2" />
             {t('billing.title')}
+          </div>
+
+          <div
+            className="flex w-full cursor-pointer items-center p-2 hover:bg-aws-sea-blue-hover-light dark:hover:bg-aws-paper-dark"
+            onClick={() => {
+              setIsOpen(false);
+              navigate('/download');
+            }}>
+            <PiDeviceMobile className="mr-2" />
+            {t('download.menuLabel')}
           </div>
 
           <div

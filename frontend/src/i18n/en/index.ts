@@ -156,6 +156,8 @@ const translation = {
     },
     download: {
       navLabel: 'Apps',
+      menuLabel: 'Get the app',
+      directDownload: 'Direct download',
       title: 'Get the Echium AI app',
       intro:
         'Use Echium AI on your phone. We distribute directly — no app stores.',
