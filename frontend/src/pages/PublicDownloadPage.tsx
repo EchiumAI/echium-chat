@@ -8,6 +8,7 @@ import {
   PiAppleLogo,
   PiQrCode,
 } from 'react-icons/pi';
+import { FaApple, FaGooglePlay } from 'react-icons/fa';
 import AuthLanguageSwitcher from '../components/AuthLanguageSwitcher';
 import PublicFooter from '../components/PublicFooter';
 
@@ -91,18 +92,15 @@ const PublicDownloadPage: React.FC = () => {
             </p>
             <a
               href={APK_URL}
-              className="group flex items-center justify-center gap-3 rounded-xl bg-black px-5 py-3 text-white ring-1 ring-white/15 transition-colors hover:bg-zinc-800">
-              <PiAndroidLogo
-                aria-hidden
-                className="size-7"
-                style={{ color: '#3DDC84' }}
-              />
-              <span className="flex flex-col items-start leading-tight">
-                <span className="text-[10px] uppercase tracking-wider text-white/60">
-                  {t('download.directDownload')}
+              aria-label="Get it on Google Play"
+              className="flex items-center justify-center gap-3 rounded-xl border border-white/20 bg-black px-6 py-2.5 text-white transition-colors hover:bg-zinc-800">
+              <FaGooglePlay aria-hidden className="size-6" />
+              <span className="flex flex-col items-start leading-none">
+                <span className="text-[10px] font-normal tracking-wide text-white/70">
+                  GET IT ON
                 </span>
-                <span className="text-sm font-semibold">
-                  {t('download.android.cta')}
+                <span className="text-lg font-semibold leading-tight">
+                  Google Play
                 </span>
               </span>
             </a>
@@ -143,6 +141,19 @@ const PublicDownloadPage: React.FC = () => {
             <p className="mb-4 text-sm leading-relaxed text-white/55">
               {t('download.ios.body')}
             </p>
+            <div
+              aria-label="Download on the App Store"
+              className="mb-4 inline-flex items-center gap-3 self-start rounded-xl border border-white/20 bg-black px-6 py-2.5 text-white">
+              <FaApple aria-hidden className="size-7" />
+              <span className="flex flex-col items-start leading-none">
+                <span className="text-[10px] font-normal tracking-wide text-white/70">
+                  Download on the
+                </span>
+                <span className="text-lg font-semibold leading-tight">
+                  App Store
+                </span>
+              </span>
+            </div>
             <ol className="flex-1 list-decimal space-y-1.5 pl-5 text-sm text-white/70">
               <li>{t('download.ios.step1')}</li>
               <li>{t('download.ios.step2')}</li>
