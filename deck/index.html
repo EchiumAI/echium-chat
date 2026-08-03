@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Echium AI — Investor Deck</title>
+<style>
+  :root {
+    --brand:      #1E1438;   /* Echium deep purple */
+    --brand-2:    #2A1A52;
+    --brand-3:    #3B2470;
+    --accent:     #8B5CF6;   /* violet */
+    --accent-2:   #C4B5FD;
+    --ink:        #F5F3FF;
+    --ink-dim:    #C9C2E8;
+    --ink-faint:  #8B84AD;
+    --card:       rgba(255,255,255,0.05);
+    --card-brd:   rgba(255,255,255,0.10);
+    --good:       #34D399;
+    --warn:       #FBBF24;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--brand);
+    color: var(--ink);
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  /* ---------- Deck / slide layout ---------- */
+  .deck { height: 100vh; width: 100vw; position: relative; }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    padding: 6vh 8vw;
+    background:
+      radial-gradient(1200px 700px at 85% -10%, rgba(139,92,246,0.22), transparent 60%),
+      radial-gradient(900px 600px at -10% 110%, rgba(59,36,112,0.55), transparent 55%),
+      linear-gradient(160deg, var(--brand) 0%, var(--brand-2) 100%);
+    animation: fade .35s ease;
+    overflow: auto;
+  }
+  .slide.active { display: flex; }
+  @keyframes fade { from { opacity: 0; transform: translateY(8px);} to {opacity:1; transform:none;} }
+
+  /* ---------- Typography ---------- */
+  h1 { font-size: clamp(2.2rem, 5.5vw, 4.4rem); line-height: 1.02; letter-spacing: -0.02em; font-weight: 800; }
+  h2 { font-size: clamp(1.6rem, 3.6vw, 2.8rem); line-height: 1.08; letter-spacing: -0.015em; font-weight: 750; margin-bottom: .6em; }
+  h3 { font-size: clamp(1.05rem, 1.7vw, 1.35rem); font-weight: 700; }
+  p  { font-size: clamp(1rem, 1.5vw, 1.25rem); line-height: 1.5; color: var(--ink-dim); }
+  .lead { font-size: clamp(1.15rem, 2vw, 1.6rem); color: var(--ink-dim); max-width: 60ch; }
+
+  .eyebrow {
+    text-transform: uppercase; letter-spacing: .22em; font-size: .78rem;
+    font-weight: 700; color: var(--accent-2); margin-bottom: 1.2rem;
+  }
+  .accent { color: var(--accent-2); }
+  .todo {
+    color: var(--warn); font-weight: 700;
+    background: rgba(251,191,36,0.10); border: 1px dashed rgba(251,191,36,0.5);
+    border-radius: 6px; padding: 0 .35em;
+  }
+
+  /* ---------- Bits ---------- */
+  .grid { display: grid; gap: 1.1rem; margin-top: 1.6rem; }
+  .g2 { grid-template-columns: repeat(2, 1fr); }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+  .g4 { grid-template-columns: repeat(4, 1fr); }
+
+  .card {
+    background: var(--card); border: 1px solid var(--card-brd);
+    border-radius: 16px; padding: 1.4rem 1.5rem; backdrop-filter: blur(6px);
+  }
+  .card h3 { margin-bottom: .5rem; color: var(--ink); }
+  .card p { font-size: 1rem; }
+  .card .num { font-size: 2rem; font-weight: 800; color: var(--accent-2); display:block; }
+
+  ul.clean { list-style: none; margin-top: 1.2rem; }
+  ul.clean li {
+    font-size: clamp(1rem, 1.6vw, 1.3rem); color: var(--ink-dim);
+    padding: .5rem 0 .5rem 2rem; position: relative; line-height: 1.4;
+  }
+  ul.clean li::before {
+    content: ""; position: absolute; left: 0; top: .95em;
+    width: .7rem; height: .7rem; border-radius: 3px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  }
+
+  .pill {
+    display: inline-block; padding: .4rem .9rem; margin: .25rem .3rem .25rem 0;
+    border-radius: 999px; border: 1px solid var(--card-brd);
+    background: rgba(139,92,246,0.12); color: var(--ink-dim); font-size: .95rem; font-weight: 600;
+  }
+
+  .step { display:flex; align-items:flex-start; gap:1rem; padding:.7rem 0; }
+  .step .n {
+    flex: 0 0 2.4rem; height:2.4rem; width:2.4rem; border-radius: 10px;
+    display:flex; align-items:center; justify-content:center; font-weight:800;
+    background: linear-gradient(135deg, var(--accent), var(--brand-3)); color:#fff;
+  }
+  .step .body h3 { color: var(--ink); }
+  .step .body p { font-size: .98rem; }
+
+  .status { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; padding:.2rem .55rem; border-radius:999px; margin-left:.6rem; vertical-align:middle; }
+  .status.live { background:rgba(52,211,153,0.15); color:var(--good); border:1px solid rgba(52,211,153,0.4); }
+  .status.build { background:rgba(139,92,246,0.15); color:var(--accent-2); border:1px solid rgba(139,92,246,0.4); }
+  .status.next { background:rgba(251,191,36,0.12); color:var(--warn); border:1px solid rgba(251,191,36,0.4); }
+
+  /* ---------- Title slide ---------- */
+  .title-wrap { display:flex; flex-direction:column; align-items:flex-start; }
+  .logo-row { display:flex; align-items:center; gap:1.2rem; margin-bottom: 2.4rem; }
+  .logo-row .mark { width: 84px; height: 84px; border-radius: 20px; box-shadow: 0 12px 40px rgba(0,0,0,.4);
+    display:flex; align-items:center; justify-content:center; font-size:2.6rem; font-weight:800;
+    background: linear-gradient(135deg, var(--accent), var(--brand-3)); }
+  .logo-row .name { font-size: 2rem; font-weight: 800; letter-spacing: -0.01em; }
+  .badge {
+    display:inline-flex; align-items:center; gap:.5rem; margin-top: 2rem;
+    padding:.5rem 1rem; border-radius: 999px; border:1px solid var(--card-brd);
+    background: var(--card); font-size:.95rem; font-weight:600; color: var(--ink-dim);
+  }
+
+  /* ---------- Table ---------- */
+  table { width:100%; border-collapse: collapse; margin-top: 1.4rem; }
+  th, td { text-align:left; padding: .85rem 1rem; border-bottom: 1px solid var(--card-brd); font-size: 1.05rem; }
+  th { color: var(--accent-2); text-transform: uppercase; letter-spacing:.08em; font-size:.8rem; }
+  td .price { font-weight: 800; color: var(--ink); }
+  tr:hover td { background: rgba(255,255,255,0.03); }
+
+  /* ---------- Chrome ---------- */
+  .progress { position: fixed; top: 0; left: 0; height: 3px; width:0; background: linear-gradient(90deg, var(--accent), var(--accent-2)); z-index: 50; transition: width .3s; }
+  .counter { position: fixed; bottom: 1.2rem; right: 1.6rem; font-size:.85rem; color: var(--ink-faint); z-index: 50; font-variant-numeric: tabular-nums; }
+  .foot { position: fixed; bottom: 1.2rem; left: 1.6rem; font-size:.8rem; color: var(--ink-faint); z-index: 50; letter-spacing:.05em; }
+  .nav-hint { position: fixed; bottom: 1.2rem; left: 50%; transform: translateX(-50%); font-size:.78rem; color: var(--ink-faint); z-index:50; }
+
+  .kicker { color: var(--ink-faint); font-size:.9rem; margin-top: 1.6rem; }
+
+  /* ---------- Print (export to PDF) ---------- */
+  @media print {
+    html, body { overflow: visible; height:auto; }
+    .deck { height:auto; }
+    .slide { display:flex !important; position: relative; height: 100vh; page-break-after: always; inset:auto; animation:none; overflow:hidden; }
+    .progress, .counter, .foot, .nav-hint { display:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="deck" id="deck">
+
+  <!-- 1. TITLE -->
+  <section class="slide active">
+    <div class="title-wrap">
+      <div class="logo-row">
+        <div class="mark">e</div>
+        <div class="name">Echium&nbsp;AI</div>
+      </div>
+      <h1>The conversational layer for<br><span class="accent">building, not just chatting.</span></h1>
+      <p class="lead" style="margin-top:1.6rem;">A European AI platform where a conversation becomes an agent, a document, an app, or a live integration — no code required.</p>
+      <div class="badge">🇪🇺 Made in Madrid · European Union · data stays in the EU</div>
+      <p class="kicker">Investor overview · <span class="todo">[TODO: month / year]</span> · Confidential</p>
+    </div>
+  </section>
+
+  <!-- 2. PROBLEM -->
+  <section class="slide">
+    <div class="eyebrow">The problem</div>
+    <h2>AI is powerful, but it stops at the chat window.</h2>
+    <p class="lead">Teams can chat with a model, but turning that into something durable — an agent, documentation, an internal tool, a system integration — still means engineers, glue code, and a stack of SaaS subscriptions.</p>
+    <div class="grid g3">
+      <div class="card"><h3>Chat is a dead end</h3><p>Great answers evaporate. Nothing persists, compounds, or ships.</p></div>
+      <div class="card"><h3>Building needs engineers</h3><p>Agents, apps and integrations require dev time most teams don't have.</p></div>
+      <div class="card"><h3>US-hosted &amp; fragmented</h3><p>European teams juggle many tools and worry where their data lives.</p></div>
+    </div>
+  </section>
+
+  <!-- 3. SOLUTION -->
+  <section class="slide">
+    <div class="eyebrow">The solution</div>
+    <h2>One conversation. Five things it can become.</h2>
+    <p class="lead">Echium turns natural-language conversation into the control surface for the whole AI stack — starting with chat and expanding outward through five connected workstreams.</p>
+    <div class="grid g3" style="margin-top:2rem;">
+      <div class="card"><span class="num">1</span><h3>Chat Platform</h3><p>The intelligent entry point.</p></div>
+      <div class="card"><span class="num">2</span><h3>Agents &amp; Living Docs</h3><p>Build agents by talking.</p></div>
+      <div class="card"><span class="num">3</span><h3>Apps Platform</h3><p>Ship real apps from chat.</p></div>
+      <div class="card"><span class="num">4</span><h3>MCP Hub</h3><p>Connect the tools you use.</p></div>
+      <div class="card"><span class="num">5</span><h3>Custom MCP &amp; API</h3><p>Expose your systems to AI.</p></div>
+      <div class="card" style="border-style:dashed;"><span class="num">🇪🇺</span><h3>European by default</h3><p>Built &amp; hosted in the EU.</p></div>
+    </div>
+  </section>
+
+  <!-- 4. WHY NOW -->
+  <section class="slide">
+    <div class="eyebrow">Why now</div>
+    <h2>The window is open — briefly.</h2>
+    <div class="grid g2">
+      <div class="card"><h3>Foundation models are commoditised</h3><p>Claude, Nova, Mistral, Llama, DeepSeek are all one API away. The value has moved up the stack — to orchestration, memory and delivery. That's where we sit.</p></div>
+      <div class="card"><h3>Europe wants a European option</h3><p>Regulation (AI Act, GDPR) and sovereignty concerns are pushing EU teams to look for alternatives to US-hosted tools. "Made in the EU" is now a buying reason.</p></div>
+      <div class="card"><h3>No-code AI building is unsolved</h3><p>Everyone can chat; almost no one can turn that into shipped software. The team that closes that gap owns the workflow.</p></div>
+      <div class="card"><h3>The app-store toll is optional</h3><p>The EU DMA + web/PWA distribution let us reach mobile users without paying Apple or Google a 15–30% cut. Direct-to-user economics.</p></div>
+    </div>
+  </section>
+
+  <!-- 5. PRODUCT TODAY -->
+  <section class="slide">
+    <div class="eyebrow">Product today</div>
+    <h2>Live now: the Chat Platform <span class="status live">MVP live</span></h2>
+    <p class="lead">A multilingual generative-AI platform in production at <span class="accent">chat.echium.ai</span> — the foundation everything else builds on.</p>
+    <div class="grid g2">
+      <div class="card"><h3>Multi-model chat</h3><p>Claude, Amazon Nova, Mistral, Llama and DeepSeek behind one interface — pick the right model per task.</p></div>
+      <div class="card"><h3>Custom bots with knowledge (RAG)</h3><p>Bring your own instructions and documents; share bots through a built-in bot store.</p></div>
+      <div class="card"><h3>Agents &amp; tool use</h3><p>Break down and execute multi-step tasks, calling external tools automatically.</p></div>
+      <div class="card"><h3>Tiered orchestration</h3><p>One orchestrator per paid tier; legacy RAG models refactored into orchestrators — the base for higher tiers.</p></div>
+    </div>
+    <p class="kicker">Web today · installable PWA on iOS/Android · direct-distributed Android app · 10+ UI languages.</p>
+  </section>
+
+  <!-- 6. WORKSTREAM 1 -->
+  <section class="slide">
+    <div class="eyebrow">Workstream 1</div>
+    <h2>Chat Platform <span class="status live">Live now</span></h2>
+    <p class="lead">The intelligent conversation layer — and the entry point to everything else.</p>
+    <ul class="clean">
+      <li>Intelligent conversation layer across leading foundation models</li>
+      <li>Tiered orchestration — one orchestrator per paid tier</li>
+      <li>Existing RAG models refactored into orchestrators</li>
+      <li>The front door: every other workstream is reached from here</li>
+    </ul>
+  </section>
+
+  <!-- 7. WORKSTREAM 2 -->
+  <section class="slide">
+    <div class="eyebrow">Workstream 2</div>
+    <h2>Agent Wizard &amp; Living Documentation <span class="status build">In build</span></h2>
+    <p class="lead">Anyone can create a capable AI agent by talking to a guided wizard — and the agent documents itself.</p>
+    <div class="grid g2">
+      <ul class="clean">
+        <li>Guided wizard for AI agent creation</li>
+        <li>Agents generate their own steering docs</li>
+        <li>Auto-generated agent description</li>
+      </ul>
+      <ul class="clean">
+        <li>Collaborative docs (Quip-like + AI)</li>
+        <li>Users comment → AI responds in context</li>
+        <li>Docs automatically become a RAG knowledge base; add your own sources</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 8. WORKSTREAM 3 -->
+  <section class="slide">
+    <div class="eyebrow">Workstream 3</div>
+    <h2>Apps Platform <span class="status next">On roadmap</span></h2>
+    <p class="lead">Describe an app in chat; Echium builds, hosts and runs it — and each app is itself an intelligent agent.</p>
+    <div class="grid g2">
+      <ul class="clean">
+        <li>AI-built apps (HTML/JS) from conversation</li>
+        <li>Hosted on subdomains: <span class="accent">my-app.apps.echium.ai</span></li>
+        <li>Apps have memory, databases, persistence</li>
+        <li>Each app is an intelligent agent</li>
+      </ul>
+      <ul class="clean">
+        <li>Modify apps conversationally</li>
+        <li>Premium: custom domains <span class="accent">app.your-domain.com</span></li>
+        <li>Priced per app by functionality level</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 9. WORKSTREAM 4 -->
+  <section class="slide">
+    <div class="eyebrow">Workstream 4</div>
+    <h2>MCP Integration Hub <span class="status next">On roadmap</span></h2>
+    <p class="lead">Connect the tools teams already use to their agents and apps — with no code.</p>
+    <ul class="clean">
+      <li>Browse and connect existing MCPs through a simple UI</li>
+      <li>Codesys, databases, SaaS tools, third-party MCPs</li>
+      <li>No-code wiring of MCPs to agents and apps</li>
+      <li>An MCP marketplace for discovery and reuse</li>
+    </ul>
+  </section>
+
+  <!-- 10. WORKSTREAM 5 -->
+  <section class="slide">
+    <div class="eyebrow">Workstream 5</div>
+    <h2>Custom MCP &amp; API Creation <span class="status next">On roadmap</span></h2>
+    <p class="lead">Help companies expose their own internal systems to AI — and publish them to the marketplace.</p>
+    <ul class="clean">
+      <li>Help companies build their own MCPs</li>
+      <li>API creation wizard — expose internal systems to AI</li>
+      <li>Dedicated agents per MCP / API</li>
+      <li>Companies can publish to the marketplace</li>
+    </ul>
+    <p class="kicker">Workstreams 4 &amp; 5 create a two-sided marketplace: consumers of integrations and publishers of them.</p>
+  </section>
+
+  <!-- 11. THE FLYWHEEL / MOAT -->
+  <section class="slide">
+    <div class="eyebrow">Why it compounds</div>
+    <h2>Each workstream feeds the next.</h2>
+    <div class="grid g4">
+      <div class="card"><h3>Chat</h3><p>Brings users in and captures intent.</p></div>
+      <div class="card"><h3>Agents + Docs</h3><p>Turn intent into reusable knowledge &amp; automation.</p></div>
+      <div class="card"><h3>Apps + MCP</h3><p>Turn knowledge into shipped tools &amp; live integrations.</p></div>
+      <div class="card"><h3>Marketplace</h3><p>Publishers attract users; users attract publishers.</p></div>
+    </div>
+    <p class="lead" style="margin-top:2rem;">The more a customer builds — agents, docs, apps, integrations — the higher the switching cost and the more the marketplace network grows. Data and workflows stay inside Echium.</p>
+  </section>
+
+  <!-- 12. MARKET -->
+  <section class="slide">
+    <div class="eyebrow">Market</div>
+    <h2>A large market, entered EU-first.</h2>
+    <div class="grid g3">
+      <div class="card"><span class="num">TAM</span><h3><span class="todo">[TODO $]</span></h3><p>Global generative-AI application &amp; agent platforms.</p></div>
+      <div class="card"><span class="num">SAM</span><h3><span class="todo">[TODO $]</span></h3><p>EU SMBs &amp; teams wanting EU-hosted AI tooling.</p></div>
+      <div class="card"><span class="num">SOM</span><h3><span class="todo">[TODO $]</span></h3><p>Reachable via direct + PWA distribution in yr 1–2.</p></div>
+    </div>
+    <p class="lead" style="margin-top:1.8rem;">Beachhead: European teams who want a single, sovereign place to chat, build agents, and ship internal tools — then expand outward from chat into apps and integrations. <span class="todo">[TODO: replace with sourced market sizing]</span></p>
+  </section>
+
+  <!-- 13. BUSINESS MODEL -->
+  <section class="slide">
+    <div class="eyebrow">Business model</div>
+    <h2>Subscriptions + usage credits + marketplace.</h2>
+    <table>
+      <tr><th>Plan</th><th>Price</th><th>For</th></tr>
+      <tr><td>Free</td><td><span class="price">€0</span></td><td>Trial / individual, server-side limits</td></tr>
+      <tr><td>Starter</td><td><span class="price">€5</span>/mo</td><td>Light individual use</td></tr>
+      <tr><td>Pro</td><td><span class="price">€20</span>/mo</td><td>Power users &amp; creators</td></tr>
+      <tr><td>Business</td><td><span class="price">€100</span>/mo</td><td>Teams</td></tr>
+      <tr><td>Max</td><td><span class="price">€200</span>/mo</td><td>Heavy / org usage</td></tr>
+    </table>
+    <p class="kicker">Plus one-time usage credits (€10 / €25 / €50), per-app pricing (Workstream 3), and marketplace take-rate (Workstreams 4–5). Billing via Paddle (merchant of record) — web-first, so no app-store cut. <span class="todo">[TODO: confirm final live pricing &amp; margins]</span></p>
+  </section>
+
+  <!-- 14. GO TO MARKET -->
+  <section class="slide">
+    <div class="eyebrow">Go to market &amp; distribution</div>
+    <h2>Direct-to-user, no gatekeeper toll.</h2>
+    <div class="grid g3">
+      <div class="card"><h3>Web first</h3><p>chat.echium.ai — full product, instant access, Paddle checkout in-app.</p></div>
+      <div class="card"><h3>PWA (iOS + Android)</h3><p>Installable from the browser. €0 to Apple/Google, works today, global.</p></div>
+      <div class="card"><h3>Direct Android app</h3><p>Signed APK distributed from our own site — no Play Store, no 15–30% cut.</p></div>
+    </div>
+    <p class="lead" style="margin-top:1.8rem;">Web-first billing keeps 100% of revenue out of store IAP rules. Growth via product-led signups, the bot/MCP marketplaces, and EU-sovereignty positioning.</p>
+  </section>
+
+  <!-- 15. TECH / DEFENSIBILITY -->
+  <section class="slide">
+    <div class="eyebrow">Technology</div>
+    <h2>Serverless, EU-hosted, model-agnostic.</h2>
+    <div class="grid g2">
+      <div class="card"><h3>Built on AWS managed services</h3><p>Bedrock, Lambda, DynamoDB, CloudFront, Cognito, OpenSearch Serverless, Step Functions — scalable with near-zero infra overhead.</p></div>
+      <div class="card"><h3>Model-agnostic orchestration</h3><p>Any foundation model via one interface; we're not betting the company on a single vendor.</p></div>
+      <div class="card"><h3>EU data residency</h3><p>Deployed in-region (eu-west-1); a genuine sovereignty story for European buyers.</p></div>
+      <div class="card"><h3>One codebase, every surface</h3><p>Web, PWA and native shells all ship from the same React app — small team, wide reach.</p></div>
+    </div>
+  </section>
+
+  <!-- 16. TRACTION -->
+  <section class="slide">
+    <div class="eyebrow">Traction</div>
+    <h2>Where we are.</h2>
+    <div class="grid g4">
+      <div class="card"><span class="num"><span class="todo">[#]</span></span><h3>Signups</h3><p>Total registered users.</p></div>
+      <div class="card"><span class="num"><span class="todo">[#]</span></span><h3>Active users</h3><p>Weekly / monthly active.</p></div>
+      <div class="card"><span class="num"><span class="todo">€[#]</span></span><h3>MRR</h3><p>Recurring revenue.</p></div>
+      <div class="card"><span class="num"><span class="todo">[#]</span></span><h3>Pilots / waitlist</h3><p>Design partners.</p></div>
+    </div>
+    <ul class="clean" style="margin-top:1.6rem;">
+      <li>Chat Platform MVP <span class="accent">live in production</span> at chat.echium.ai</li>
+      <li>Billing, mobile distribution &amp; EU infrastructure <span class="accent">built and deploying</span></li>
+      <li><span class="todo">[TODO: add real metrics, logos, quotes, or "pre-launch" honestly]</span></li>
+    </ul>
+  </section>
+
+  <!-- 17. ROADMAP -->
+  <section class="slide">
+    <div class="eyebrow">Roadmap</div>
+    <h2>From chat to a full building platform.</h2>
+    <div class="step"><div class="n">1</div><div class="body"><h3>Now — Chat Platform live + billing</h3><p>Multi-model chat, RAG bots, agents; Paddle billing &amp; usage enforcement going live.</p></div></div>
+    <div class="step"><div class="n">2</div><div class="body"><h3>Next — Agent Wizard &amp; Living Docs</h3><p>Guided agent creation, self-writing docs that become knowledge bases.</p></div></div>
+    <div class="step"><div class="n">3</div><div class="body"><h3>Then — Apps Platform</h3><p>Conversationally-built, hosted apps with memory &amp; persistence.</p></div></div>
+    <div class="step"><div class="n">4</div><div class="body"><h3>Then — MCP Hub + Custom MCP/API + Marketplace</h3><p>Connect and publish integrations; open the two-sided marketplace.</p></div></div>
+    <p class="kicker"><span class="todo">[TODO: attach rough quarters/dates to each phase]</span></p>
+  </section>
+
+  <!-- 18. TEAM -->
+  <section class="slide">
+    <div class="eyebrow">Team</div>
+    <h2>Who's building this.</h2>
+    <div class="grid g3">
+      <div class="card"><h3><span class="todo">[Founder name]</span></h3><p><span class="todo">[Role — one-line background: prior companies, domain, why you]</span></p></div>
+      <div class="card"><h3><span class="todo">[Founder / key hire]</span></h3><p><span class="todo">[Role — one-line background]</span></p></div>
+      <div class="card"><h3><span class="todo">[Advisor / hire]</span></h3><p><span class="todo">[Role — one-line background]</span></p></div>
+    </div>
+    <p class="lead" style="margin-top:1.8rem;">Small, technical, EU-based team shipping across the full stack. <span class="todo">[TODO: add the real people, headcount, and any notable advisors.]</span></p>
+  </section>
+
+  <!-- 19. THE ASK -->
+  <section class="slide">
+    <div class="eyebrow">The ask</div>
+    <h2>Raising <span class="accent todo">[€ amount]</span> <span class="todo">[pre-seed / seed]</span>.</h2>
+    <p class="lead">To take Echium from a live chat MVP to the full conversational building platform — funding the next three workstreams and EU go-to-market.</p>
+    <div class="grid g3" style="margin-top:1.8rem;">
+      <div class="card"><h3>Product &amp; engineering</h3><p><span class="todo">[%]</span> — ship Agent Wizard, Apps Platform, MCP Hub.</p></div>
+      <div class="card"><h3>Infrastructure &amp; models</h3><p><span class="todo">[%]</span> — Bedrock/AWS usage, EU hosting, scaling.</p></div>
+      <div class="card"><h3>Go-to-market</h3><p><span class="todo">[%]</span> — EU acquisition, marketplace seeding.</p></div>
+    </div>
+    <p class="kicker"><span class="todo">[TODO: milestones this round unlocks — e.g. X users, €Y MRR, N workstreams live, runway of Z months]</span></p>
+  </section>
+
+  <!-- 20. CLOSING -->
+  <section class="slide">
+    <div class="title-wrap">
+      <div class="logo-row"><div class="mark">e</div><div class="name">Echium&nbsp;AI</div></div>
+      <h1>Chat is the door.<br><span class="accent">Building is the room.</span></h1>
+      <p class="lead" style="margin-top:1.6rem;">A European platform to chat, build agents, ship apps, and connect everything — from one conversation.</p>
+      <div class="badge">🇪🇺 Made in Madrid · European Union</div>
+      <p class="kicker"><span class="todo">[name]</span> · <span class="todo">[email]</span> · chat.echium.ai</p>
+    </div>
+  </section>
+
+</div>
+
+<div class="counter" id="counter"></div>
+<div class="foot">ECHIUM AI · CONFIDENTIAL</div>
+<div class="nav-hint">← → or Space to navigate · F fullscreen · P print/PDF</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  let i = 0;
+  const progress = document.getElementById('progress');
+  const counter  = document.getElementById('counter');
+
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, idx) => s.classList.toggle('active', idx === i));
+    progress.style.width = ((i + 1) / slides.length * 100) + '%';
+    counter.textContent = (i + 1) + ' / ' + slides.length;
+    // reset scroll on the active slide
+    slides[i].scrollTop = 0;
+  }
+
+  function next() { show(i + 1); }
+  function prev() { show(i - 1); }
+
+  document.addEventListener('keydown', (e) => {
+    if (['ArrowRight', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); next(); }
+    else if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); prev(); }
+    else if (e.key === 'Home') { show(0); }
+    else if (e.key === 'End') { show(slides.length - 1); }
+    else if (e.key.toLowerCase() === 'f') {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+    else if (e.key.toLowerCase() === 'p') { window.print(); }
+  });
+
+  // click right half = next, left half = prev
+  document.getElementById('deck').addEventListener('click', (e) => {
+    if (e.target.closest('a')) return;
+    (e.clientX > window.innerWidth / 2) ? next() : prev();
+  });
+
+  show(0);
+</script>
+</body>
+</html>

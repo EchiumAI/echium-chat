@@ -134,7 +134,16 @@ jobs:
         # The CDK construct in this repo runs `npm run build` on the frontend
         # and packages the backend Lambda automatically during deploy, so we
         # don't need to build them as separate steps.
-        run: npx cdk deploy --all --require-approval never --concurrency 4
+        #
+        # deckAuthPassword gates the /deck/ investor deck (HTTP Basic Auth).
+        # It comes from the DECK_PASSWORD repo secret so it stays out of git;
+        # if the secret is unset the CDK falls back to a placeholder default.
+        env:
+          DECK_PASSWORD: ${{ secrets.DECK_PASSWORD }}
+        run: >-
+          npx cdk deploy --all --require-approval never --concurrency 4
+          -c deckAuthUser=echium
+          -c deckAuthPassword="$DECK_PASSWORD"
 
       - name: Print frontend URL
         if: success()

@@ -11,8 +11,12 @@ import {
   Distribution,
   ViewerProtocolPolicy,
   GeoRestriction,
+  Function as CloudFrontFunction,
+  FunctionCode,
+  FunctionEventType,
 } from "aws-cdk-lib/aws-cloudfront";
 import { S3BucketOrigin } from "aws-cdk-lib/aws-cloudfront-origins";
+import { BucketDeployment, Source } from "aws-cdk-lib/aws-s3-deployment";
 import { NodejsBuild } from "@cdklabs/deploy-time-build";
 import { Auth } from "./auth";
 import { Idp } from "../utils/identity-provider";
@@ -118,6 +122,57 @@ export class Frontend extends Construct {
       });
     }
 
+    // ---- Investor deck (/deck/*) ----------------------------------------
+    // The deck (repo `deck/`) is uploaded to the downloads bucket under the
+    // `deck/` prefix and served under the `/deck/*` behavior. A CloudFront
+    // Function gates it behind HTTP Basic Auth (a single shared password) and
+    // rewrites `/deck` and `/deck/` to `/deck/index.html`.
+    //
+    // Credentials come from CDK context so they need not be committed:
+    //   npx cdk deploy ... -c deckAuthUser=echium -c deckAuthPassword=<secret>
+    // The compared value is baked into the function at synth time (CloudFront
+    // Functions cannot read env/secrets at runtime). Treat this as a light
+    // gate for a shared deck, not high-security auth.
+    // `|| default` (not `??`) so an empty string from an unset CI secret
+    // falls back to the placeholder rather than creating an empty-password gate.
+    const deckAuthUser: string =
+      (this.node.tryGetContext("deckAuthUser") || "").trim() || "echium";
+    const deckAuthPassword: string =
+      (this.node.tryGetContext("deckAuthPassword") || "").trim() ||
+      "change-me-echium-deck";
+    const expectedAuthHeader =
+      "Basic " +
+      Buffer.from(`${deckAuthUser}:${deckAuthPassword}`).toString("base64");
+
+    const deckAuthFunction = new CloudFrontFunction(this, "DeckAuthFunction", {
+      comment: "Basic-auth gate + index rewrite for /deck/*",
+      code: FunctionCode.fromInline(`
+function handler(event) {
+  var request = event.request;
+  var headers = request.headers;
+  var expected = ${JSON.stringify(expectedAuthHeader)};
+
+  if (!headers.authorization || headers.authorization.value !== expected) {
+    return {
+      statusCode: 401,
+      statusDescription: "Unauthorized",
+      headers: {
+        "www-authenticate": { value: 'Basic realm="Echium Investor Deck"' }
+      }
+    };
+  }
+
+  var uri = request.uri;
+  if (uri === "/deck" || uri === "/deck/") {
+    request.uri = "/deck/index.html";
+  } else if (uri.endsWith("/")) {
+    request.uri = uri + "index.html";
+  }
+  return request;
+}
+`),
+    });
+
     const distribution = new Distribution(this, "Distribution", {
       defaultRootObject: "index.html",
       defaultBehavior: {
@@ -132,6 +187,19 @@ export class Frontend extends Construct {
           origin: S3BucketOrigin.withOriginAccessControl(downloadsBucket),
           viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
           cachePolicy: CachePolicy.CACHING_OPTIMIZED,
+        },
+        // Password-protected investor deck, served from the same downloads
+        // bucket (under the `deck/` prefix) so it survives web redeploys.
+        "/deck/*": {
+          origin: S3BucketOrigin.withOriginAccessControl(downloadsBucket),
+          viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
+          cachePolicy: CachePolicy.CACHING_OPTIMIZED,
+          functionAssociations: [
+            {
+              function: deckAuthFunction,
+              eventType: FunctionEventType.VIEWER_REQUEST,
+            },
+          ],
         },
       },
       // Apply geo restriction allowlist only when countries are provided
@@ -196,11 +264,30 @@ export class Frontend extends Construct {
 
     this.downloadsBucket = downloadsBucket;
 
+    // Upload the investor deck (repo `deck/`) into the downloads bucket under
+    // the `deck/` prefix and invalidate `/deck/*`. `prune: false` and the
+    // scoped key prefix ensure this never removes the Android APKs that also
+    // live in this bucket (under `downloads/`).
+    new BucketDeployment(this, "DeckDeployment", {
+      sources: [Source.asset("../deck")],
+      destinationBucket: downloadsBucket,
+      destinationKeyPrefix: "deck",
+      prune: false,
+      distribution,
+      distributionPaths: ["/deck/*"],
+    });
+
     // Surfaced so the Android CI workflow can locate the upload target and
     // issue a CloudFront invalidation after publishing a new APK.
     new CfnOutput(this, "DownloadsBucketName", {
       value: downloadsBucket.bucketName,
       description: "S3 bucket for direct-download artifacts (Android APK)",
+    });
+    new CfnOutput(this, "DeckUrl", {
+      value: this.alternateDomainName
+        ? `https://${this.alternateDomainName}/deck/`
+        : `https://${distribution.distributionDomainName}/deck/`,
+      description: "Password-protected investor deck URL",
     });
     new CfnOutput(this, "DistributionId", {
       value: distribution.distributionId,
