@@ -12,11 +12,16 @@ import useDrawer from '../hooks/useDrawer';
 import ButtonIcon from './ButtonIcon';
 import {
   PiArrowRight,
+  PiCaretDown,
+  PiCaretRight,
   PiChartLine,
   PiChat,
   PiChatCenteredDotsDuotone,
   PiCheck,
   PiCompass,
+  PiFolder,
+  PiFolderPlus,
+  PiFolderSimple,
   PiListBullets,
   PiNotePencil,
   PiPencilLine,
@@ -27,7 +32,7 @@ import {
   PiX,
 } from 'react-icons/pi';
 import LazyOutputText from './LazyOutputText';
-import { ConversationMeta } from '../@types/conversation';
+import { ConversationFolder, ConversationMeta } from '../@types/conversation';
 import { BotListItem } from '../@types/bot';
 import { isMobile } from 'react-device-detect';
 import useChat from '../hooks/useChat';
@@ -52,6 +57,7 @@ const BOTS_ENABLED = false;
 type Props = BaseProps & {
   isAdmin: boolean;
   conversations?: ConversationMeta[];
+  folders?: ConversationFolder[];
   pinnedBots?: BotListItem[];
   starredBots?: BotListItem[];
   recentlyUsedUnstarredBots?: BotListItem[];
@@ -64,23 +70,32 @@ type Props = BaseProps & {
   onClearConversations: () => void;
   onSelectLanguage: () => void;
   onClickDrawerOptions: () => void;
+  onCreateFolder: (name: string) => void;
+  onRenameFolder: (folderId: string, name: string) => void;
+  onDeleteFolder: (folderId: string) => void;
+  onMoveConversation: (conversationId: string, folderId: string | null) => void;
 };
 
 type ItemProps = BaseProps & {
   label: string;
   conversationId: string;
   generatedTitle?: boolean;
+  folders?: ConversationFolder[];
+  isFiled?: boolean;
   updateTitle: (conversationId: string, title: string) => Promise<void>;
   onClick: () => void;
   onDelete: () => void;
+  onMoveToFolder?: (folderId: string | null) => void;
 };
 
 const Item: React.FC<ItemProps> = (props) => {
+  const { t } = useTranslation();
   const { pathname } = useLocation();
   const { conversationId: pathParam } = useParams();
   const { conversationId } = useChat();
   const [tempLabel, setTempLabel] = useState('');
   const [editing, setEditing] = useState(false);
+  const [showMove, setShowMove] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -175,6 +190,55 @@ const Item: React.FC<ItemProps> = (props) => {
         <>
           {active && !editing && (
             <>
+              {props.onMoveToFolder && (
+                <div className="relative">
+                  <ButtonIcon
+                    className="text-base"
+                    onClick={() => setShowMove((v) => !v)}>
+                    <PiFolderSimple />
+                  </ButtonIcon>
+                  {showMove && (
+                    <div className="absolute right-0 top-full z-50 mt-1 max-h-64 w-52 overflow-y-auto rounded border border-white/20 bg-aws-squid-ink-light py-1 text-white shadow-lg dark:bg-aws-ui-color-dark">
+                      <div className="px-3 py-1 text-xs text-white/50">
+                        {t('folder.moveTo')}
+                      </div>
+                      {(props.folders ?? []).map((folder) => (
+                        <button
+                          key={folder.id}
+                          type="button"
+                          className="flex w-full items-center gap-2 truncate px-3 py-1.5 text-left hover:bg-white/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            props.onMoveToFolder?.(folder.id);
+                            setShowMove(false);
+                          }}>
+                          <PiFolder className="shrink-0" />
+                          <span className="truncate">{folder.name}</span>
+                        </button>
+                      ))}
+                      {(props.folders ?? []).length === 0 && (
+                        <div className="px-3 py-1 text-xs text-white/50">
+                          {t('folder.noFolders')}
+                        </div>
+                      )}
+                      {props.isFiled && (
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 truncate border-t border-white/10 px-3 py-1.5 text-left hover:bg-white/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            props.onMoveToFolder?.(null);
+                            setShowMove(false);
+                          }}>
+                          {t('folder.removeFromFolder')}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
               <ButtonIcon className="text-base" onClick={onClickEdit}>
                 <PiPencilLine />
               </ButtonIcon>
@@ -205,18 +269,107 @@ const Item: React.FC<ItemProps> = (props) => {
   );
 };
 
+type FolderSectionProps = {
+  folder: ConversationFolder;
+  children: React.ReactNode;
+  onRename: () => void;
+  onDelete: () => void;
+};
+
+const FolderSection: React.FC<FolderSectionProps> = ({
+  folder,
+  children,
+  onRename,
+  onDelete,
+}) => {
+  const [open, setOpen] = useState(true);
+  return (
+    <div>
+      <div className="group flex items-center justify-between px-2 py-1.5 hover:bg-white/5">
+        <button
+          type="button"
+          className="flex min-w-0 flex-1 items-center gap-1.5 truncate text-left"
+          onClick={() => setOpen((o) => !o)}>
+          {open ? (
+            <PiCaretDown className="shrink-0" />
+          ) : (
+            <PiCaretRight className="shrink-0" />
+          )}
+          <PiFolder className="shrink-0" />
+          <span className="truncate">{folder.name}</span>
+        </button>
+        <div className="hidden shrink-0 gap-1 group-hover:flex">
+          <ButtonIcon className="text-base" onClick={onRename}>
+            <PiPencilLine />
+          </ButtonIcon>
+          <ButtonIcon className="text-base" onClick={onDelete}>
+            <PiTrash />
+          </ButtonIcon>
+        </div>
+      </div>
+      {open && (
+        <div className="ml-2 border-l border-white/10 pl-1">{children}</div>
+      )}
+    </div>
+  );
+};
+
 const Drawer: React.FC<Props> = (props) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { getPageLabel } = usePageLabel();
   const { opened, switchOpen, drawerOptions } = useDrawer();
-  const { conversations, pinnedBots, starredBots, recentlyUsedUnstarredBots } = props;
+  const {
+    conversations,
+    folders,
+    pinnedBots,
+    starredBots,
+    recentlyUsedUnstarredBots,
+    onCreateFolder,
+    onRenameFolder,
+    onDeleteFolder,
+    onMoveConversation,
+  } = props;
+
+  const handleCreateFolder = useCallback(() => {
+    const name = window.prompt(t('folder.namePrompt') ?? '');
+    if (name && name.trim()) {
+      onCreateFolder(name.trim());
+    }
+  }, [onCreateFolder, t]);
+
+  const handleRenameFolder = useCallback(
+    (folder: ConversationFolder) => {
+      const name = window.prompt(t('folder.namePrompt') ?? '', folder.name);
+      if (name && name.trim() && name.trim() !== folder.name) {
+        onRenameFolder(folder.id, name.trim());
+      }
+    },
+    [onRenameFolder, t]
+  );
+
+  const handleDeleteFolder = useCallback(
+    (folder: ConversationFolder) => {
+      if (window.confirm(t('folder.deleteConfirm', { name: folder.name }))) {
+        onDeleteFolder(folder.id);
+      }
+    },
+    [onDeleteFolder, t]
+  );
 
   const location = useLocation();
 
   const [prevConversations, setPrevConversations] =
     useState<typeof conversations>();
   const [generateTitleIndex, setGenerateTitleIndex] = useState(-1);
+
+  const generateTitleConvId = useMemo(
+    () =>
+      generateTitleIndex >= 0
+        ? conversations?.[generateTitleIndex]?.id
+        : undefined,
+    [conversations, generateTitleIndex]
+  );
 
   const { newChat, conversationId } = useChat();
   const { botId } = useParams();
@@ -352,24 +505,24 @@ const Drawer: React.FC<Props> = (props) => {
 
               {BOTS_ENABLED &&
               drawerOptions.show.pinnedBots &&
-                pinnedBots?.filter((bot) => bot.available).length ? (
-                  <ExpandableDrawerGroup
-                    label={t('app.pinnedBots')}
-                    className="border-t bg-aws-squid-ink-light pt-1 dark:bg-aws-squid-ink-dark">
-                    {pinnedBots
-                      .filter((bot) => bot.available)
-                      .map((bot) => (
-                        <DrawerItem
-                          key={bot.id}
-                          isActive={botId === bot.id && !conversationId}
-                          to={`/bot/${bot.id}`}
-                          icon={<IconPinnedBot showAlways />}
-                          labelComponent={bot.title}
-                          onClick={onClickNewBotChat}
-                        />
-                      ))}
-                  </ExpandableDrawerGroup>
-                ) : null}
+              pinnedBots?.filter((bot) => bot.available).length ? (
+                <ExpandableDrawerGroup
+                  label={t('app.pinnedBots')}
+                  className="border-t bg-aws-squid-ink-light pt-1 dark:bg-aws-squid-ink-dark">
+                  {pinnedBots
+                    .filter((bot) => bot.available)
+                    .map((bot) => (
+                      <DrawerItem
+                        key={bot.id}
+                        isActive={botId === bot.id && !conversationId}
+                        to={`/bot/${bot.id}`}
+                        icon={<IconPinnedBot showAlways />}
+                        labelComponent={bot.title}
+                        onClick={onClickNewBotChat}
+                      />
+                    ))}
+                </ExpandableDrawerGroup>
+              ) : null}
 
               {BOTS_ENABLED && drawerOptions.show.starredBots && (
                 <ExpandableDrawerGroup
@@ -481,18 +634,76 @@ const Drawer: React.FC<Props> = (props) => {
                       <Skeleton className="h-10 w-full bg-aws-sea-blue-light/50 dark:bg-aws-sea-blue-dark/50" />
                     </div>
                   )}
+                  {conversations && (
+                    <button
+                      type="button"
+                      onClick={handleCreateFolder}
+                      className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-xs text-white/70 hover:bg-white/5">
+                      <PiFolderPlus className="text-base" />
+                      {t('folder.newFolder')}
+                    </button>
+                  )}
+
+                  {(folders ?? []).map((folder) => {
+                    const items = (conversations ?? []).filter(
+                      (c) => c.folderId === folder.id
+                    );
+                    return (
+                      <FolderSection
+                        key={folder.id}
+                        folder={folder}
+                        onRename={() => handleRenameFolder(folder)}
+                        onDelete={() => handleDeleteFolder(folder)}>
+                        {items.length === 0 && (
+                          <div className="px-3 py-1 text-xs text-white/50">
+                            {t('folder.empty')}
+                          </div>
+                        )}
+                        {items.map((conversation) => (
+                          <Item
+                            key={conversation.id}
+                            className="grow"
+                            label={conversation.title}
+                            conversationId={conversation.id}
+                            generatedTitle={
+                              conversation.id === generateTitleConvId
+                            }
+                            folders={folders}
+                            isFiled
+                            updateTitle={props.updateConversationTitle}
+                            onClick={closeSmallDrawer}
+                            onDelete={() =>
+                              props.onDeleteConversation(conversation)
+                            }
+                            onMoveToFolder={(folderId) =>
+                              onMoveConversation(conversation.id, folderId)
+                            }
+                          />
+                        ))}
+                      </FolderSection>
+                    );
+                  })}
+
                   {conversations
-                    ?.slice(0, drawerOptions.displayCount.conversationHistory)
-                    .map((conversation, idx) => (
+                    ?.filter((c) => !c.folderId)
+                    .slice(0, drawerOptions.displayCount.conversationHistory)
+                    .map((conversation) => (
                       <Item
-                        key={idx}
+                        key={conversation.id}
                         className="grow"
                         label={conversation.title}
                         conversationId={conversation.id}
-                        generatedTitle={idx === generateTitleIndex}
+                        generatedTitle={conversation.id === generateTitleConvId}
+                        folders={folders}
+                        isFiled={false}
                         updateTitle={props.updateConversationTitle}
                         onClick={closeSmallDrawer}
-                        onDelete={() => props.onDeleteConversation(conversation)}
+                        onDelete={() =>
+                          props.onDeleteConversation(conversation)
+                        }
+                        onMoveToFolder={(folderId) =>
+                          onMoveConversation(conversation.id, folderId)
+                        }
                       />
                     ))}
 

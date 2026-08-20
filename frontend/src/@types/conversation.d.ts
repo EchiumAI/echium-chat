@@ -128,7 +128,7 @@ export type PostMessageResponse = {
 };
 
 export type SearchHighlightModel = {
-  fieldName: string;  // "Title" or "MessageMap"
+  fieldName: string; // "Title" or "MessageMap"
   fragments: string[]; // Text fragments containing the search term
 };
 
@@ -136,9 +136,16 @@ export type ConversationMeta = {
   id: string;
   title: string;
   createTime: number;
-  lastMessageId: string; 
+  lastMessageId: string;
   model: Model;
   botId?: string;
+  folderId?: string | null;
+};
+
+export type ConversationFolder = {
+  id: string;
+  name: string;
+  createTime: number;
 };
 
 export type ConversationSearchMeta = {

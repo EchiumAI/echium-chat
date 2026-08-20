@@ -3,6 +3,16 @@ import en from '../en';
 const translation: typeof en = {
   // const translation = {
   translation: {
+    folder: {
+      newFolder: '新しいフォルダ',
+      namePrompt: 'フォルダ名',
+      moveTo: 'フォルダに移動',
+      removeFromFolder: 'フォルダから外す',
+      noFolders: 'フォルダがありません',
+      empty: '会話がありません',
+      deleteConfirm:
+        'フォルダ「{{name}}」を削除しますか？中の会話は削除されず保持されます。',
+    },
     signIn: {
       button: {
         login: 'ログイン',
@@ -72,7 +82,8 @@ const translation: typeof en = {
       modelLocked: '現在のプラン対象外',
       modelLockedWith: '{{plan}}で利用可能',
       upgradeTitle: 'このモデルを使うにはアップグレード',
-      upgradeBody: '{{model}} は現在のプランに含まれていません。アップグレードすると利用できます。',
+      upgradeBody:
+        '{{model}} は現在のプランに含まれていません。アップグレードすると利用できます。',
       upgradeCta: 'プランを見る',
       perMonth: '/月',
       free: '無料',
@@ -203,8 +214,7 @@ const translation: typeof en = {
       },
       'claude-v4.1-opus': {
         label: 'Claude 4.1 (Opus)',
-        description:
-          '最も強力なOpusの最新版。推論能力が向上',
+        description: '最も強力なOpusの最新版。推論能力が向上',
       },
       'claude-v4.5-opus': {
         label: 'Claude 4.5 (Opus)',
@@ -719,7 +729,8 @@ const translation: typeof en = {
         title: 'プロンプトキャッシュ',
         promptCachingEnabled: {
           title: 'モデルが対応している場合、プロンプトキャッシュを利用する。',
-          description: '有効にすると、このボットと繰り返し会話した際のコストとレイテンシーを削減できます。',
+          description:
+            '有効にすると、このボットと繰り返し会話した際のコストとレイテンシーを削減できます。',
         },
       },
     },
@@ -1142,8 +1153,7 @@ const translation: typeof en = {
       advancedConfigration: {
         existingKnowledgeBaseId: {
           label: '既存のAmazon Bedrock Knowledge BaseのID',
-          description:
-            '既存のAmazon Bedrock Knowledge Baseを利用できます',
+          description: '既存のAmazon Bedrock Knowledge Baseを利用できます',
         },
         createDedicatedKnowledgeBase: {
           label: '専用のKnowledge Baseを作成する',
@@ -1191,7 +1201,7 @@ const translation: typeof en = {
             'このボットは管理者によってAPIとして公開されています。APIを公開するためには、全ユーザーに共有する必要があります。',
         },
       },
-      invalidMermaidFormat: "ダイアグラム描画時にエラーが発生しました"
+      invalidMermaidFormat: 'ダイアグラム描画時にエラーが発生しました',
     },
     validation: {
       title: 'バリデーションエラー',

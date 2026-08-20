@@ -82,6 +82,30 @@ _MIN_PLAN_FOR_MODEL_TIER = {
 }
 
 
+def check_web_search_allowed(user_id: str, bypass: bool = False) -> None:
+    """Gate internet search to plans that include the web_search feature (Pro+).
+
+    Unlike check_message_allowed, this is INTENTIONALLY independent of the
+    ENABLE_PLAN_ENFORCEMENT flag: the web-search entitlement always applies, so
+    internet search stays Pro-only even before global plan enforcement is
+    switched on. `bypass` skips the check for admins / the Unlimited group.
+
+    Raises PlanLimitError(reason="web_search_not_allowed", required_plan="pro")
+    when the plan is not entitled; callers (websocket.py) turn this into a
+    structured upgrade prompt for the client.
+    """
+    if bypass:
+        return
+
+    plan = get_or_create_subscription(user_id).plan
+    if not is_feature_allowed(plan, FEATURE_WEB_SEARCH):
+        raise PlanLimitError(
+            reason="web_search_not_allowed",
+            message="Internet search isn't available on your current plan. Upgrade to Pro to search the web.",
+            required_plan="pro",
+        )
+
+
 def check_message_allowed(
     user_id: str,
     model_key: str,

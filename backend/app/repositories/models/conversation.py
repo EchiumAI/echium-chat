@@ -801,6 +801,8 @@ class ConversationModel(BaseModel):
     last_message_id: str
     bot_id: str | None
     should_continue: bool
+    # Id of the folder this conversation belongs to (None = not filed).
+    folder_id: str | None = None
 
 
 class ConversationMeta(BaseModel):
@@ -809,6 +811,13 @@ class ConversationMeta(BaseModel):
     create_time: float
     model: str
     bot_id: str | None
+    folder_id: str | None = None
+
+
+class FolderModel(BaseModel):
+    id: str
+    name: str
+    create_time: float
 
 
 class RelatedDocumentModel(BaseModel):

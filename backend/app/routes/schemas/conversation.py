@@ -234,6 +234,7 @@ class ConversationMetaOutput(BaseSchema):
     create_time: float
     model: str
     bot_id: str | None
+    folder_id: str | None = None
 
 
 class ConversationSearchResult(BaseSchema):
@@ -260,3 +261,22 @@ class NewTitleInput(BaseSchema):
 
 class ProposedTitle(BaseSchema):
     title: str
+
+
+class FolderOutput(BaseSchema):
+    id: str
+    name: str
+    create_time: float
+
+
+class NewFolderInput(BaseSchema):
+    name: str = Field(..., min_length=1, max_length=100)
+
+
+class FolderNameInput(BaseSchema):
+    name: str = Field(..., min_length=1, max_length=100)
+
+
+class MoveConversationInput(BaseSchema):
+    # Target folder id, or null to remove the conversation from any folder.
+    folder_id: str | None = None

@@ -73,6 +73,10 @@ export const Admin: Story = () => {
       onClearConversations={() => {}}
       onSelectLanguage={() => {}}
       onClickDrawerOptions={() => {}}
+      onCreateFolder={() => {}}
+      onRenameFolder={() => {}}
+      onDeleteFolder={() => {}}
+      onMoveConversation={() => {}}
     />
   );
 };
@@ -90,6 +94,10 @@ export const NonAdmin: Story = () => {
       onClearConversations={() => {}}
       onSelectLanguage={() => {}}
       onClickDrawerOptions={() => {}}
+      onCreateFolder={() => {}}
+      onRenameFolder={() => {}}
+      onDeleteFolder={() => {}}
+      onMoveConversation={() => {}}
     />
   );
 };

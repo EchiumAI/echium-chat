@@ -9,8 +9,10 @@ from app.repositories.common import (
     TRANSACTION_BATCH_WRITE_SIZE,
     RecordNotFoundError,
     compose_conv_id,
+    compose_folder_id,
     compose_related_document_source_id,
     decompose_conv_id,
+    decompose_folder_id,
     decompose_related_document_source_id,
     get_conversation_table_client,
 )
@@ -18,6 +20,7 @@ from app.repositories.models.conversation import (
     ConversationMeta,
     ConversationModel,
     FeedbackModel,
+    FolderModel,
     MessageModel,
     RelatedDocumentModel,
     ToolResultModel,
@@ -56,6 +59,9 @@ def store_conversation(
 
     if conversation.bot_id:
         item_params["BotId"] = conversation.bot_id
+
+    if conversation.folder_id:
+        item_params["FolderId"] = conversation.folder_id
 
     message_map = {
         k: v.model_dump(by_alias=True) for k, v in conversation.message_map.items()
@@ -109,6 +115,7 @@ def find_conversation_by_user_id(user_id: str) -> list[ConversationMeta]:
             # NOTE: all message has the same model
             model=json.loads(item["MessageMap"]).get("system", {}).get("model", ""),
             bot_id=item["BotId"] if "BotId" in item else None,
+            folder_id=item.get("FolderId"),
         )
         for item in response["Items"]
     ]
@@ -135,6 +142,7 @@ def find_conversation_by_user_id(user_id: str) -> list[ConversationMeta]:
                     title=item["Title"],
                     model=model,
                     bot_id=item["BotId"] if "BotId" in item else None,
+                    folder_id=item.get("FolderId"),
                 )
                 for item in response["Items"]
             ]
@@ -178,6 +186,7 @@ def find_conversation_by_id(user_id: str, conversation_id: str) -> ConversationM
         last_message_id=item["LastMessageId"],
         bot_id=item["BotId"] if "BotId" in item else None,
         should_continue=item.get("ShouldContinue", False),
+        folder_id=item.get("FolderId"),
     )
     logger.info(f"Found conversation: {conv}")
     return conv
@@ -301,6 +310,107 @@ def change_conversation_title(user_id: str, conversation_id: str, new_title: str
     logger.info(f"Updated conversation title response: {response}")
 
     return response
+
+
+def find_folders_by_user_id(user_id: str) -> list[FolderModel]:
+    """List all folders owned by the user (newest first)."""
+    logger.info(f"Finding folders for user: {user_id}")
+    table = get_conversation_table_client(user_id)
+    response = table.query(
+        KeyConditionExpression=Key("PK").eq(user_id)
+        & Key("SK").begins_with(f"{user_id}#FOLDER#"),
+        ScanIndexForward=False,
+    )
+    folders = [
+        FolderModel(
+            id=decompose_folder_id(item["SK"]),
+            name=item["FolderName"],
+            create_time=float(item["CreateTime"]),
+        )
+        for item in response["Items"]
+    ]
+    return folders
+
+
+def store_folder(user_id: str, folder: FolderModel):
+    """Create or overwrite a folder item."""
+    logger.info(f"Storing folder: {folder.id} ({folder.name})")
+    table = get_conversation_table_client(user_id)
+    table.put_item(
+        Item={
+            "PK": user_id,
+            "SK": compose_folder_id(user_id, folder.id),
+            "FolderName": folder.name,
+            "CreateTime": decimal(folder.create_time),
+            "ItemType": "FOLDER",
+        }
+    )
+
+
+def change_folder_name(user_id: str, folder_id: str, new_name: str):
+    """Rename an existing folder."""
+    logger.info(f"Renaming folder {folder_id} to {new_name}")
+    table = get_conversation_table_client(user_id)
+    try:
+        table.update_item(
+            Key={"PK": user_id, "SK": compose_folder_id(user_id, folder_id)},
+            UpdateExpression="set FolderName=:n",
+            ExpressionAttributeValues={":n": new_name},
+            ReturnValues="UPDATED_NEW",
+            ConditionExpression="attribute_exists(PK) AND attribute_exists(SK)",
+        )
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+            raise RecordNotFoundError(f"Folder with id {folder_id} not found")
+        raise e
+
+
+def delete_folder(user_id: str, folder_id: str):
+    """Delete a folder. Conversations inside are unfiled (kept), not deleted."""
+    logger.info(f"Deleting folder: {folder_id}")
+    table = get_conversation_table_client(user_id)
+
+    # Un-file any conversations that reference this folder so they don't point
+    # at a folder that no longer exists.
+    for conv in find_conversation_by_user_id(user_id):
+        if conv.folder_id == folder_id:
+            move_conversation_to_folder(user_id, conv.id, None)
+
+    table.delete_item(
+        Key={"PK": user_id, "SK": compose_folder_id(user_id, folder_id)},
+    )
+
+
+def move_conversation_to_folder(
+    user_id: str, conversation_id: str, folder_id: str | None
+):
+    """Assign a conversation to a folder, or unfile it when folder_id is None.
+
+    Uses a partial update so the (potentially large) message map is untouched.
+    """
+    logger.info(f"Moving conversation {conversation_id} to folder {folder_id}")
+    table = get_conversation_table_client(user_id)
+    key = {"PK": user_id, "SK": compose_conv_id(user_id, conversation_id)}
+    try:
+        if folder_id is None:
+            table.update_item(
+                Key=key,
+                UpdateExpression="REMOVE FolderId",
+                ConditionExpression="attribute_exists(PK) AND attribute_exists(SK)",
+            )
+        else:
+            table.update_item(
+                Key=key,
+                UpdateExpression="set FolderId=:f",
+                ExpressionAttributeValues={":f": folder_id},
+                ConditionExpression="attribute_exists(PK) AND attribute_exists(SK)",
+            )
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+            raise RecordNotFoundError(
+                f"Conversation with id {conversation_id} not found"
+            )
+        raise e
 
 
 def update_feedback(

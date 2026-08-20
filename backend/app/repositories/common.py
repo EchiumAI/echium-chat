@@ -61,6 +61,15 @@ def decompose_related_document_source_id(composed_id: str):
     return composed_id.split("#")[-1]
 
 
+def compose_folder_id(user_id: str, folder_id: str):
+    # Add user_id prefix for row level security to match with `LeadingKeys` condition
+    return f"{user_id}#FOLDER#{folder_id}"
+
+
+def decompose_folder_id(composed_id: str):
+    return composed_id.split("#")[-1]
+
+
 def compose_item_type(user_id: str, item_type: Literal["bot", "alias"]):
     if item_type == "bot":
         return f"{user_id}#BOT"

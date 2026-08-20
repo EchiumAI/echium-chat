@@ -1,13 +1,20 @@
+import uuid
+
 from app.repositories.conversation import (
     change_conversation_title,
+    change_folder_name,
     delete_conversation_by_id,
     delete_conversation_by_user_id,
+    delete_folder,
     find_conversation_by_user_id,
+    find_folders_by_user_id,
     find_related_document_by_id,
     find_related_documents_by_conversation_id,
+    move_conversation_to_folder,
+    store_folder,
     update_feedback,
 )
-from app.repositories.models.conversation import FeedbackModel
+from app.repositories.models.conversation import FeedbackModel, FolderModel
 from app.routes.schemas.conversation import (
     ChatInput,
     ChatOutput,
@@ -16,10 +23,15 @@ from app.routes.schemas.conversation import (
     ConversationSearchResult,
     FeedbackInput,
     FeedbackOutput,
+    FolderNameInput,
+    FolderOutput,
+    MoveConversationInput,
+    NewFolderInput,
     NewTitleInput,
     ProposedTitle,
     RelatedDocument,
 )
+from app.utils import get_current_time
 from app.usecases.chat import (
     chat,
     chat_output_from_message,
@@ -116,6 +128,7 @@ def get_all_conversations(
             create_time=conversation.create_time,
             model=conversation.model,
             bot_id=conversation.bot_id,
+            folder_id=conversation.folder_id,
         )
         for conversation in conversations
     ]
@@ -146,6 +159,52 @@ def patch_conversation_title(
     change_conversation_title(
         current_user.id, conversation_id, new_title_input.new_title
     )
+
+
+@router.get("/folders", response_model=list[FolderOutput])
+def get_all_folders(request: Request):
+    """List all of the current user's folders"""
+    current_user: User = request.state.current_user
+    folders = find_folders_by_user_id(current_user.id)
+    return [
+        FolderOutput(id=f.id, name=f.name, create_time=f.create_time) for f in folders
+    ]
+
+
+@router.post("/folders", response_model=FolderOutput)
+def post_folder(request: Request, new_folder_input: NewFolderInput):
+    """Create a new folder"""
+    current_user: User = request.state.current_user
+    folder = FolderModel(
+        id=str(uuid.uuid4()),
+        name=new_folder_input.name,
+        create_time=get_current_time(),
+    )
+    store_folder(current_user.id, folder)
+    return FolderOutput(id=folder.id, name=folder.name, create_time=folder.create_time)
+
+
+@router.patch("/folders/{folder_id}")
+def patch_folder(request: Request, folder_id: str, folder_name_input: FolderNameInput):
+    """Rename a folder"""
+    current_user: User = request.state.current_user
+    change_folder_name(current_user.id, folder_id, folder_name_input.name)
+
+
+@router.delete("/folders/{folder_id}")
+def remove_folder(request: Request, folder_id: str):
+    """Delete a folder. Conversations inside are unfiled, not deleted."""
+    current_user: User = request.state.current_user
+    delete_folder(current_user.id, folder_id)
+
+
+@router.patch("/conversation/{conversation_id}/folder")
+def patch_conversation_folder(
+    request: Request, conversation_id: str, move_input: MoveConversationInput
+):
+    """Move a conversation into a folder (or unfile it when folder_id is null)"""
+    current_user: User = request.state.current_user
+    move_conversation_to_folder(current_user.id, conversation_id, move_input.folder_id)
 
 
 @router.get(

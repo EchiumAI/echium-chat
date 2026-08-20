@@ -1,5 +1,15 @@
 const translation = {
   translation: {
+    folder: {
+      newFolder: 'New folder',
+      namePrompt: 'Folder name',
+      moveTo: 'Move to folder',
+      removeFromFolder: 'Remove from folder',
+      noFolders: 'No folders yet',
+      empty: 'No conversations',
+      deleteConfirm:
+        'Delete folder "{{name}}"? The conversations inside will be kept, not deleted.',
+    },
     signIn: {
       button: {
         login: 'Login',
@@ -714,7 +724,8 @@ How would you categorize this email?`,
         title: 'Prompt Caching',
         promptCachingEnabled: {
           title: 'Use prompt caching if the model supports it.',
-          description: 'If enabled, it may reduce the cost and latency of repeated conversations with this bot.',
+          description:
+            'If enabled, it may reduce the cost and latency of repeated conversations with this bot.',
         },
       },
     },
@@ -1187,7 +1198,7 @@ How would you categorize this email?`,
             'This bot is published as API by administrator. Published API must be shared with all users.',
         },
       },
-      invalidMermaidFormat: "Error in diagram drawing"
+      invalidMermaidFormat: 'Error in diagram drawing',
     },
     validation: {
       title: 'Validation Error',

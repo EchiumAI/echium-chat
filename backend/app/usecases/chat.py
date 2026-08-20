@@ -230,7 +230,10 @@ def chat(
         wants_web_search = any(
             isinstance(tool, InternetToolModel) for tool in bot.agent.tools
         )
-    from app.usecases.subscription import check_message_allowed
+    from app.usecases.subscription import (
+        check_message_allowed,
+        check_web_search_allowed,
+    )
 
     # Admins and the "Unlimited" group (company staff/developers) bypass all
     # plan limits — full access regardless of subscription.
@@ -242,6 +245,12 @@ def chat(
         wants_web_search=wants_web_search,
         bypass=bypass_enforcement,
     )
+
+    # Targeted entitlement gate: internet search is Pro-only. Kept independent
+    # of ENABLE_PLAN_ENFORCEMENT so this rule holds even before global plan
+    # enforcement is switched on.
+    if wants_web_search:
+        check_web_search_allowed(user_id=user.id, bypass=bypass_enforcement)
 
     message_map = conversation.message_map
     instructions: list[str] = (

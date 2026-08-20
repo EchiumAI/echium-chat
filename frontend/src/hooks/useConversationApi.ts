@@ -1,6 +1,7 @@
 import { MutatorCallback, useSWRConfig } from 'swr';
 import {
   Conversation,
+  ConversationFolder,
   ConversationMeta,
   PostMessageRequest,
   PostMessageResponse,
@@ -24,6 +25,37 @@ const useConversationApi = () => {
         keepPreviousData: true,
       });
     },
+    getFolders: () => {
+      return http.get<ConversationFolder[]>('folders', {
+        keepPreviousData: true,
+      });
+    },
+    createFolder: (name: string) => {
+      return http.post<ConversationFolder>('folders', { name });
+    },
+    updateFolderName: (folderId: string, name: string) => {
+      return http.patch(`folders/${folderId}`, { name });
+    },
+    deleteFolder: (folderId: string) => {
+      return http.delete(`folders/${folderId}`);
+    },
+    moveConversationToFolder: (
+      conversationId: string,
+      folderId: string | null
+    ) => {
+      return http.patch(`conversation/${conversationId}/folder`, {
+        folderId,
+      });
+    },
+    mutateFolders: (
+      folders?:
+        | ConversationFolder[]
+        | Promise<ConversationFolder[]>
+        | MutatorCallback<ConversationFolder[]>,
+      options?: Parameters<typeof mutate>[2]
+    ) => {
+      return mutate('folders', folders, options);
+    },
     getConversation: (conversationId?: string) => {
       return http.get<Conversation>(
         !conversationId ? null : `conversation/${conversationId}`,
@@ -39,12 +71,18 @@ const useConversationApi = () => {
     },
     getRelatedDocuments: (conversationId?: string) => {
       return http.get<RelatedDocument[]>(
-        !conversationId ? null : `conversation/${conversationId}/related-documents`, {
-        keepPreviousData: true,
-      });
+        !conversationId
+          ? null
+          : `conversation/${conversationId}/related-documents`,
+        {
+          keepPreviousData: true,
+        }
+      );
     },
     getRelatedDocument: async (conversationId: string, sourceId: string) => {
-      const res = await http.getOnce<RelatedDocument>(`conversation/${conversationId}/related-documents/${sourceId}`);
+      const res = await http.getOnce<RelatedDocument>(
+        `conversation/${conversationId}/related-documents/${sourceId}`
+      );
       return res.data;
     },
     deleteConversation: (conversationId: string) => {

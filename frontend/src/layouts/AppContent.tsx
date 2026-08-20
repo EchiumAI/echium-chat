@@ -33,10 +33,15 @@ const AppContent: React.FC<Props> = (props) => {
   const { conversationId } = useParams();
   const {
     conversations,
+    folders,
     getTitle,
     updateTitle,
     deleteConversation,
     clearConversations: clear,
+    createFolder,
+    renameFolder,
+    deleteFolder,
+    moveConversationToFolder,
   } = useConversation();
   const { pinnedBots, starredBots, recentlyUsedUnstarredBots } = useBot();
   const { newChat, isGeneratedTitle } = useChat();
@@ -94,6 +99,7 @@ const AppContent: React.FC<Props> = (props) => {
         isAdmin={isAdmin}
         pinnedBots={pinnedBots}
         conversations={conversations}
+        folders={folders}
         starredBots={starredBots}
         recentlyUsedUnstarredBots={recentlyUsedUnstarredBots}
         updateConversationTitle={async (conversationId, title) => {
@@ -111,6 +117,12 @@ const AppContent: React.FC<Props> = (props) => {
         onClickDrawerOptions={() => {
           setIsOpenDrawerOptions(true);
         }}
+        onCreateFolder={(name) => createFolder(name)}
+        onRenameFolder={(folderId, name) => renameFolder(folderId, name)}
+        onDeleteFolder={(folderId) => deleteFolder(folderId)}
+        onMoveConversation={(conversationId, folderId) =>
+          moveConversationToFolder(conversationId, folderId)
+        }
       />
       <DialogConfirmDeleteChat
         isOpen={isOpenDeleteChat}
