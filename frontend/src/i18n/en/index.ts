@@ -8,6 +8,7 @@ const translation = {
       noFolders: 'No folders yet',
       empty: 'No conversations',
       clearAll: 'Clear all',
+      foldersLabel: 'Folders',
       unfiled: 'Chats',
       dropHint: 'Drag chats here',
       deleteConfirm:

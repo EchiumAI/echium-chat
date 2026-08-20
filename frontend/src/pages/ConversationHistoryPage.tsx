@@ -27,6 +27,19 @@ import ConversationSearchResults from '../components/ConversationSearchResults';
 // Custom drag-and-drop MIME type for moving a conversation into a folder.
 const CONV_DND_TYPE = 'application/x-echium-conversation-id';
 
+// Accent colors cycled per folder (brand palette) to make folders easier to
+// tell apart. Full class strings so Tailwind keeps them at build time.
+const FOLDER_COLORS = [
+  {
+    borderL: 'border-l-aws-sea-blue-light',
+    text: 'text-aws-sea-blue-light',
+    bg: 'bg-aws-sea-blue-light/10',
+  },
+  { borderL: 'border-l-aws-aqua', text: 'text-aws-aqua', bg: 'bg-aws-aqua/10' },
+  { borderL: 'border-l-aws-lab', text: 'text-aws-lab', bg: 'bg-aws-lab/10' },
+  { borderL: 'border-l-aws-mist', text: 'text-aws-mist', bg: 'bg-aws-mist/20' },
+];
+
 const ConversationHistoryPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -345,93 +358,120 @@ const ConversationHistoryPage: React.FC = () => {
 
         {/* Regular conversation list, grouped by folder (hidden during search) */}
         {!hasSearched && (
-          <>
-            {(folders ?? []).map((folder) => {
-              const items = (conversations ?? []).filter(
-                (c) => c.folderId === folder.id
-              );
-              const isOver = dragOverFolderId === folder.id;
-              return (
-                <div
-                  key={folder.id}
-                  onDragOver={(e) => {
-                    if (e.dataTransfer.types.includes(CONV_DND_TYPE)) {
-                      e.preventDefault();
-                      e.dataTransfer.dropEffect = 'move';
-                      setDragOverFolderId(folder.id);
-                    }
-                  }}
-                  onDragLeave={() => setDragOverFolderId(null)}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setDragOverFolderId(null);
-                    const id = e.dataTransfer.getData(CONV_DND_TYPE);
-                    if (id) {
-                      moveConversationToFolder(id, folder.id);
-                    }
-                  }}
-                  className={twMerge(
-                    'mb-3 rounded border border-gray',
-                    isOver && 'ring-2 ring-aws-sea-blue-light'
-                  )}>
-                  <div className="flex items-center justify-between rounded-t bg-light-gray px-2 py-1.5">
-                    <div className="flex items-center gap-2 font-medium">
-                      <PiFolder />
-                      <span>{folder.name}</span>
-                      <span className="text-xs text-gray">
-                        ({items.length})
-                      </span>
-                    </div>
-                    <div className="flex gap-1">
-                      <ButtonIcon onClick={() => handleRenameFolder(folder)}>
-                        <PiPencilLine />
-                      </ButtonIcon>
-                      <ButtonIcon onClick={() => handleDeleteFolder(folder)}>
-                        <PiTrash />
-                      </ButtonIcon>
-                    </div>
+          <div className="flex h-full min-h-0 flex-col gap-4 pt-3 lg:flex-row">
+            {/* Folders pane — scrolls independently so it stays visible */}
+            <div className="flex min-h-0 flex-col lg:w-2/5">
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-aws-font-color-light dark:text-aws-font-color-dark">
+                <PiFolder />
+                {t('folder.foldersLabel')}
+              </div>
+              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-aws-font-color-light/20 dark:scrollbar-thumb-aws-font-color-dark/20">
+                {(folders ?? []).length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-gray p-4 text-center text-xs text-gray">
+                    {t('folder.noFolders')}
                   </div>
-                  {items.length === 0 ? (
-                    <div className="p-3 text-xs text-gray">
-                      {t('folder.dropHint')}
-                    </div>
-                  ) : (
-                    items.map(renderRow)
-                  )}
-                </div>
-              );
-            })}
-
-            <div
-              onDragOver={(e) => {
-                if (e.dataTransfer.types.includes(CONV_DND_TYPE)) {
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect = 'move';
-                  setDragOverFolderId('unfiled');
-                }
-              }}
-              onDragLeave={() => setDragOverFolderId(null)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragOverFolderId(null);
-                const id = e.dataTransfer.getData(CONV_DND_TYPE);
-                if (id) {
-                  moveConversationToFolder(id, null);
-                }
-              }}
-              className={twMerge(
-                'rounded',
-                dragOverFolderId === 'unfiled' &&
-                  'ring-2 ring-aws-sea-blue-light'
-              )}>
-              {(folders ?? []).length > 0 && (
-                <div className="px-2 py-1 text-xs text-gray">
-                  {t('folder.unfiled')}
-                </div>
-              )}
-              {conversations?.filter((c) => !c.folderId).map(renderRow)}
+                ) : (
+                  (folders ?? []).map((folder, idx) => {
+                    const color = FOLDER_COLORS[idx % FOLDER_COLORS.length];
+                    const items = (conversations ?? []).filter(
+                      (c) => c.folderId === folder.id
+                    );
+                    const isOver = dragOverFolderId === folder.id;
+                    return (
+                      <div
+                        key={folder.id}
+                        onDragOver={(e) => {
+                          if (e.dataTransfer.types.includes(CONV_DND_TYPE)) {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = 'move';
+                            setDragOverFolderId(folder.id);
+                          }
+                        }}
+                        onDragLeave={() => setDragOverFolderId(null)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setDragOverFolderId(null);
+                          const id = e.dataTransfer.getData(CONV_DND_TYPE);
+                          if (id) {
+                            moveConversationToFolder(id, folder.id);
+                          }
+                        }}
+                        className={twMerge(
+                          'overflow-hidden rounded-lg border border-l-4 border-gray',
+                          color.borderL,
+                          isOver && 'ring-2 ring-aws-sea-blue-light'
+                        )}>
+                        <div
+                          className={twMerge(
+                            'flex items-center justify-between px-2 py-1.5',
+                            color.bg
+                          )}>
+                          <div className="flex items-center gap-2 font-medium">
+                            <PiFolder className={color.text} />
+                            <span>{folder.name}</span>
+                            <span className="text-xs text-gray">
+                              ({items.length})
+                            </span>
+                          </div>
+                          <div className="flex gap-1">
+                            <ButtonIcon
+                              onClick={() => handleRenameFolder(folder)}>
+                              <PiPencilLine />
+                            </ButtonIcon>
+                            <ButtonIcon
+                              onClick={() => handleDeleteFolder(folder)}>
+                              <PiTrash />
+                            </ButtonIcon>
+                          </div>
+                        </div>
+                        {items.length === 0 ? (
+                          <div className="p-3 text-xs text-gray">
+                            {t('folder.dropHint')}
+                          </div>
+                        ) : (
+                          items.map(renderRow)
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
-          </>
+
+            {/* Chats pane — the long list scrolls here, folders stay put */}
+            <div className="flex min-h-0 flex-col lg:w-3/5">
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-aws-font-color-light dark:text-aws-font-color-dark">
+                {t('folder.unfiled')}
+                <span className="text-xs text-gray">
+                  ({(conversations ?? []).filter((c) => !c.folderId).length})
+                </span>
+              </div>
+              <div
+                onDragOver={(e) => {
+                  if (e.dataTransfer.types.includes(CONV_DND_TYPE)) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    setDragOverFolderId('unfiled');
+                  }
+                }}
+                onDragLeave={() => setDragOverFolderId(null)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOverFolderId(null);
+                  const id = e.dataTransfer.getData(CONV_DND_TYPE);
+                  if (id) {
+                    moveConversationToFolder(id, null);
+                  }
+                }}
+                className={twMerge(
+                  'min-h-0 flex-1 overflow-y-auto rounded pr-1 scrollbar-thin scrollbar-thumb-aws-font-color-light/20 dark:scrollbar-thumb-aws-font-color-dark/20',
+                  dragOverFolderId === 'unfiled' &&
+                    'ring-2 ring-inset ring-aws-sea-blue-light'
+                )}>
+                {conversations?.filter((c) => !c.folderId).map(renderRow)}
+              </div>
+            </div>
+          </div>
         )}
       </ListPageLayout>
     </>

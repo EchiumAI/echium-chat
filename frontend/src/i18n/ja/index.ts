@@ -11,6 +11,7 @@ const translation: typeof en = {
       noFolders: 'フォルダがありません',
       empty: '会話がありません',
       clearAll: 'すべて削除',
+      foldersLabel: 'フォルダ',
       unfiled: 'チャット',
       dropHint: 'ここにチャットをドラッグ',
       deleteConfirm:
