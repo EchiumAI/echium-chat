@@ -2,23 +2,30 @@ import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   PiCheck,
+  PiFolder,
+  PiFolderPlus,
   PiMagnifyingGlass,
   PiPencilLine,
   PiPlus,
   PiTrash,
   PiX,
 } from 'react-icons/pi';
+import { twMerge } from 'tailwind-merge';
 import { useNavigate } from 'react-router-dom';
 import useConversation from '../hooks/useConversation';
 import useConversationSearch from '../hooks/useConversationSearch';
-import { ConversationMeta } from '../@types/conversation';
+import { ConversationFolder, ConversationMeta } from '../@types/conversation';
 import ButtonIcon from '../components/ButtonIcon';
 import InputText from '../components/InputText';
 import useChat from '../hooks/useChat';
 import DialogConfirmDeleteChat from '../components/DialogConfirmDeleteChat';
+import DialogConfirmClearConversations from '../components/DialogConfirmClearConversations';
 import Button from '../components/Button';
 import ListPageLayout from '../layouts/ListPageLayout';
 import ConversationSearchResults from '../components/ConversationSearchResults';
+
+// Custom drag-and-drop MIME type for moving a conversation into a folder.
+const CONV_DND_TYPE = 'application/x-echium-conversation-id';
 
 const ConversationHistoryPage: React.FC = () => {
   const { t } = useTranslation();
@@ -36,10 +43,54 @@ const ConversationHistoryPage: React.FC = () => {
   const { setConversationId, newChat } = useChat();
   const {
     conversations,
+    folders,
     deleteConversation,
     updateTitle,
     isLoadingConversations,
+    createFolder,
+    renameFolder,
+    deleteFolder,
+    moveConversationToFolder,
+    clearConversations,
   } = useConversation();
+
+  const [isOpenClearDialog, setIsOpenClearDialog] = useState(false);
+  const [dragOverFolderId, setDragOverFolderId] = useState<
+    string | null | 'unfiled'
+  >(null);
+
+  const handleCreateFolder = useCallback(() => {
+    const name = window.prompt(t('folder.namePrompt') ?? '');
+    if (name && name.trim()) {
+      createFolder(name.trim());
+    }
+  }, [createFolder, t]);
+
+  const handleRenameFolder = useCallback(
+    (folder: ConversationFolder) => {
+      const name = window.prompt(t('folder.namePrompt') ?? '', folder.name);
+      if (name && name.trim() && name.trim() !== folder.name) {
+        renameFolder(folder.id, name.trim());
+      }
+    },
+    [renameFolder, t]
+  );
+
+  const handleDeleteFolder = useCallback(
+    (folder: ConversationFolder) => {
+      if (window.confirm(t('folder.deleteConfirm', { name: folder.name }))) {
+        deleteFolder(folder.id);
+      }
+    },
+    [deleteFolder, t]
+  );
+
+  const onClearConversations = useCallback(() => {
+    clearConversations().then(() => {
+      setIsOpenClearDialog(false);
+      navigate('');
+    });
+  }, [clearConversations, navigate]);
 
   // Search hook
   const {
@@ -152,6 +203,67 @@ const ConversationHistoryPage: React.FC = () => {
     }
   }, [editingConversationId, tempTitle, onUpdateTitle]);
 
+  const renderRow = (conversation: ConversationMeta) => (
+    <div
+      key={conversation.id}
+      draggable={editingConversationId !== conversation.id}
+      onDragStart={(e) => {
+        e.dataTransfer.setData(CONV_DND_TYPE, conversation.id);
+        e.dataTransfer.setData('text/plain', conversation.id);
+        e.dataTransfer.effectAllowed = 'move';
+      }}
+      className="group flex cursor-pointer items-center justify-between border-b border-gray p-2 hover:bg-light-gray"
+      onClick={() => onClickConversation(conversation.id)}>
+      <div className="flex flex-col">
+        {editingConversationId === conversation.id ? (
+          <div
+            className="flex items-center"
+            onClick={(e) => e.stopPropagation()}>
+            <input
+              ref={inputRef}
+              type="text"
+              className="w-64 bg-transparent text-base"
+              value={tempTitle}
+              onChange={(e) => setTempTitle(e.target.value)}
+            />
+            <ButtonIcon
+              className="text-base"
+              onClick={() => onUpdateTitle(conversation.id, tempTitle)}
+              disabled={
+                !tempTitle.trim() || tempTitle.trim() === conversation.title
+              }>
+              <PiCheck />
+            </ButtonIcon>
+            <ButtonIcon
+              className="text-base"
+              onClick={() => setEditingConversationId(null)}>
+              <PiX />
+            </ButtonIcon>
+          </div>
+        ) : (
+          <div className="flex items-center">
+            <div className="text-base font-medium">{conversation.title}</div>
+            <ButtonIcon
+              className="-my-2 mr-6 opacity-0 group-hover:opacity-100"
+              onClick={(e) => onClickEdit(e, conversation)}>
+              <PiPencilLine />
+            </ButtonIcon>
+          </div>
+        )}
+        <div className="text-xs text-gray">
+          {formatDate(conversation.createTime)}
+        </div>
+      </div>
+      {editingConversationId !== conversation.id && (
+        <div className="flex items-center opacity-0 group-hover:opacity-100">
+          <ButtonIcon onClick={(e) => onClickDelete(e, conversation)}>
+            <PiTrash />
+          </ButtonIcon>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <>
       <DialogConfirmDeleteChat
@@ -163,16 +275,40 @@ const ConversationHistoryPage: React.FC = () => {
         }}
       />
 
+      <DialogConfirmClearConversations
+        isOpen={isOpenClearDialog}
+        onDelete={onClearConversations}
+        onClose={() => setIsOpenClearDialog(false)}
+      />
+
       <ListPageLayout
         pageTitle={t('conversationHistory.pageTitle')}
         pageTitleActions={
-          <Button
-            className="text-sm"
-            outlined
-            icon={<PiPlus />}
-            onClick={onClickNewChat}>
-            {t('button.newChat')}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              className="text-sm"
+              outlined
+              icon={<PiFolderPlus />}
+              onClick={handleCreateFolder}>
+              {t('folder.newFolder')}
+            </Button>
+            <Button
+              className="text-sm"
+              outlined
+              icon={<PiPlus />}
+              onClick={onClickNewChat}>
+              {t('button.newChat')}
+            </Button>
+            {conversations && conversations.length > 0 && (
+              <Button
+                className="text-sm"
+                outlined
+                icon={<PiTrash />}
+                onClick={() => setIsOpenClearDialog(true)}>
+                {t('folder.clearAll')}
+              </Button>
+            )}
+          </div>
         }
         searchCondition={
           <div className="relative mb-2">
@@ -207,65 +343,96 @@ const ConversationHistoryPage: React.FC = () => {
           onSelectConversation={onClickConversation}
         />
 
-        {/* Regular conversation list (hidden during search) */}
-        {!hasSearched &&
-          conversations?.map((conversation) => (
-            <div
-              key={conversation.id}
-              className="group flex cursor-pointer items-center justify-between border-b border-gray p-2 hover:bg-light-gray"
-              onClick={() => onClickConversation(conversation.id)}>
-              <div className="flex flex-col">
-                {editingConversationId === conversation.id ? (
-                  <div
-                    className="flex items-center"
-                    onClick={(e) => e.stopPropagation()}>
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      className="w-64 bg-transparent text-base"
-                      value={tempTitle}
-                      onChange={(e) => setTempTitle(e.target.value)}
-                    />
-                    <ButtonIcon
-                      className="text-base"
-                      onClick={() => onUpdateTitle(conversation.id, tempTitle)}
-                      disabled={
-                        !tempTitle.trim() ||
-                        tempTitle.trim() === conversation.title
-                      }>
-                      <PiCheck />
-                    </ButtonIcon>
-                    <ButtonIcon
-                      className="text-base"
-                      onClick={() => setEditingConversationId(null)}>
-                      <PiX />
-                    </ButtonIcon>
-                  </div>
-                ) : (
-                  <div className="flex items-center">
-                    <div className="text-base font-medium">
-                      {conversation.title}
+        {/* Regular conversation list, grouped by folder (hidden during search) */}
+        {!hasSearched && (
+          <>
+            {(folders ?? []).map((folder) => {
+              const items = (conversations ?? []).filter(
+                (c) => c.folderId === folder.id
+              );
+              const isOver = dragOverFolderId === folder.id;
+              return (
+                <div
+                  key={folder.id}
+                  onDragOver={(e) => {
+                    if (e.dataTransfer.types.includes(CONV_DND_TYPE)) {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      setDragOverFolderId(folder.id);
+                    }
+                  }}
+                  onDragLeave={() => setDragOverFolderId(null)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOverFolderId(null);
+                    const id = e.dataTransfer.getData(CONV_DND_TYPE);
+                    if (id) {
+                      moveConversationToFolder(id, folder.id);
+                    }
+                  }}
+                  className={twMerge(
+                    'mb-3 rounded border border-gray',
+                    isOver && 'ring-2 ring-aws-sea-blue-light'
+                  )}>
+                  <div className="flex items-center justify-between rounded-t bg-light-gray px-2 py-1.5">
+                    <div className="flex items-center gap-2 font-medium">
+                      <PiFolder />
+                      <span>{folder.name}</span>
+                      <span className="text-xs text-gray">
+                        ({items.length})
+                      </span>
                     </div>
-                    <ButtonIcon
-                      className="-my-2 mr-6 opacity-0 group-hover:opacity-100"
-                      onClick={(e) => onClickEdit(e, conversation)}>
-                      <PiPencilLine />
-                    </ButtonIcon>
+                    <div className="flex gap-1">
+                      <ButtonIcon onClick={() => handleRenameFolder(folder)}>
+                        <PiPencilLine />
+                      </ButtonIcon>
+                      <ButtonIcon onClick={() => handleDeleteFolder(folder)}>
+                        <PiTrash />
+                      </ButtonIcon>
+                    </div>
                   </div>
-                )}
-                <div className="text-xs text-gray">
-                  {formatDate(conversation.createTime)}
+                  {items.length === 0 ? (
+                    <div className="p-3 text-xs text-gray">
+                      {t('folder.dropHint')}
+                    </div>
+                  ) : (
+                    items.map(renderRow)
+                  )}
                 </div>
-              </div>
-              {editingConversationId !== conversation.id && (
-                <div className="flex items-center opacity-0 group-hover:opacity-100">
-                  <ButtonIcon onClick={(e) => onClickDelete(e, conversation)}>
-                    <PiTrash />
-                  </ButtonIcon>
+              );
+            })}
+
+            <div
+              onDragOver={(e) => {
+                if (e.dataTransfer.types.includes(CONV_DND_TYPE)) {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = 'move';
+                  setDragOverFolderId('unfiled');
+                }
+              }}
+              onDragLeave={() => setDragOverFolderId(null)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOverFolderId(null);
+                const id = e.dataTransfer.getData(CONV_DND_TYPE);
+                if (id) {
+                  moveConversationToFolder(id, null);
+                }
+              }}
+              className={twMerge(
+                'rounded',
+                dragOverFolderId === 'unfiled' &&
+                  'ring-2 ring-aws-sea-blue-light'
+              )}>
+              {(folders ?? []).length > 0 && (
+                <div className="px-2 py-1 text-xs text-gray">
+                  {t('folder.unfiled')}
                 </div>
               )}
+              {conversations?.filter((c) => !c.folderId).map(renderRow)}
             </div>
-          ))}
+          </>
+        )}
       </ListPageLayout>
     </>
   );

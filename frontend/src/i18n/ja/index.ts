@@ -10,6 +10,9 @@ const translation: typeof en = {
       removeFromFolder: 'フォルダから外す',
       noFolders: 'フォルダがありません',
       empty: '会話がありません',
+      clearAll: 'すべて削除',
+      unfiled: 'チャット',
+      dropHint: 'ここにチャットをドラッグ',
       deleteConfirm:
         'フォルダ「{{name}}」を削除しますか？中の会話は削除されず保持されます。',
     },

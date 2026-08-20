@@ -7,6 +7,9 @@ const translation = {
       removeFromFolder: 'Remove from folder',
       noFolders: 'No folders yet',
       empty: 'No conversations',
+      clearAll: 'Clear all',
+      unfiled: 'Chats',
+      dropHint: 'Drag chats here',
       deleteConfirm:
         'Delete folder "{{name}}"? The conversations inside will be kept, not deleted.',
     },

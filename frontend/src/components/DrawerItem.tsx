@@ -11,6 +11,9 @@ type Props = {
   labelComponent: ReactNode;
   actionComponent?: ReactNode;
   onClick?: () => void;
+  draggable?: boolean;
+  onDragStart?: (e: React.DragEvent<HTMLAnchorElement>) => void;
+  onDragEnd?: (e: React.DragEvent<HTMLAnchorElement>) => void;
 };
 
 const DrawerItem: React.FC<Props> = (props) => {
@@ -24,6 +27,9 @@ const DrawerItem: React.FC<Props> = (props) => {
         props.className
       )}
       to={props.to}
+      draggable={props.draggable}
+      onDragStart={props.onDragStart}
+      onDragEnd={props.onDragEnd}
       onClick={props.onClick}>
       <div className={`flex h-8 max-h-5 w-full justify-start overflow-hidden`}>
         <div className="mr-2 pt-0.5">{props.icon}</div>

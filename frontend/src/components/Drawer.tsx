@@ -21,7 +21,6 @@ import {
   PiCompass,
   PiFolder,
   PiFolderPlus,
-  PiFolderSimple,
   PiListBullets,
   PiNotePencil,
   PiPencilLine,
@@ -54,6 +53,9 @@ import useGlobalConfig from '../hooks/useGlobalConfig';
 // full bot experience back.
 const BOTS_ENABLED = false;
 
+// Custom drag-and-drop MIME type for moving a conversation into a folder.
+const CONV_DND_TYPE = 'application/x-echium-conversation-id';
+
 type Props = BaseProps & {
   isAdmin: boolean;
   conversations?: ConversationMeta[];
@@ -80,22 +82,20 @@ type ItemProps = BaseProps & {
   label: string;
   conversationId: string;
   generatedTitle?: boolean;
-  folders?: ConversationFolder[];
-  isFiled?: boolean;
+  draggable?: boolean;
+  onDragStart?: (e: React.DragEvent<HTMLAnchorElement>) => void;
+  onDragEnd?: (e: React.DragEvent<HTMLAnchorElement>) => void;
   updateTitle: (conversationId: string, title: string) => Promise<void>;
   onClick: () => void;
   onDelete: () => void;
-  onMoveToFolder?: (folderId: string | null) => void;
 };
 
 const Item: React.FC<ItemProps> = (props) => {
-  const { t } = useTranslation();
   const { pathname } = useLocation();
   const { conversationId: pathParam } = useParams();
   const { conversationId } = useChat();
   const [tempLabel, setTempLabel] = useState('');
   const [editing, setEditing] = useState(false);
-  const [showMove, setShowMove] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -161,6 +161,9 @@ const Item: React.FC<ItemProps> = (props) => {
       isActive={active}
       isBlur={!editing}
       to={`/${props.conversationId}`}
+      draggable={props.draggable && !editing}
+      onDragStart={props.onDragStart}
+      onDragEnd={props.onDragEnd}
       onClick={props.onClick}
       icon={<PiChat />}
       labelComponent={
@@ -190,55 +193,6 @@ const Item: React.FC<ItemProps> = (props) => {
         <>
           {active && !editing && (
             <>
-              {props.onMoveToFolder && (
-                <div className="relative">
-                  <ButtonIcon
-                    className="text-base"
-                    onClick={() => setShowMove((v) => !v)}>
-                    <PiFolderSimple />
-                  </ButtonIcon>
-                  {showMove && (
-                    <div className="absolute right-0 top-full z-50 mt-1 max-h-64 w-52 overflow-y-auto rounded border border-white/20 bg-aws-squid-ink-light py-1 text-white shadow-lg dark:bg-aws-ui-color-dark">
-                      <div className="px-3 py-1 text-xs text-white/50">
-                        {t('folder.moveTo')}
-                      </div>
-                      {(props.folders ?? []).map((folder) => (
-                        <button
-                          key={folder.id}
-                          type="button"
-                          className="flex w-full items-center gap-2 truncate px-3 py-1.5 text-left hover:bg-white/10"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            props.onMoveToFolder?.(folder.id);
-                            setShowMove(false);
-                          }}>
-                          <PiFolder className="shrink-0" />
-                          <span className="truncate">{folder.name}</span>
-                        </button>
-                      ))}
-                      {(props.folders ?? []).length === 0 && (
-                        <div className="px-3 py-1 text-xs text-white/50">
-                          {t('folder.noFolders')}
-                        </div>
-                      )}
-                      {props.isFiled && (
-                        <button
-                          type="button"
-                          className="flex w-full items-center gap-2 truncate border-t border-white/10 px-3 py-1.5 text-left hover:bg-white/10"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            props.onMoveToFolder?.(null);
-                            setShowMove(false);
-                          }}>
-                          {t('folder.removeFromFolder')}
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
               <ButtonIcon className="text-base" onClick={onClickEdit}>
                 <PiPencilLine />
               </ButtonIcon>
@@ -274,6 +228,7 @@ type FolderSectionProps = {
   children: React.ReactNode;
   onRename: () => void;
   onDelete: () => void;
+  onDropConversation: (conversationId: string) => void;
 };
 
 const FolderSection: React.FC<FolderSectionProps> = ({
@@ -281,10 +236,33 @@ const FolderSection: React.FC<FolderSectionProps> = ({
   children,
   onRename,
   onDelete,
+  onDropConversation,
 }) => {
   const [open, setOpen] = useState(true);
+  const [isOver, setIsOver] = useState(false);
   return (
-    <div>
+    <div
+      onDragOver={(e) => {
+        if (e.dataTransfer.types.includes(CONV_DND_TYPE)) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          setIsOver(true);
+        }
+      }}
+      onDragLeave={() => setIsOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setIsOver(false);
+        const id = e.dataTransfer.getData(CONV_DND_TYPE);
+        if (id) {
+          onDropConversation(id);
+          setOpen(true);
+        }
+      }}
+      className={twMerge(
+        'rounded',
+        isOver && 'bg-aws-sea-blue-dark/40 ring-1 ring-inset ring-white/30'
+      )}>
       <div className="group flex items-center justify-between px-2 py-1.5 hover:bg-white/5">
         <button
           type="button"
@@ -356,6 +334,17 @@ const Drawer: React.FC<Props> = (props) => {
     },
     [onDeleteFolder, t]
   );
+
+  const handleDragStart = useCallback(
+    (conversationId: string) => (e: React.DragEvent<HTMLAnchorElement>) => {
+      e.dataTransfer.setData(CONV_DND_TYPE, conversationId);
+      e.dataTransfer.setData('text/plain', conversationId);
+      e.dataTransfer.effectAllowed = 'move';
+    },
+    []
+  );
+
+  const [isUnfiledOver, setIsUnfiledOver] = useState(false);
 
   const location = useLocation();
 
@@ -635,13 +624,24 @@ const Drawer: React.FC<Props> = (props) => {
                     </div>
                   )}
                   {conversations && (
-                    <button
-                      type="button"
-                      onClick={handleCreateFolder}
-                      className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-xs text-white/70 hover:bg-white/5">
-                      <PiFolderPlus className="text-base" />
-                      {t('folder.newFolder')}
-                    </button>
+                    <div className="flex items-center justify-between px-2 py-1 text-xs text-white/70">
+                      <button
+                        type="button"
+                        onClick={handleCreateFolder}
+                        className="flex items-center gap-2 rounded p-1 hover:bg-white/5">
+                        <PiFolderPlus className="text-base" />
+                        {t('folder.newFolder')}
+                      </button>
+                      {conversations.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={props.onClearConversations}
+                          className="flex items-center gap-1 rounded p-1 hover:bg-white/5">
+                          <PiTrash className="text-base" />
+                          {t('folder.clearAll')}
+                        </button>
+                      )}
+                    </div>
                   )}
 
                   {(folders ?? []).map((folder) => {
@@ -653,10 +653,13 @@ const Drawer: React.FC<Props> = (props) => {
                         key={folder.id}
                         folder={folder}
                         onRename={() => handleRenameFolder(folder)}
-                        onDelete={() => handleDeleteFolder(folder)}>
+                        onDelete={() => handleDeleteFolder(folder)}
+                        onDropConversation={(conversationId) =>
+                          onMoveConversation(conversationId, folder.id)
+                        }>
                         {items.length === 0 && (
                           <div className="px-3 py-1 text-xs text-white/50">
-                            {t('folder.empty')}
+                            {t('folder.dropHint')}
                           </div>
                         )}
                         {items.map((conversation) => (
@@ -668,15 +671,12 @@ const Drawer: React.FC<Props> = (props) => {
                             generatedTitle={
                               conversation.id === generateTitleConvId
                             }
-                            folders={folders}
-                            isFiled
+                            draggable
+                            onDragStart={handleDragStart(conversation.id)}
                             updateTitle={props.updateConversationTitle}
                             onClick={closeSmallDrawer}
                             onDelete={() =>
                               props.onDeleteConversation(conversation)
-                            }
-                            onMoveToFolder={(folderId) =>
-                              onMoveConversation(conversation.id, folderId)
                             }
                           />
                         ))}
@@ -684,28 +684,55 @@ const Drawer: React.FC<Props> = (props) => {
                     );
                   })}
 
-                  {conversations
-                    ?.filter((c) => !c.folderId)
-                    .slice(0, drawerOptions.displayCount.conversationHistory)
-                    .map((conversation) => (
-                      <Item
-                        key={conversation.id}
-                        className="grow"
-                        label={conversation.title}
-                        conversationId={conversation.id}
-                        generatedTitle={conversation.id === generateTitleConvId}
-                        folders={folders}
-                        isFiled={false}
-                        updateTitle={props.updateConversationTitle}
-                        onClick={closeSmallDrawer}
-                        onDelete={() =>
-                          props.onDeleteConversation(conversation)
-                        }
-                        onMoveToFolder={(folderId) =>
-                          onMoveConversation(conversation.id, folderId)
-                        }
-                      />
-                    ))}
+                  <div
+                    onDragOver={(e) => {
+                      if (e.dataTransfer.types.includes(CONV_DND_TYPE)) {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        setIsUnfiledOver(true);
+                      }
+                    }}
+                    onDragLeave={() => setIsUnfiledOver(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setIsUnfiledOver(false);
+                      const id = e.dataTransfer.getData(CONV_DND_TYPE);
+                      if (id) {
+                        onMoveConversation(id, null);
+                      }
+                    }}
+                    className={twMerge(
+                      'min-h-[1rem] rounded',
+                      isUnfiledOver &&
+                        'bg-aws-sea-blue-dark/40 ring-1 ring-inset ring-white/30'
+                    )}>
+                    {(folders ?? []).length > 0 && (
+                      <div className="px-2 pt-1 text-xs text-white/50">
+                        {t('folder.unfiled')}
+                      </div>
+                    )}
+                    {conversations
+                      ?.filter((c) => !c.folderId)
+                      .slice(0, drawerOptions.displayCount.conversationHistory)
+                      .map((conversation) => (
+                        <Item
+                          key={conversation.id}
+                          className="grow"
+                          label={conversation.title}
+                          conversationId={conversation.id}
+                          generatedTitle={
+                            conversation.id === generateTitleConvId
+                          }
+                          draggable
+                          onDragStart={handleDragStart(conversation.id)}
+                          updateTitle={props.updateConversationTitle}
+                          onClick={closeSmallDrawer}
+                          onDelete={() =>
+                            props.onDeleteConversation(conversation)
+                          }
+                        />
+                      ))}
+                  </div>
 
                   {conversations && (
                     <Button
