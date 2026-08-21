@@ -233,6 +233,7 @@ def chat(
     from app.usecases.subscription import (
         check_message_allowed,
         check_web_search_allowed,
+        web_search_enabled_for,
     )
 
     # Admins and the "Unlimited" group (company staff/developers) bypass all
@@ -251,6 +252,11 @@ def chat(
     # enforcement is switched on.
     if wants_web_search:
         check_web_search_allowed(user_id=user.id, bypass=bypass_enforcement)
+
+    # Make the internet-search tool available to entitled (Pro+) users in any
+    # chat — not just bots with the tool configured — so questions like
+    # "what are the markets doing today" trigger a live search.
+    web_search_enabled = web_search_enabled_for(user.id, bypass=bypass_enforcement)
 
     message_map = conversation.message_map
     instructions: list[str] = (
@@ -379,6 +385,7 @@ def chat(
             on_thinking=on_thinking,
             on_tool_result=on_tool_run_result,
             on_reasoning=on_reasoning,
+            web_search_enabled=web_search_enabled,
         )
 
     else:

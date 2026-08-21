@@ -20,6 +20,7 @@ import InputText from '../components/InputText';
 import useChat from '../hooks/useChat';
 import DialogConfirmDeleteChat from '../components/DialogConfirmDeleteChat';
 import DialogConfirmClearConversations from '../components/DialogConfirmClearConversations';
+import ModalDialog from '../components/ModalDialog';
 import Button from '../components/Button';
 import ListPageLayout from '../layouts/ListPageLayout';
 import ConversationSearchResults from '../components/ConversationSearchResults';
@@ -71,6 +72,8 @@ const ConversationHistoryPage: React.FC = () => {
   const [dragOverFolderId, setDragOverFolderId] = useState<
     string | null | 'unfiled'
   >(null);
+  // Conversation whose folder is being picked in the move dialog (tap/touch).
+  const [moveTarget, setMoveTarget] = useState<ConversationMeta | undefined>();
 
   const handleCreateFolder = useCallback(() => {
     const name = window.prompt(t('folder.namePrompt') ?? '');
@@ -257,7 +260,7 @@ const ConversationHistoryPage: React.FC = () => {
           <div className="flex items-center">
             <div className="text-base font-medium">{conversation.title}</div>
             <ButtonIcon
-              className="-my-2 mr-6 opacity-0 group-hover:opacity-100"
+              className="-my-2 mr-6 opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
               onClick={(e) => onClickEdit(e, conversation)}>
               <PiPencilLine />
             </ButtonIcon>
@@ -268,7 +271,14 @@ const ConversationHistoryPage: React.FC = () => {
         </div>
       </div>
       {editingConversationId !== conversation.id && (
-        <div className="flex items-center opacity-0 group-hover:opacity-100">
+        <div className="flex items-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
+          <ButtonIcon
+            onClick={(e) => {
+              e.stopPropagation();
+              setMoveTarget(conversation);
+            }}>
+            <PiFolder />
+          </ButtonIcon>
           <ButtonIcon onClick={(e) => onClickDelete(e, conversation)}>
             <PiTrash />
           </ButtonIcon>
@@ -293,6 +303,49 @@ const ConversationHistoryPage: React.FC = () => {
         onDelete={onClearConversations}
         onClose={() => setIsOpenClearDialog(false)}
       />
+
+      <ModalDialog
+        isOpen={!!moveTarget}
+        title={t('folder.moveTo')}
+        showCloseIcon
+        onClose={() => setMoveTarget(undefined)}>
+        <div className="flex max-h-80 flex-col gap-1 overflow-y-auto">
+          {(folders ?? []).length === 0 && (
+            <div className="p-2 text-xs text-gray">{t('folder.noFolders')}</div>
+          )}
+          {(folders ?? []).map((folder) => (
+            <button
+              key={folder.id}
+              type="button"
+              className={twMerge(
+                'flex items-center gap-2 rounded p-2 text-left hover:bg-light-gray dark:hover:bg-aws-ui-color-dark',
+                moveTarget?.folderId === folder.id && 'font-semibold'
+              )}
+              onClick={() => {
+                if (moveTarget) {
+                  moveConversationToFolder(moveTarget.id, folder.id);
+                }
+                setMoveTarget(undefined);
+              }}>
+              <PiFolder />
+              <span className="truncate">{folder.name}</span>
+            </button>
+          ))}
+          {moveTarget?.folderId && (
+            <button
+              type="button"
+              className="mt-1 flex items-center gap-2 rounded border-t border-gray p-2 text-left hover:bg-light-gray dark:hover:bg-aws-ui-color-dark"
+              onClick={() => {
+                if (moveTarget) {
+                  moveConversationToFolder(moveTarget.id, null);
+                }
+                setMoveTarget(undefined);
+              }}>
+              {t('folder.removeFromFolder')}
+            </button>
+          )}
+        </div>
+      </ModalDialog>
 
       <ListPageLayout
         pageTitle={t('conversationHistory.pageTitle')}
@@ -365,7 +418,7 @@ const ConversationHistoryPage: React.FC = () => {
                 <PiFolder />
                 {t('folder.foldersLabel')}
               </div>
-              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-aws-font-color-light/20 dark:scrollbar-thumb-aws-font-color-dark/20">
+              <div className="max-h-[40vh] min-h-0 flex-1 space-y-3 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-aws-font-color-light/20 dark:scrollbar-thumb-aws-font-color-dark/20 lg:max-h-none">
                 {(folders ?? []).length === 0 ? (
                   <div className="rounded-lg border border-dashed border-gray p-4 text-center text-xs text-gray">
                     {t('folder.noFolders')}

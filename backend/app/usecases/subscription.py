@@ -106,6 +106,19 @@ def check_web_search_allowed(user_id: str, bypass: bool = False) -> None:
         )
 
 
+def web_search_enabled_for(user_id: str, bypass: bool = False) -> bool:
+    """Whether the user's plan entitles them to internet search (Pro+).
+
+    Used to decide whether to make the internet-search tool available in a
+    normal chat (no bot required). Admins / Unlimited group (bypass) always
+    get it.
+    """
+    if bypass:
+        return True
+    plan = get_or_create_subscription(user_id).plan
+    return is_feature_allowed(plan, FEATURE_WEB_SEARCH)
+
+
 def check_message_allowed(
     user_id: str,
     model_key: str,
