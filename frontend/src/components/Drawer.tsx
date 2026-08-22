@@ -24,6 +24,7 @@ import {
   PiListBullets,
   PiNotePencil,
   PiPencilLine,
+  PiPlus,
   PiPlugs,
   PiPresentationChart,
   PiRobot,
@@ -228,6 +229,7 @@ type FolderSectionProps = {
   children: React.ReactNode;
   onRename: () => void;
   onDelete: () => void;
+  onNewChat: () => void;
   onDropConversation: (conversationId: string) => void;
 };
 
@@ -236,6 +238,7 @@ const FolderSection: React.FC<FolderSectionProps> = ({
   children,
   onRename,
   onDelete,
+  onNewChat,
   onDropConversation,
 }) => {
   const [open, setOpen] = useState(true);
@@ -276,7 +279,10 @@ const FolderSection: React.FC<FolderSectionProps> = ({
           <PiFolder className="shrink-0" />
           <span className="truncate">{folder.name}</span>
         </button>
-        <div className="hidden shrink-0 gap-1 group-hover:flex">
+        <div className="flex shrink-0 gap-1 lg:hidden lg:group-hover:flex">
+          <ButtonIcon className="text-base" onClick={onNewChat}>
+            <PiPlus />
+          </ButtonIcon>
           <ButtonIcon className="text-base" onClick={onRename}>
             <PiPencilLine />
           </ButtonIcon>
@@ -654,6 +660,11 @@ const Drawer: React.FC<Props> = (props) => {
                         folder={folder}
                         onRename={() => handleRenameFolder(folder)}
                         onDelete={() => handleDeleteFolder(folder)}
+                        onNewChat={() => {
+                          newChat(folder.id);
+                          navigate('/');
+                          closeSmallDrawer();
+                        }}
                         onDropConversation={(conversationId) =>
                           onMoveConversation(conversationId, folder.id)
                         }>

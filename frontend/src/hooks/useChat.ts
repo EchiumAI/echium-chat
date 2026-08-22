@@ -89,6 +89,9 @@ const useChatState = create<{
   getShouldContinue: () => boolean;
   reasoningEnabled: boolean;
   setReasoningEnabled: (enabled: boolean) => void;
+  // Folder a not-yet-created new chat should be filed into once it exists.
+  newChatFolderId: string | null;
+  setNewChatFolderId: (id: string | null) => void;
 }>((set, get) => {
   return {
     conversationId: '',
@@ -98,6 +101,10 @@ const useChatState = create<{
           conversationId: s,
         };
       });
+    },
+    newChatFolderId: null,
+    setNewChatFolderId: (id) => {
+      set(() => ({ newChatFolderId: id }));
     },
     postingMessage: false,
     setPostingMessage: (b) => {
@@ -236,7 +243,9 @@ const useChatState = create<{
 });
 
 const useChat = () => {
-  const [streamingState, streamingSend, streamingActor] = useMachine(streamingStateMachine);
+  const [streamingState, streamingSend, streamingActor] = useMachine(
+    streamingStateMachine
+  );
 
   const {
     chats,
@@ -287,10 +296,16 @@ const useChat = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId, chats, currentMessageId]);
 
-  const newChat = useCallback(() => {
-    setConversationId('');
-    setMessages('', {});
-  }, [setConversationId, setMessages]);
+  const newChat = useCallback(
+    (folderId?: string) => {
+      setConversationId('');
+      setMessages('', {});
+      // Remember the target folder so the conversation is filed there as soon
+      // as it's created (on the first message).
+      useChatState.getState().setNewChatFolderId(folderId ?? null);
+    },
+    [setConversationId, setMessages]
+  );
 
   // when updated messages
   useEffect(() => {
@@ -436,15 +451,34 @@ const useChat = () => {
       // Copy State to prevent screen flicker
       copyMessages('', newConversationId);
 
+      // If this chat was started from a folder, file it there now that the
+      // conversation exists server-side.
+      const folderId = useChatState.getState().newChatFolderId;
+
       conversationApi
         .updateTitleWithGeneratedTitle(newConversationId)
         .then(() => {
           setConversationId(newConversationId);
         })
         .finally(() => {
-          syncConversations().then(() => {
-            setIsGeneratedTitle(true);
-          });
+          const finish = () => {
+            syncConversations().then(() => {
+              setIsGeneratedTitle(true);
+            });
+          };
+          if (folderId) {
+            conversationApi
+              .moveConversationToFolder(newConversationId, folderId)
+              .catch((e) =>
+                console.error('Failed to file new chat into folder:', e)
+              )
+              .finally(() => {
+                useChatState.getState().setNewChatFolderId(null);
+                finish();
+              });
+          } else {
+            finish();
+          }
         });
     };
 
@@ -456,8 +490,12 @@ const useChat = () => {
     // post message
     const postPromise = new Promise<void>((resolve, reject) => {
       if (USE_STREAMING) {
-        const subscription = streamingActor.subscribe(state => {
-          editMessage(conversationId, NEW_MESSAGE_ID.ASSISTANT, state.context.text);
+        const subscription = streamingActor.subscribe((state) => {
+          editMessage(
+            conversationId,
+            NEW_MESSAGE_ID.ASSISTANT,
+            state.context.text
+          );
         });
         postStreaming({
           input,
@@ -538,8 +576,12 @@ const useChat = () => {
     const currentMessage = messages[messages.length - 1];
 
     // WARNING: Non-streaming is not supported from the UI side as it is planned to be DEPRICATED.
-    const subscription = streamingActor.subscribe(state => {
-      editMessage(conversationId, currentMessage.id, currentContentBody + state.context.text);
+    const subscription = streamingActor.subscribe((state) => {
+      editMessage(
+        conversationId,
+        currentMessage.id,
+        currentContentBody + state.context.text
+      );
     });
     postStreaming({
       input,
@@ -640,7 +682,7 @@ const useChat = () => {
 
     setCurrentMessageId(NEW_MESSAGE_ID.ASSISTANT);
 
-    const subscription = streamingActor.subscribe(state => {
+    const subscription = streamingActor.subscribe((state) => {
       editMessage(conversationId, NEW_MESSAGE_ID.ASSISTANT, state.context.text);
     });
     postStreaming({

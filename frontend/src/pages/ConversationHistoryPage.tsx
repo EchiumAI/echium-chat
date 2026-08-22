@@ -350,7 +350,7 @@ const ConversationHistoryPage: React.FC = () => {
       <ListPageLayout
         pageTitle={t('conversationHistory.pageTitle')}
         pageTitleActions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             <Button
               className="text-sm"
               outlined
@@ -456,17 +456,26 @@ const ConversationHistoryPage: React.FC = () => {
                         )}>
                         <div
                           className={twMerge(
-                            'flex items-center justify-between px-2 py-1.5',
+                            'flex items-center justify-between gap-1 px-2 py-1.5',
                             color.bg
                           )}>
-                          <div className="flex items-center gap-2 font-medium">
-                            <PiFolder className={color.text} />
-                            <span>{folder.name}</span>
-                            <span className="text-xs text-gray">
+                          <div className="flex min-w-0 items-center gap-2 font-medium">
+                            <PiFolder
+                              className={twMerge('shrink-0', color.text)}
+                            />
+                            <span className="truncate">{folder.name}</span>
+                            <span className="shrink-0 text-xs text-gray">
                               ({items.length})
                             </span>
                           </div>
-                          <div className="flex gap-1">
+                          <div className="flex shrink-0 gap-1">
+                            <ButtonIcon
+                              onClick={() => {
+                                newChat(folder.id);
+                                navigate('/');
+                              }}>
+                              <PiPlus />
+                            </ButtonIcon>
                             <ButtonIcon
                               onClick={() => handleRenameFolder(folder)}>
                               <PiPencilLine />
