@@ -270,6 +270,9 @@ export class Api extends Construct {
         CONVERSATION_TABLE_NAME: database.conversationTable.tableName,
         BOT_TABLE_NAME: database.botTable.tableName,
         SUBSCRIPTION_TABLE_NAME: database.subscriptionTable.tableName,
+        // Optional search-provider key for reliable internet search (Firecrawl).
+        // Sourced from the deploy environment (GitHub secret) so it stays out of git.
+        FIRECRAWL_API_KEY: process.env.FIRECRAWL_API_KEY ?? "",
         ENABLE_PLAN_ENFORCEMENT:
           this.node.tryGetContext("enableMessageEnforcement") === true
             ? "true"

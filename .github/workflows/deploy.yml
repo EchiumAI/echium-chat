@@ -21,6 +21,9 @@ env:
   AWS_ROLE_ARN: arn:aws:iam::888284248988:role/github-actions-echium-deploy
   NODE_VERSION: '22.x'
   NPM_VERSION: '11'
+  # Optional: reliable internet search (Firecrawl). Add a repo secret named
+  # FIRECRAWL_API_KEY to enable it; empty falls back to DuckDuckGo.
+  FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
   PYTHON_VERSION: '3.13'
 
 jobs:

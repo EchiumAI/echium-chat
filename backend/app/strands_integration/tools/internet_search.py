@@ -1,47 +1,59 @@
 import json
 import logging
+import os
 
 from app.repositories.models.custom_bot import BotModel
+from reretry import retry
 from strands import tool
 from strands.types.tools import AgentTool as StrandsAgentTool
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+# Optional global search-provider key (used when a chat has no bot-specific
+# Firecrawl config). DuckDuckGo needs no key but is heavily rate-limited from
+# datacenter IPs (AWS Lambda), so setting this makes search reliable.
+GLOBAL_FIRECRAWL_API_KEY = os.environ.get("FIRECRAWL_API_KEY", "")
+
+
+@retry(tries=3, delay=1.0, max_delay=8.0, backoff=2, jitter=(0, 1.0))
+def _ddg_query(query: str, region: str, time_limit: str, backend: str) -> list:
+    """Single DuckDuckGo query attempt (retried with backoff on failure)."""
+    from duckduckgo_search import DDGS
+
+    with DDGS() as ddgs:
+        return list(
+            ddgs.text(
+                keywords=query,
+                region=region,
+                safesearch="moderate",
+                timelimit=time_limit,
+                max_results=20,
+                backend=backend,
+            )
+        )
+
 
 def _search_with_duckduckgo_standalone(
     query: str, time_limit: str, locale: str
 ) -> list[dict[str, str]]:
-    """Standalone DuckDuckGo search implementation."""
-    try:
-        from duckduckgo_search import DDGS
+    """Standalone DuckDuckGo search implementation.
 
-        language, country = locale.split("-", 1)
-        REGION = f"{country}-{language}".lower()
-        SAFE_SEARCH = "moderate"
-        MAX_RESULTS = 20
-        BACKEND = "api"
+    DuckDuckGo aggressively rate-limits datacenter IPs (AWS Lambda), returning
+    "202 Ratelimit". Try each available backend in turn, each with retry and
+    exponential backoff, before giving up.
+    """
+    language, country = locale.split("-", 1)
+    region = f"{country}-{language}".lower()
 
-        logger.info(
-            f"Executing DuckDuckGo search: query={query}, region={REGION}, time_limit={time_limit}"
-        )
-
-        with DDGS() as ddgs:
-            results = list(
-                ddgs.text(
-                    keywords=query,
-                    region=REGION,
-                    safesearch=SAFE_SEARCH,
-                    timelimit=time_limit,
-                    max_results=MAX_RESULTS,
-                    backend=BACKEND,
-                )
+    last_error: Exception | None = None
+    for backend in ("api", "html", "lite"):
+        try:
+            logger.info(
+                f"Executing DuckDuckGo search: query={query}, region={region}, backend={backend}"
             )
-
-        # Format results for citation support
-        formatted_results = []
-        for result in results:
-            formatted_results.append(
+            results = _ddg_query(query, region, time_limit, backend)
+            formatted_results = [
                 {
                     "content": _summarize_content_standalone(
                         result["body"], result["title"], result["href"], query
@@ -49,16 +61,20 @@ def _search_with_duckduckgo_standalone(
                     "source_name": result["title"],
                     "source_link": result["href"],
                 }
-            )
+                for result in results
+            ]
+            if formatted_results:
+                logger.info(
+                    f"DuckDuckGo search completed via '{backend}'. Found {len(formatted_results)} results"
+                )
+                return formatted_results
+        except Exception as e:
+            last_error = e
+            logger.warning(f"DuckDuckGo backend '{backend}' failed: {e}")
 
-        logger.info(
-            f"DuckDuckGo search completed. Found {len(formatted_results)} results"
-        )
-        return formatted_results
-
-    except Exception as e:
-        logger.error(f"DuckDuckGo search error: {e}")
-        raise e
+    if last_error:
+        raise last_error
+    return []
 
 
 def _search_with_firecrawl_standalone(
@@ -207,44 +223,41 @@ def create_internet_search_tool(bot: BotModel | None) -> StrandsAgentTool:
         )
 
         try:
-            # # Bot is captured on closure
-            current_bot = bot
+            # Resolve a Firecrawl key: per-bot config first, then the global
+            # env key (so plain chats without a bot can still use it).
+            firecrawl_key = ""
+            max_results = 10
+            internet_tool = _get_internet_tool_config(bot) if bot else None
+            if (
+                internet_tool
+                and internet_tool.search_engine == "firecrawl"
+                and internet_tool.firecrawl_config
+                and internet_tool.firecrawl_config.api_key
+            ):
+                firecrawl_key = internet_tool.firecrawl_config.api_key
+                max_results = internet_tool.firecrawl_config.max_results
+            elif GLOBAL_FIRECRAWL_API_KEY:
+                firecrawl_key = GLOBAL_FIRECRAWL_API_KEY
 
-            # Use DuckDuckGo if no bot context
-            if not current_bot:
-                logger.debug("[INTERNET_SEARCH_V3] No bot context, using DuckDuckGo")
-                results = _search_with_duckduckgo_standalone(query, time_limit, locale)
-            else:
-                internet_tool = _get_internet_tool_config(current_bot)
-
-                if (
-                    internet_tool
-                    and internet_tool.search_engine == "firecrawl"
-                    and internet_tool.firecrawl_config
-                    and internet_tool.firecrawl_config.api_key
-                ):
-
-                    logger.debug("[INTERNET_SEARCH_V3] Using Firecrawl search")
-                    results = _search_with_firecrawl_standalone(
-                        query=query,
-                        api_key=internet_tool.firecrawl_config.api_key,
-                        locale=locale,
-                        max_results=internet_tool.firecrawl_config.max_results,
+            if firecrawl_key:
+                logger.debug("[INTERNET_SEARCH_V3] Using Firecrawl search")
+                results = _search_with_firecrawl_standalone(
+                    query=query,
+                    api_key=firecrawl_key,
+                    locale=locale,
+                    max_results=max_results,
+                )
+                # If no results from Firecrawl, fall back to DuckDuckGo
+                if not results:
+                    logger.warning(
+                        "[INTERNET_SEARCH_V3] Firecrawl returned no results, falling back to DuckDuckGo"
                     )
-
-                    # If no results from Firecrawl, fallback to DuckDuckGo
-                    if not results:
-                        logger.warning(
-                            "[INTERNET_SEARCH_V3] Firecrawl returned no results, falling back to DuckDuckGo"
-                        )
-                        results = _search_with_duckduckgo_standalone(
-                            query, time_limit, locale
-                        )
-                else:
-                    logger.debug("[INTERNET_SEARCH_V3] Using DuckDuckGo search")
                     results = _search_with_duckduckgo_standalone(
                         query, time_limit, locale
                     )
+            else:
+                logger.debug("[INTERNET_SEARCH_V3] Using DuckDuckGo search")
+                results = _search_with_duckduckgo_standalone(query, time_limit, locale)
 
             # Return in ToolResult format to prevent Strands from converting to string
             return {
