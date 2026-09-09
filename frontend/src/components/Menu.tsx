@@ -18,6 +18,7 @@ import { PiCreditCard } from 'react-icons/pi';
 import { IoMoonSharp, IoSunnyOutline } from 'react-icons/io5';
 import useLocalStorage from '../hooks/useLocalStorage';
 import Toggle from './Toggle';
+import { MONETIZATION_ENABLED } from '../constants/features';
 
 type Props = BaseProps & {
   onSignOut: () => void;
@@ -98,23 +99,27 @@ const MenuSettings: React.FC<Props> = (props) => {
           className="absolute bottom-10 left-2 w-60 rounded border border-aws-font-color-white-light bg-aws-sea-blue-light text-aws-font-color-white-light dark:border-aws-font-color-white-dark dark:bg-aws-ui-color-dark dark:text-aws-font-color-white-dark">
           <div className="flex flex-col gap-1 border-b p-2">
             <div className="font-bold">{userName}</div>
-            <div className="text-sm opacity-80">
-              {t('billing.plan')}:{' '}
-              {subscription
-                ? t(`pricing.plans.${subscription.plan}.name` as never)
-                : '—'}
-            </div>
+            {MONETIZATION_ENABLED && (
+              <div className="text-sm opacity-80">
+                {t('billing.plan')}:{' '}
+                {subscription
+                  ? t(`pricing.plans.${subscription.plan}.name` as never)
+                  : '—'}
+              </div>
+            )}
           </div>
 
-          <div
-            className="flex w-full cursor-pointer items-center p-2 hover:bg-aws-sea-blue-hover-light dark:hover:bg-aws-paper-dark"
-            onClick={() => {
-              setIsOpen(false);
-              navigate('/account');
-            }}>
-            <PiCreditCard className="mr-2" />
-            {t('billing.title')}
-          </div>
+          {MONETIZATION_ENABLED && (
+            <div
+              className="flex w-full cursor-pointer items-center p-2 hover:bg-aws-sea-blue-hover-light dark:hover:bg-aws-paper-dark"
+              onClick={() => {
+                setIsOpen(false);
+                navigate('/account');
+              }}>
+              <PiCreditCard className="mr-2" />
+              {t('billing.title')}
+            </div>
+          )}
 
           <div
             className="flex w-full cursor-pointer items-center p-2 hover:bg-aws-sea-blue-hover-light dark:hover:bg-aws-paper-dark"

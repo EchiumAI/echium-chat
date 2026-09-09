@@ -9,6 +9,7 @@ unlocks) that the frontend does not need.
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -40,6 +41,10 @@ FEATURE_WEB_SEARCH = "web_search"
 FEATURE_AGENTS = "agents"
 FEATURE_FILE_UPLOAD = "file_upload"
 FEATURE_KNOWLEDGE_BASES = "knowledge_bases"
+
+ALL_FEATURES = frozenset(
+    {FEATURE_WEB_SEARCH, FEATURE_AGENTS, FEATURE_FILE_UPLOAD, FEATURE_KNOWLEDGE_BASES}
+)
 
 # Model "families" a plan may use. The chat layer maps a concrete model id
 # (e.g. "claude-v4.6-sonnet") to one of these tiers via MODEL_TIER below.
@@ -198,16 +203,42 @@ def credit_for_price_id(price_id: str) -> float | None:
     return PADDLE_PRICE_TO_CREDIT_EUR.get(price_id)
 
 
+def _assume_all_pro() -> bool:
+    """TEMPORARY (development phase): treat every account as fully entitled.
+
+    While all product workstreams are being built, plan gating shouldn't block
+    development, so by default every plan is granted all features and all model
+    tiers. Set ASSUME_ALL_PRO=false (or remove this override) when re-introducing
+    real tier trimming. Monthly message caps are gated separately by
+    ENABLE_PLAN_ENFORCEMENT (default off).
+    """
+    return os.environ.get("ASSUME_ALL_PRO", "true").lower() == "true"
+
+
+def effective_features(plan: PlanId) -> frozenset:
+    """Features a plan can use, honoring the temporary ASSUME_ALL_PRO override."""
+    if _assume_all_pro():
+        return ALL_FEATURES
+    return get_plan_limits(plan).features
+
+
+def effective_model_tiers(plan: PlanId) -> frozenset:
+    """Model tiers a plan can use, honoring the temporary ASSUME_ALL_PRO override."""
+    if _assume_all_pro():
+        return _ALL
+    return get_plan_limits(plan).model_tiers
+
+
 def model_tier(model_key: str) -> str:
     return MODEL_TIER.get(model_key, MODEL_TIER_BASIC)
 
 
 def is_model_allowed(plan: PlanId, model_key: str) -> bool:
-    return model_tier(model_key) in get_plan_limits(plan).model_tiers
+    return model_tier(model_key) in effective_model_tiers(plan)
 
 
 def is_feature_allowed(plan: PlanId, feature: str) -> bool:
-    return feature in get_plan_limits(plan).features
+    return feature in effective_features(plan)
 
 
 def messages_remaining(plan: PlanId, used: int) -> Optional[int]:

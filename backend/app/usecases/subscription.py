@@ -18,6 +18,8 @@ from app.usecases.plans import (
     MODEL_TIER_OPUS,
     MODEL_TIER_SONNET,
     PlanLimitError,
+    effective_features,
+    effective_model_tiers,
     get_plan_limits,
     is_feature_allowed,
     is_model_allowed,
@@ -47,6 +49,10 @@ def get_subscription_overview(user_id: str, bypass: bool = False) -> dict:
     limits = get_plan_limits(sub.plan)
 
     remaining = messages_remaining(sub.plan, usage.message_count)
+    # Report capabilities through the effective_* helpers so the ASSUME_ALL_PRO
+    # override (dev phase: everyone fully entitled) is reflected in the UI, not
+    # just in server-side gating.
+    effective_feats = effective_features(sub.plan)
 
     return {
         "plan": sub.plan,
@@ -65,11 +71,11 @@ def get_subscription_overview(user_id: str, bypass: bool = False) -> dict:
         "enforcementEnabled": _enforcement_enabled(),
         "unlimited": bypass,
         "capabilities": {
-            "modelTiers": sorted(limits.model_tiers),
-            "webSearch": FEATURE_WEB_SEARCH in limits.features,
-            "agents": FEATURE_AGENTS in limits.features,
-            "knowledgeBases": FEATURE_KNOWLEDGE_BASES in limits.features,
-            "fileUpload": FEATURE_FILE_UPLOAD in limits.features,
+            "modelTiers": sorted(effective_model_tiers(sub.plan)),
+            "webSearch": FEATURE_WEB_SEARCH in effective_feats,
+            "agents": FEATURE_AGENTS in effective_feats,
+            "knowledgeBases": FEATURE_KNOWLEDGE_BASES in effective_feats,
+            "fileUpload": FEATURE_FILE_UPLOAD in effective_feats,
         },
     }
 
