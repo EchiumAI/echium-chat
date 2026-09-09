@@ -224,6 +224,29 @@ const Item: React.FC<ItemProps> = (props) => {
   );
 };
 
+// Persist each folder's expanded/collapsed state across sessions so folders
+// reopen where the user left them. Keyed by folder id in localStorage.
+const FOLDER_OPEN_STORAGE_KEY = 'echium:folderOpenState';
+
+const readFolderOpenState = (): Record<string, boolean> => {
+  try {
+    const raw = localStorage.getItem(FOLDER_OPEN_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
+  } catch {
+    return {};
+  }
+};
+
+const writeFolderOpenState = (folderId: string, open: boolean) => {
+  try {
+    const state = readFolderOpenState();
+    state[folderId] = open;
+    localStorage.setItem(FOLDER_OPEN_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // Ignore storage errors (e.g. storage disabled/full).
+  }
+};
+
 type FolderSectionProps = {
   folder: ConversationFolder;
   children: React.ReactNode;
@@ -241,8 +264,19 @@ const FolderSection: React.FC<FolderSectionProps> = ({
   onNewChat,
   onDropConversation,
 }) => {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState<boolean>(
+    () => readFolderOpenState()[folder.id] ?? true
+  );
   const [isOver, setIsOver] = useState(false);
+
+  const toggleOpen = useCallback(() => {
+    setOpen((o) => {
+      const next = !o;
+      writeFolderOpenState(folder.id, next);
+      return next;
+    });
+  }, [folder.id]);
+
   return (
     <div
       onDragOver={(e) => {
@@ -260,6 +294,7 @@ const FolderSection: React.FC<FolderSectionProps> = ({
         if (id) {
           onDropConversation(id);
           setOpen(true);
+          writeFolderOpenState(folder.id, true);
         }
       }}
       className={twMerge(
@@ -270,7 +305,7 @@ const FolderSection: React.FC<FolderSectionProps> = ({
         <button
           type="button"
           className="flex min-w-0 flex-1 items-center gap-1.5 truncate text-left"
-          onClick={() => setOpen((o) => !o)}>
+          onClick={toggleOpen}>
           {open ? (
             <PiCaretDown className="shrink-0" />
           ) : (
@@ -303,6 +338,47 @@ const Drawer: React.FC<Props> = (props) => {
   const navigate = useNavigate();
   const { getPageLabel } = usePageLabel();
   const { opened, switchOpen, drawerOptions } = useDrawer();
+
+  // Resizable drawer width (desktop only). Persisted so it stays where the
+  // user dragged it; clamped to a readable range.
+  const [drawerWidth, setDrawerWidth] = useState<number>(() => {
+    try {
+      const raw = localStorage.getItem('echium:drawerWidth');
+      const n = raw ? parseInt(raw, 10) : NaN;
+      return Number.isFinite(n) ? Math.min(Math.max(n, 220), 500) : 256;
+    } catch {
+      return 256;
+    }
+  });
+  const [isResizing, setIsResizing] = useState(false);
+
+  const startResize = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      setIsResizing(true);
+      let latest = drawerWidth;
+      const onMove = (ev: MouseEvent) => {
+        latest = Math.min(Math.max(ev.clientX, 220), 500);
+        setDrawerWidth(latest);
+      };
+      const onUp = () => {
+        setIsResizing(false);
+        try {
+          localStorage.setItem('echium:drawerWidth', String(latest));
+        } catch {
+          // Ignore storage errors.
+        }
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.body.style.userSelect = '';
+      };
+      document.body.style.userSelect = 'none';
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    },
+    [drawerWidth]
+  );
+
   const {
     conversations,
     folders,
@@ -445,11 +521,15 @@ const Drawer: React.FC<Props> = (props) => {
 
   return (
     <>
-      <div className="relative h-full overflow-y-auto bg-aws-squid-ink-light scrollbar-thin scrollbar-track-white scrollbar-thumb-aws-squid-ink-light/30 dark:bg-aws-ui-color-dark dark:scrollbar-thumb-aws-ui-color-dark/30">
+      <div
+        className="relative h-full overflow-y-auto bg-aws-squid-ink-light scrollbar-thin scrollbar-track-white scrollbar-thumb-aws-squid-ink-light/30 dark:bg-aws-ui-color-dark dark:scrollbar-thumb-aws-ui-color-dark/30"
+        style={{ '--drawer-width': `${drawerWidth}px` } as React.CSSProperties}>
         <nav
-          className={`lg:visible lg:w-64 ${
+          className={twMerge(
+            'text-sm text-white lg:visible lg:w-[var(--drawer-width)]',
+            !isResizing && 'transition-width',
             opened ? 'visible w-64' : 'invisible w-0'
-          } text-sm  text-white transition-width`}>
+          )}>
           <div className="sticky top-0 z-10 flex items-center justify-center border-b border-white/10 bg-aws-squid-ink-light px-4 py-6 dark:bg-aws-squid-ink-dark">
             <button
               type="button"
@@ -788,7 +868,7 @@ const Drawer: React.FC<Props> = (props) => {
             className={twMerge(
               opened ? 'w-64' : 'w-0',
               props.isAdmin ? 'h-20' : 'h-10',
-              'fixed -bottom-2 z-50 mb-2 flex flex-col items-start border-t bg-aws-squid-ink-light transition-width dark:bg-aws-ui-color-dark lg:w-64'
+              'fixed -bottom-2 z-50 mb-2 flex flex-col items-start border-t bg-aws-squid-ink-light transition-width dark:bg-aws-ui-color-dark lg:w-[var(--drawer-width)]'
             )}>
             {props.isAdmin && !isAdminPanel && (
               <DrawerItem
@@ -820,6 +900,16 @@ const Drawer: React.FC<Props> = (props) => {
           </div>
         </nav>
       </div>
+
+      {/* Desktop-only drag handle to resize the drawer so long chat titles are
+          readable. Hidden on mobile, where the drawer is a slide-over. */}
+      <div
+        onMouseDown={startResize}
+        role="separator"
+        aria-orientation="vertical"
+        style={{ left: drawerWidth - 3 }}
+        className="fixed top-0 z-30 hidden h-full w-1.5 cursor-col-resize hover:bg-white/30 lg:block"
+      />
 
       <div
         ref={smallDrawer}
