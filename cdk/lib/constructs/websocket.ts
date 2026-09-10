@@ -124,8 +124,12 @@ export class WebSocket extends Construct {
         CONVERSATION_TABLE_NAME: database.conversationTable.tableName,
         BOT_TABLE_NAME: database.botTable.tableName,
         SUBSCRIPTION_TABLE_NAME: database.subscriptionTable.tableName,
-        // Optional search-provider key for reliable internet search (Firecrawl).
-        // Sourced from the deploy environment (GitHub secret) so it stays out of git.
+        // Search-provider keys for reliable internet search. Brave is the
+        // primary provider; Tavily is an optional fallback; Firecrawl is used
+        // by bots configured for it. Sourced from the deploy environment
+        // (GitHub secrets) so they stay out of git. Empty => DuckDuckGo (dev).
+        BRAVE_API_KEY: process.env.BRAVE_API_KEY ?? "",
+        TAVILY_API_KEY: process.env.TAVILY_API_KEY ?? "",
         FIRECRAWL_API_KEY: process.env.FIRECRAWL_API_KEY ?? "",
         ENABLE_PLAN_ENFORCEMENT:
           this.node.tryGetContext("enableMessageEnforcement") === true

@@ -21,8 +21,12 @@ env:
   AWS_ROLE_ARN: arn:aws:iam::888284248988:role/github-actions-echium-deploy
   NODE_VERSION: '22.x'
   NPM_VERSION: '11'
-  # Optional: reliable internet search (Firecrawl). Add a repo secret named
-  # FIRECRAWL_API_KEY to enable it; empty falls back to DuckDuckGo.
+  # Reliable internet search. Brave is primary (BRAVE_API_KEY), Tavily is an
+  # optional fallback (TAVILY_API_KEY), Firecrawl is used by bots configured for
+  # it. Add the matching repo secrets to enable each; empty falls back to
+  # DuckDuckGo (local dev only).
+  BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
+  TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
   FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
   PYTHON_VERSION: '3.13'
 
