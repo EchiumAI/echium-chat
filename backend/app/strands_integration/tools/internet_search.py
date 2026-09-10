@@ -256,7 +256,9 @@ class DuckDuckGoProvider(SearchProvider):
         last_error: Optional[Exception] = None
         for backend in ("api", "html", "lite"):
             try:
-                logger.info(f"[duckduckgo] query={query}, region={region}, backend={backend}")
+                logger.info(
+                    f"[duckduckgo] query={query}, region={region}, backend={backend}"
+                )
                 with DDGS(timeout=5) as ddgs:
                     hits = list(
                         ddgs.text(
