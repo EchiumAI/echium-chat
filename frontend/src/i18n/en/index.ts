@@ -853,6 +853,13 @@ How would you categorize this email?`,
       label: {
         noConversations: 'No Chat History',
       },
+      selection: {
+        select: 'Select',
+        selectAll: 'Select all',
+        deselectAll: 'Deselect all',
+        selectedCount: '{{count}} selected',
+        deleteConfirm: 'Delete {{count}} selected chats? This cannot be undone.',
+      },
       searchConversation: {
         placeholder: 'Search conversations...',
         searching: 'Searching...',

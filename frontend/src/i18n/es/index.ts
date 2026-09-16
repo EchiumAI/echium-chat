@@ -1,5 +1,15 @@
 const translation = {
   translation: {
+    conversationHistory: {
+      selection: {
+        select: 'Seleccionar',
+        selectAll: 'Seleccionar todo',
+        deselectAll: 'Deseleccionar todo',
+        selectedCount: '{{count}} seleccionados',
+        deleteConfirm:
+          '¿Eliminar {{count}} chats seleccionados? Esta acción no se puede deshacer.',
+      },
+    },
     signIn: {
       button: {
         login: 'Iniciar sesión',

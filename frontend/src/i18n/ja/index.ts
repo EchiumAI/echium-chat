@@ -858,6 +858,14 @@ const translation: typeof en = {
       label: {
         noConversations: 'チャット履歴がありません',
       },
+      selection: {
+        select: '選択',
+        selectAll: 'すべて選択',
+        deselectAll: '選択を解除',
+        selectedCount: '{{count}}件を選択中',
+        deleteConfirm:
+          '選択した{{count}}件のチャットを削除しますか？この操作は取り消せません。',
+      },
       searchConversation: {
         placeholder: '会話を検索...',
         searching: '検索中...',

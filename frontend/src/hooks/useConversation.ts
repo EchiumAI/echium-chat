@@ -58,6 +58,35 @@ const useConversation = () => {
           throw error; // Re-throw error so it can be caught by the caller
         });
     },
+    deleteConversations: (conversationIds: string[]) => {
+      const idSet = new Set(conversationIds);
+      // Optimistic update: drop all selected conversations at once.
+      mutate(
+        produce(conversations, (draft) => {
+          if (draft) {
+            for (let i = draft.length - 1; i >= 0; i--) {
+              if (idSet.has(draft[i].id)) {
+                draft.splice(i, 1);
+              }
+            }
+          }
+        }),
+        { revalidate: false }
+      );
+
+      // Fire the single-item deletes in parallel, then revalidate once.
+      return Promise.all(
+        conversationIds.map((id) => conversationApi.deleteConversation(id))
+      )
+        .then(() => {
+          mutate();
+        })
+        .catch((error) => {
+          console.error('Failed to delete conversations:', error);
+          mutate();
+          throw error;
+        });
+    },
     clearConversations: () => {
       return mutate(async () => {
         await conversationApi.clearConversations();

@@ -2,6 +2,7 @@ import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   PiCheck,
+  PiChecks,
   PiChatCircleText,
   PiFolder,
   PiFolderPlus,
@@ -71,7 +72,30 @@ const ConversationHistoryPage: React.FC = () => {
     deleteFolder,
     moveConversationToFolder,
     clearConversations,
+    deleteConversations,
   } = useConversation();
+
+  // Multi-select mode for bulk-deleting chats.
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isOpenBulkDeleteDialog, setIsOpenBulkDeleteDialog] = useState(false);
+
+  const toggleSelectionMode = useCallback(() => {
+    setSelectionMode((prev) => !prev);
+    setSelectedIds(new Set());
+  }, []);
+
+  const toggleSelected = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
 
   // Folders | Agents tab. Agents are lightweight, workspace-scoped personas
   // created through the conversational wizard (see DialogAgentWizard).
@@ -106,6 +130,30 @@ const ConversationHistoryPage: React.FC = () => {
     },
     [deleteAgent, t]
   );
+
+  const allSelected =
+    (conversations?.length ?? 0) > 0 &&
+    selectedIds.size === (conversations?.length ?? 0);
+
+  const onToggleSelectAll = useCallback(() => {
+    setSelectedIds((prev) => {
+      if (prev.size === (conversations?.length ?? 0)) {
+        return new Set();
+      }
+      return new Set((conversations ?? []).map((c) => c.id));
+    });
+  }, [conversations]);
+
+  const onBulkDelete = useCallback(() => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) {
+      return;
+    }
+    setIsOpenBulkDeleteDialog(false);
+    deleteConversations(ids).catch(() => {});
+    setSelectedIds(new Set());
+    setSelectionMode(false);
+  }, [selectedIds, deleteConversations]);
 
   const [isOpenClearDialog, setIsOpenClearDialog] = useState(false);
   const [dragOverFolderId, setDragOverFolderId] = useState<
@@ -261,15 +309,33 @@ const ConversationHistoryPage: React.FC = () => {
   const renderRow = (conversation: ConversationMeta) => (
     <div
       key={conversation.id}
-      draggable={editingConversationId !== conversation.id}
+      draggable={!selectionMode && editingConversationId !== conversation.id}
       onDragStart={(e) => {
         e.dataTransfer.setData(CONV_DND_TYPE, conversation.id);
         e.dataTransfer.setData('text/plain', conversation.id);
         e.dataTransfer.effectAllowed = 'move';
       }}
-      className="group flex cursor-pointer items-center justify-between border-b border-gray p-2 hover:bg-light-gray"
-      onClick={() => onClickConversation(conversation.id)}>
-      <div className="flex flex-col">
+      className={twMerge(
+        'group flex cursor-pointer items-center justify-between border-b border-gray p-2 hover:bg-light-gray',
+        selectionMode &&
+          selectedIds.has(conversation.id) &&
+          'bg-aws-sea-blue-light/10'
+      )}
+      onClick={() =>
+        selectionMode
+          ? toggleSelected(conversation.id)
+          : onClickConversation(conversation.id)
+      }>
+      {selectionMode && (
+        <input
+          type="checkbox"
+          className="mr-3 size-4 shrink-0 accent-aws-sea-blue-light"
+          checked={selectedIds.has(conversation.id)}
+          onChange={() => toggleSelected(conversation.id)}
+          onClick={(e) => e.stopPropagation()}
+        />
+      )}
+      <div className="flex flex-1 flex-col">
         {editingConversationId === conversation.id ? (
           <div
             className="flex items-center"
@@ -309,7 +375,7 @@ const ConversationHistoryPage: React.FC = () => {
           {formatDate(conversation.createTime)}
         </div>
       </div>
-      {editingConversationId !== conversation.id && (
+      {editingConversationId !== conversation.id && !selectionMode && (
         <div className="flex items-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
           <ButtonIcon
             onClick={(e) => {
@@ -348,6 +414,27 @@ const ConversationHistoryPage: React.FC = () => {
         onClose={() => setIsWizardOpen(false)}
         onCreated={onCreatedAgent}
       />
+
+      <ModalDialog
+        isOpen={isOpenBulkDeleteDialog}
+        title={t('deleteDialog.title')}
+        onClose={() => setIsOpenBulkDeleteDialog(false)}>
+        <div className="text-sm">
+          {t('conversationHistory.selection.deleteConfirm', {
+            count: selectedIds.size,
+          })}
+        </div>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button outlined onClick={() => setIsOpenBulkDeleteDialog(false)}>
+            {t('button.cancel')}
+          </Button>
+          <Button
+            className="bg-red text-white hover:brightness-90"
+            onClick={onBulkDelete}>
+            {t('button.delete')}
+          </Button>
+        </div>
+      </ModalDialog>
 
       <ModalDialog
         isOpen={!!moveTarget}
@@ -396,31 +483,72 @@ const ConversationHistoryPage: React.FC = () => {
         pageTitle={t('conversationHistory.pageTitle')}
         pageTitleActions={
           activeTab === 'folders' ? (
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button
-                className="text-sm"
-                outlined
-                icon={<PiFolderPlus />}
-                onClick={handleCreateFolder}>
-                {t('folder.newFolder')}
-              </Button>
-              <Button
-                className="text-sm"
-                outlined
-                icon={<PiPlus />}
-                onClick={onClickNewChat}>
-                {t('button.newChat')}
-              </Button>
-              {conversations && conversations.length > 0 && (
+            selectionMode ? (
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <span className="text-sm text-gray">
+                  {t('conversationHistory.selection.selectedCount', {
+                    count: selectedIds.size,
+                  })}
+                </span>
                 <Button
                   className="text-sm"
                   outlined
-                  icon={<PiTrash />}
-                  onClick={() => setIsOpenClearDialog(true)}>
-                  {t('folder.clearAll')}
+                  icon={allSelected ? <PiX /> : <PiCheck />}
+                  onClick={onToggleSelectAll}>
+                  {allSelected
+                    ? t('conversationHistory.selection.deselectAll')
+                    : t('conversationHistory.selection.selectAll')}
                 </Button>
-              )}
-            </div>
+                <Button
+                  className="bg-red text-sm text-white hover:brightness-90"
+                  icon={<PiTrash />}
+                  disabled={selectedIds.size === 0}
+                  onClick={() => setIsOpenBulkDeleteDialog(true)}>
+                  {t('button.delete')}
+                </Button>
+                <Button
+                  className="text-sm"
+                  outlined
+                  onClick={toggleSelectionMode}>
+                  {t('button.cancel')}
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button
+                  className="text-sm"
+                  outlined
+                  icon={<PiFolderPlus />}
+                  onClick={handleCreateFolder}>
+                  {t('folder.newFolder')}
+                </Button>
+                <Button
+                  className="text-sm"
+                  outlined
+                  icon={<PiPlus />}
+                  onClick={onClickNewChat}>
+                  {t('button.newChat')}
+                </Button>
+                {conversations && conversations.length > 0 && (
+                  <>
+                    <Button
+                      className="text-sm"
+                      outlined
+                      icon={<PiChecks />}
+                      onClick={toggleSelectionMode}>
+                      {t('conversationHistory.selection.select')}
+                    </Button>
+                    <Button
+                      className="text-sm"
+                      outlined
+                      icon={<PiTrash />}
+                      onClick={() => setIsOpenClearDialog(true)}>
+                      {t('folder.clearAll')}
+                    </Button>
+                  </>
+                )}
+              </div>
+            )
           ) : (
             <div className="flex flex-wrap justify-end gap-2">
               <Button
