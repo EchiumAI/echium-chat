@@ -12,7 +12,6 @@ from __future__ import annotations
 import logging
 import os
 
-from app.repositories.models.conversation import type_model_name
 from app.routes.schemas.agent import (
     AgentInput,
     AgentWizardOutput,
@@ -20,6 +19,7 @@ from app.routes.schemas.agent import (
 )
 from app.strands_integration.agent.config import get_bedrock_model_config
 from app.usecases.agent import create_agent
+from app.usecases.global_config import get_default_model
 from strands import Agent, tool
 from strands.models import BedrockModel
 
@@ -27,7 +27,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 BEDROCK_REGION = os.environ.get("BEDROCK_REGION", "us-east-1")
-WIZARD_MODEL: type_model_name = "claude-v3.5-sonnet"
+
+# Use the same default model the rest of the app uses (configured via the
+# DEFAULT_MODEL env, falling back to claude-v3.7-sonnet). Hardcoding an older
+# model broke in eu-west-1, where it lacks an on-demand/inference-profile path.
 
 INTERVIEWER_PROMPT = """You are Echium's Agent Creator — a friendly assistant that helps a user design a new AI agent through a short, natural conversation.
 
@@ -106,7 +109,7 @@ def run_agent_wizard(user_id: str, messages: list[WizardMessage]) -> AgentWizard
 
     holder: dict = {}
     model_config = get_bedrock_model_config(
-        model_name=WIZARD_MODEL,
+        model_name=get_default_model(),
         instructions=[INTERVIEWER_PROMPT],
         has_tools=True,
     )
@@ -125,11 +128,14 @@ def run_agent_wizard(user_id: str, messages: list[WizardMessage]) -> AgentWizard
         result = agent(strands_messages)  # type: ignore[arg-type]
         reply = _extract_reply_text(result.message)
     except Exception as e:
-        logger.error(f"[AGENT_WIZARD] error: {e}")
+        logger.exception("[AGENT_WIZARD] error")
+        # Alpha: surface a short error detail so issues can be diagnosed
+        # without CloudWatch access. Safe to remove once the wizard is stable.
+        detail = f"{type(e).__name__}: {e}"[:300]
         return AgentWizardOutput(
             reply=(
                 "Sorry, I couldn't continue creating the agent right now. "
-                "Please try again."
+                f"Please try again.\n\n(debug: {detail})"
             ),
             done=False,
             agent=None,
