@@ -1,4 +1,10 @@
-import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   PiCheck,
@@ -14,7 +20,7 @@ import {
   PiX,
 } from 'react-icons/pi';
 import { twMerge } from 'tailwind-merge';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import useConversation from '../hooks/useConversation';
 import useConversationSearch from '../hooks/useConversationSearch';
 import { ConversationFolder, ConversationMeta } from '../@types/conversation';
@@ -99,9 +105,31 @@ const ConversationHistoryPage: React.FC = () => {
 
   // Folders | Agents tab. Agents are lightweight, workspace-scoped personas
   // created through the conversational wizard (see DialogAgentWizard).
-  const [activeTab, setActiveTab] = useState<'folders' | 'agents'>('folders');
-  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  // The tab (and optional wizard auto-open) can be deep-linked from the
+  // sidebar via ?tab=agents and ?new=1.
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<'folders' | 'agents'>(
+    searchParams.get('tab') === 'agents' ? 'agents' : 'folders'
+  );
+  const [isWizardOpen, setIsWizardOpen] = useState(
+    searchParams.get('new') === '1'
+  );
   const { agents, isLoadingAgents, deleteAgent } = useAgent();
+
+  // Keep the active tab in sync when the query param changes while the page
+  // is already mounted (e.g. clicking the sidebar Agents item again).
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'agents') {
+      setActiveTab('agents');
+    } else if (tab === 'folders') {
+      setActiveTab('folders');
+    }
+    if (searchParams.get('new') === '1') {
+      setActiveTab('agents');
+      setIsWizardOpen(true);
+    }
+  }, [searchParams]);
 
   const onCreatedAgent = useCallback(
     (agent: Agent) => {
@@ -562,16 +590,16 @@ const ConversationHistoryPage: React.FC = () => {
         }
         searchCondition={
           <div>
-            {/* Folders | Agents tabs */}
-            <div className="flex gap-1">
+            {/* Folders | Agents segmented control */}
+            <div className="inline-flex rounded-lg border border-gray bg-light-gray p-0.5 dark:bg-aws-ui-color-dark">
               <button
                 type="button"
                 onClick={() => setActiveTab('folders')}
                 className={twMerge(
-                  'flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium',
+                  'flex items-center gap-1.5 rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
                   activeTab === 'folders'
-                    ? 'border-aws-sea-blue-light text-aws-sea-blue-light dark:border-aws-font-color-dark dark:text-aws-font-color-dark'
-                    : 'border-transparent text-gray hover:text-dark-gray'
+                    ? 'bg-white text-aws-sea-blue-light shadow-sm dark:bg-aws-squid-ink-dark dark:text-aws-font-color-dark'
+                    : 'text-gray hover:text-dark-gray dark:hover:text-light-gray'
                 )}>
                 <PiFolder />
                 {t('folder.foldersLabel')}
@@ -580,10 +608,10 @@ const ConversationHistoryPage: React.FC = () => {
                 type="button"
                 onClick={() => setActiveTab('agents')}
                 className={twMerge(
-                  'flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium',
+                  'flex items-center gap-1.5 rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
                   activeTab === 'agents'
-                    ? 'border-aws-sea-blue-light text-aws-sea-blue-light dark:border-aws-font-color-dark dark:text-aws-font-color-dark'
-                    : 'border-transparent text-gray hover:text-dark-gray'
+                    ? 'bg-white text-aws-sea-blue-light shadow-sm dark:bg-aws-squid-ink-dark dark:text-aws-font-color-dark'
+                    : 'text-gray hover:text-dark-gray dark:hover:text-light-gray'
                 )}>
                 <PiRobot />
                 {t('agent.tab')}

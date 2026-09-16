@@ -559,6 +559,16 @@ const Drawer: React.FC<Props> = (props) => {
                   labelComponent={t('button.newChat')}
                 />
               )}
+              <DrawerItem
+                isActive={
+                  location.pathname === '/conversations' &&
+                  location.search.includes('tab=agents')
+                }
+                icon={<PiRobot />}
+                to="/conversations?tab=agents"
+                onClick={closeSmallDrawer}
+                labelComponent={t('agent.tab')}
+              />
               {BOTS_ENABLED && drawerOptions.show.myBots && (
                 <DrawerItem
                   isActive={false}
