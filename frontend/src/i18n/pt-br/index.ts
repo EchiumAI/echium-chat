@@ -303,6 +303,20 @@ const translation = {
     },
     agent: {
       label: 'Agente',
+      tab: 'Agentes',
+      new: 'Novo agente',
+      noAgents: 'Ainda não há agentes. Crie um para começar.',
+      startChat: 'Iniciar chat',
+      deleteConfirm:
+        'Excluir o agente "{{name}}"? Esta ação não pode ser desfeita. Os chats existentes são mantidos.',
+      wizard: {
+        title: 'Criar um agente',
+        greeting:
+          'Olá! Vou ajudar você a criar um agente de IA. Diga o que você gostaria que ele fizesse.',
+        placeholder: 'Digite sua resposta…',
+        thinking: 'Pensando…',
+        error: 'Desculpe, algo deu errado. Tente novamente.',
+      },
       help: {
         overview:
           'Ao usar a funcionalidade de Agente, seu chatbot pode lidar automaticamente com tarefas mais complexas. O modelo deve ser compatível com o uso de Ferramentas. Verifique <Link>aqui</Link> para detalhes.',

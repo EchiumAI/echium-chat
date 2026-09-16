@@ -65,6 +65,10 @@ const rootChildren = [
     element: <ChatPage />,
   },
   {
+    path: '/agent/:agentId',
+    element: <ChatPage />,
+  },
+  {
     path: '/conversations',
     element: <ConversationHistoryPage />,
   },
@@ -167,6 +171,7 @@ export const usePageTitlePathPattern = () => {
     () => [
       { path: '/:conversationId' },
       { path: '/bot/:botId' },
+      { path: '/agent/:agentId' },
       { path: '/' },
       { path: '*' },
     ],

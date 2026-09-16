@@ -2,11 +2,13 @@ import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   PiCheck,
+  PiChatCircleText,
   PiFolder,
   PiFolderPlus,
   PiMagnifyingGlass,
   PiPencilLine,
   PiPlus,
+  PiRobot,
   PiTrash,
   PiX,
 } from 'react-icons/pi';
@@ -15,11 +17,14 @@ import { useNavigate } from 'react-router-dom';
 import useConversation from '../hooks/useConversation';
 import useConversationSearch from '../hooks/useConversationSearch';
 import { ConversationFolder, ConversationMeta } from '../@types/conversation';
+import { Agent } from '../@types/agent';
 import ButtonIcon from '../components/ButtonIcon';
 import InputText from '../components/InputText';
 import useChat from '../hooks/useChat';
+import useAgent from '../hooks/useAgent';
 import DialogConfirmDeleteChat from '../components/DialogConfirmDeleteChat';
 import DialogConfirmClearConversations from '../components/DialogConfirmClearConversations';
+import DialogAgentWizard from '../components/DialogAgentWizard';
 import ModalDialog from '../components/ModalDialog';
 import Button from '../components/Button';
 import ListPageLayout from '../layouts/ListPageLayout';
@@ -67,6 +72,40 @@ const ConversationHistoryPage: React.FC = () => {
     moveConversationToFolder,
     clearConversations,
   } = useConversation();
+
+  // Folders | Agents tab. Agents are lightweight, workspace-scoped personas
+  // created through the conversational wizard (see DialogAgentWizard).
+  const [activeTab, setActiveTab] = useState<'folders' | 'agents'>('folders');
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const { agents, isLoadingAgents, deleteAgent } = useAgent();
+
+  const onCreatedAgent = useCallback(
+    (agent: Agent) => {
+      setIsWizardOpen(false);
+      // Start a fresh chat with the new agent.
+      newChat();
+      navigate(`/agent/${agent.id}`);
+    },
+    [navigate, newChat]
+  );
+
+  const onClickAgent = useCallback(
+    (agent: Agent) => {
+      newChat();
+      navigate(`/agent/${agent.id}`);
+    },
+    [navigate, newChat]
+  );
+
+  const onClickDeleteAgent = useCallback(
+    (e: React.MouseEvent, agent: Agent) => {
+      e.stopPropagation();
+      if (window.confirm(t('agent.deleteConfirm', { name: agent.name }))) {
+        deleteAgent(agent.id).catch(() => {});
+      }
+    },
+    [deleteAgent, t]
+  );
 
   const [isOpenClearDialog, setIsOpenClearDialog] = useState(false);
   const [dragOverFolderId, setDragOverFolderId] = useState<
@@ -304,6 +343,12 @@ const ConversationHistoryPage: React.FC = () => {
         onClose={() => setIsOpenClearDialog(false)}
       />
 
+      <DialogAgentWizard
+        isOpen={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+        onCreated={onCreatedAgent}
+      />
+
       <ModalDialog
         isOpen={!!moveTarget}
         title={t('folder.moveTo')}
@@ -350,67 +395,157 @@ const ConversationHistoryPage: React.FC = () => {
       <ListPageLayout
         pageTitle={t('conversationHistory.pageTitle')}
         pageTitleActions={
-          <div className="flex flex-wrap justify-end gap-2">
-            <Button
-              className="text-sm"
-              outlined
-              icon={<PiFolderPlus />}
-              onClick={handleCreateFolder}>
-              {t('folder.newFolder')}
-            </Button>
-            <Button
-              className="text-sm"
-              outlined
-              icon={<PiPlus />}
-              onClick={onClickNewChat}>
-              {t('button.newChat')}
-            </Button>
-            {conversations && conversations.length > 0 && (
+          activeTab === 'folders' ? (
+            <div className="flex flex-wrap justify-end gap-2">
               <Button
                 className="text-sm"
                 outlined
-                icon={<PiTrash />}
-                onClick={() => setIsOpenClearDialog(true)}>
-                {t('folder.clearAll')}
+                icon={<PiFolderPlus />}
+                onClick={handleCreateFolder}>
+                {t('folder.newFolder')}
               </Button>
-            )}
-          </div>
+              <Button
+                className="text-sm"
+                outlined
+                icon={<PiPlus />}
+                onClick={onClickNewChat}>
+                {t('button.newChat')}
+              </Button>
+              {conversations && conversations.length > 0 && (
+                <Button
+                  className="text-sm"
+                  outlined
+                  icon={<PiTrash />}
+                  onClick={() => setIsOpenClearDialog(true)}>
+                  {t('folder.clearAll')}
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button
+                className="text-sm"
+                icon={<PiPlus />}
+                onClick={() => setIsWizardOpen(true)}>
+                {t('agent.new')}
+              </Button>
+            </div>
+          )
         }
         searchCondition={
-          <div className="relative mb-2">
-            <InputText
-              icon={<PiMagnifyingGlass />}
-              placeholder={t(
-                'conversationHistory.search.placeholder',
-                'Search conversations...'
-              )}
-              value={inputValue}
-              onChange={handleInputChange}
-            />
-            {inputValue && (
+          <div>
+            {/* Folders | Agents tabs */}
+            <div className="flex gap-1">
               <button
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray hover:text-dark-gray"
-                onClick={handleClearSearch}>
-                <PiX size={20} />
+                type="button"
+                onClick={() => setActiveTab('folders')}
+                className={twMerge(
+                  'flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium',
+                  activeTab === 'folders'
+                    ? 'border-aws-sea-blue-light text-aws-sea-blue-light dark:border-aws-font-color-dark dark:text-aws-font-color-dark'
+                    : 'border-transparent text-gray hover:text-dark-gray'
+                )}>
+                <PiFolder />
+                {t('folder.foldersLabel')}
               </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('agents')}
+                className={twMerge(
+                  'flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium',
+                  activeTab === 'agents'
+                    ? 'border-aws-sea-blue-light text-aws-sea-blue-light dark:border-aws-font-color-dark dark:text-aws-font-color-dark'
+                    : 'border-transparent text-gray hover:text-dark-gray'
+                )}>
+                <PiRobot />
+                {t('agent.tab')}
+              </button>
+            </div>
+            {activeTab === 'folders' && (
+              <div className="relative my-2">
+                <InputText
+                  icon={<PiMagnifyingGlass />}
+                  placeholder={t(
+                    'conversationHistory.search.placeholder',
+                    'Search conversations...'
+                  )}
+                  value={inputValue}
+                  onChange={handleInputChange}
+                />
+                {inputValue && (
+                  <button
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray hover:text-dark-gray"
+                    onClick={handleClearSearch}>
+                    <PiX size={20} />
+                  </button>
+                )}
+              </div>
             )}
           </div>
         }
-        isLoading={isLoadingConversations && !hasSearched}
-        isEmpty={conversations?.length === 0 && !hasSearched}
-        emptyMessage={t('conversationHistory.label.noConversations')}>
-        {/* Search results */}
-        <ConversationSearchResults
-          results={searchResults}
-          isSearching={isSearching}
-          hasSearched={hasSearched}
-          searchQuery={displayQuery}
-          onbackToConversationHistory={handleClearSearch}
-          onSelectConversation={onClickConversation}
-        />
+        isLoading={
+          activeTab === 'folders'
+            ? isLoadingConversations && !hasSearched
+            : isLoadingAgents
+        }
+        isEmpty={
+          activeTab === 'folders'
+            ? conversations?.length === 0 && !hasSearched
+            : (agents?.length ?? 0) === 0
+        }
+        emptyMessage={
+          activeTab === 'folders'
+            ? t('conversationHistory.label.noConversations')
+            : t('agent.noAgents')
+        }>
+        {/* Agents tab */}
+        {activeTab === 'agents' && (
+          <div className="grid grid-cols-1 gap-3 pt-3 sm:grid-cols-2 lg:grid-cols-3">
+            {(agents ?? []).map((agent) => (
+              <div
+                key={agent.id}
+                onClick={() => onClickAgent(agent)}
+                className="group flex cursor-pointer flex-col rounded-lg border border-gray p-3 hover:bg-light-gray dark:hover:bg-aws-ui-color-dark">
+                <div className="flex items-center justify-between">
+                  <div className="flex min-w-0 items-center gap-2 font-medium">
+                    <PiRobot className="shrink-0 text-aws-sea-blue-light" />
+                    <span className="truncate">{agent.name}</span>
+                  </div>
+                  <div className="flex shrink-0 items-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
+                    <ButtonIcon onClick={(e) => onClickDeleteAgent(e, agent)}>
+                      <PiTrash />
+                    </ButtonIcon>
+                  </div>
+                </div>
+                {agent.description && (
+                  <div className="mt-1 line-clamp-2 text-xs text-gray">
+                    {agent.description}
+                  </div>
+                )}
+                <div className="mt-3 flex items-center gap-1 text-xs text-aws-sea-blue-light dark:text-aws-font-color-dark">
+                  <PiChatCircleText />
+                  {t('agent.startChat')}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
-        {/* Regular conversation list, grouped by folder (hidden during search) */}
-        {!hasSearched && (
+        {/* Folders tab */}
+        {activeTab === 'folders' && (
+          <>
+            {/* Search results */}
+            <ConversationSearchResults
+              results={searchResults}
+              isSearching={isSearching}
+              hasSearched={hasSearched}
+              searchQuery={displayQuery}
+              onbackToConversationHistory={handleClearSearch}
+              onSelectConversation={onClickConversation}
+            />
+
+            {/* Regular conversation list, grouped by folder (hidden during search) */}
+            {!hasSearched && (
           <div className="flex h-full min-h-0 flex-col gap-4 pt-3 lg:flex-row">
             {/* Folders pane — scrolls independently so it stays visible */}
             <div className="flex min-h-0 flex-col lg:w-2/5">
@@ -534,6 +669,8 @@ const ConversationHistoryPage: React.FC = () => {
               </div>
             </div>
           </div>
+            )}
+          </>
         )}
       </ListPageLayout>
     </>

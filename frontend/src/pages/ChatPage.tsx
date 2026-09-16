@@ -25,6 +25,7 @@ import SwitchBedrockModel from '../components/SwitchBedrockModel';
 import ConsumptionIndicator from '../components/ConsumptionIndicator';
 import useSnackbar from '../hooks/useSnackbar';
 import useBot from '../hooks/useBot';
+import useAgent from '../hooks/useAgent';
 import useConversation from '../hooks/useConversation';
 import { ActiveModels, BotSummary } from '../@types/bot';
 import IconPinnedBot from '../components/IconPinnedBot.tsx';
@@ -242,12 +243,47 @@ const ChatPage: React.FC = () => {
 
   const { scrollToBottom, scrollToTop } = useScroll(conversationId);
 
-  const { conversationId: paramConversationId, botId: paramBotId } =
-    useParams();
+  const {
+    conversationId: paramConversationId,
+    botId: paramBotId,
+    agentId: paramAgentId,
+  } = useParams();
 
   const botId = useMemo(() => {
     return paramBotId ?? getBotId(conversationId);
   }, [conversationId, getBotId, paramBotId]);
+
+  // When starting a chat from the /agent/:agentId route we inject the agent's
+  // instruction as the system prompt on the first message. The instruction is
+  // then baked into the conversation, so it only needs threading on new chats.
+  const agentId = useMemo(() => {
+    return paramAgentId ?? undefined;
+  }, [paramAgentId]);
+
+  const { getAgent } = useAgent();
+  const [agentTitle, setAgentTitle] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    if (agentId && !conversationId) {
+      getAgent(agentId)
+        .then((agent) => {
+          if (!cancelled) {
+            setAgentTitle(agent.name);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setAgentTitle(null);
+          }
+        });
+    } else {
+      setAgentTitle(null);
+    }
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agentId, conversationId]);
 
   const {
     data: bot,
@@ -279,6 +315,13 @@ const ChatPage: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bot, botError]);
+
+  // Chatting with a lightweight agent: show its name as the page title.
+  useEffect(() => {
+    if (agentTitle && !bot) {
+      setPageTitle(agentTitle);
+    }
+  }, [agentTitle, bot]);
 
   const description = useMemo<string>(() => {
     if (!bot) {
@@ -328,10 +371,11 @@ const ChatPage: React.FC = () => {
         base64EncodedImages,
         attachments,
         bot: inputBotParams,
+        agentId,
         enableReasoning,
       });
     },
-    [inputBotParams, postChat]
+    [inputBotParams, agentId, postChat]
   );
 
   const onChangeCurrentMessageId = useCallback(

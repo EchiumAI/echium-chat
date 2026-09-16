@@ -117,6 +117,7 @@ export type PostMessageRequest = {
     parentMessageId: null | string;
   };
   botId?: string;
+  agentId?: string;
   continueGenerate?: boolean;
   enableReasoning: boolean;
 };

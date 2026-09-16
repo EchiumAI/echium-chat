@@ -1,5 +1,21 @@
 const translation = {
   translation: {
+    agent: {
+      tab: 'Agents',
+      new: 'Nouvel agent',
+      noAgents: 'Aucun agent pour le moment. Créez-en un pour commencer.',
+      startChat: 'Démarrer le chat',
+      deleteConfirm:
+        'Supprimer l’agent « {{name}} » ? Cette action est irréversible. Les conversations existantes sont conservées.',
+      wizard: {
+        title: 'Créer un agent',
+        greeting:
+          'Bonjour ! Je vais vous aider à créer un agent IA. Dites-moi ce que vous aimeriez qu’il fasse.',
+        placeholder: 'Saisissez votre réponse…',
+        thinking: 'Réflexion…',
+        error: 'Désolé, une erreur est survenue. Veuillez réessayer.',
+      },
+    },
     auth: {
       hero: {
         title: 'Echium AI',

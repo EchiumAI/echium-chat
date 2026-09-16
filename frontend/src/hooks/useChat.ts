@@ -382,8 +382,9 @@ const useChat = () => {
     base64EncodedImages?: string[];
     attachments?: AttachmentType[];
     bot?: BotInputType;
+    agentId?: string;
   }) => {
-    const { content, bot, base64EncodedImages, attachments } = params;
+    const { content, bot, agentId, base64EncodedImages, attachments } = params;
     const isNewChat = conversationId ? false : true;
     const newConversationId = ulid();
 
@@ -446,6 +447,7 @@ const useChat = () => {
         parentMessageId: parentMessageId,
       },
       botId: bot?.botId,
+      agentId: agentId,
       enableReasoning: params.enableReasoning,
     };
     const createNewConversation = () => {

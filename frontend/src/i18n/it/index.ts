@@ -1,5 +1,21 @@
 const translation = {
   translation: {
+    agent: {
+      tab: 'Agenti',
+      new: 'Nuovo agente',
+      noAgents: 'Ancora nessun agente. Creane uno per iniziare.',
+      startChat: 'Avvia chat',
+      deleteConfirm:
+        'Eliminare l’agente "{{name}}"? Questa azione non può essere annullata. Le chat esistenti vengono conservate.',
+      wizard: {
+        title: 'Crea un agente',
+        greeting:
+          'Ciao! Ti aiuterò a creare un agente IA. Dimmi cosa vuoi che faccia.',
+        placeholder: 'Scrivi la tua risposta…',
+        thinking: 'Sto pensando…',
+        error: 'Spiacenti, qualcosa è andato storto. Riprova.',
+      },
+    },
     signIn: {
       button: {
         login: 'Login',

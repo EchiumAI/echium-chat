@@ -361,6 +361,20 @@ const translation = {
     },
     agent: {
       label: 'Agent',
+      tab: 'Agents',
+      new: 'New agent',
+      noAgents: 'No agents yet. Create one to get started.',
+      startChat: 'Start chat',
+      deleteConfirm:
+        'Delete agent "{{name}}"? This cannot be undone. Existing chats are kept.',
+      wizard: {
+        title: 'Create an agent',
+        greeting:
+          "Hi! I'll help you create an AI agent. Tell me what you'd like it to do.",
+        placeholder: 'Type your answer…',
+        thinking: 'Thinking…',
+        error: 'Sorry, something went wrong. Please try again.',
+      },
       help: {
         overview:
           'By using the Agent functionality, your chatbot can automatically handle more complex tasks. The model must be compatible with Tool use. Please check <Link>here</Link> for details.',
