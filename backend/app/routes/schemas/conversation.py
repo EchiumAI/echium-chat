@@ -202,6 +202,9 @@ class ChatInput(BaseSchema):
     conversation_id: str
     message: MessageInput
     bot_id: str | None = Field(None)
+    # A lightweight agent to chat with. Its instruction becomes the system
+    # prompt (mutually exclusive with bot_id in practice; bot_id wins).
+    agent_id: str | None = Field(None)
     continue_generate: bool = Field(False)
     enable_reasoning: bool = Field(False)
 

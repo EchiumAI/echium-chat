@@ -11,6 +11,7 @@ from app.bedrock import (
     is_tooluse_supported,
 )
 from app.prompt import build_rag_prompt, get_prompt_to_cite_tool_results
+from app.repositories.agent import find_agent_by_id
 from app.repositories.conversation import (
     RecordNotFoundError,
     find_conversation_by_id,
@@ -74,8 +75,10 @@ def prepare_conversation(
         conversation = find_conversation_by_id(user.id, chat_input.conversation_id)
         logger.info(f"Found conversation: {conversation}")
         parent_id = chat_input.message.parent_message_id
-        if chat_input.message.parent_message_id == "system" and chat_input.bot_id:
-            # The case editing first user message and use bot
+        if chat_input.message.parent_message_id == "system" and (
+            chat_input.bot_id or chat_input.agent_id
+        ):
+            # The case editing first user message and using a bot/agent
             parent_id = "instruction"
         elif chat_input.message.parent_message_id is None:
             parent_id = conversation.last_message_id
@@ -141,6 +144,29 @@ def prepare_conversation(
                     )
                     # Create alias item
                     store_alias(user.id, BotAliasModel.from_bot_for_initial_alias(bot))
+
+        elif chat_input.agent_id:
+            # Lightweight agent: use its instruction as the system prompt.
+            logger.info("Agent id is provided. Fetching agent.")
+            parent_id = "instruction"
+            agent = find_agent_by_id(user.id, chat_input.agent_id)
+            initial_message_map["instruction"] = MessageModel(
+                role="instruction",
+                content=[
+                    TextContentModel(
+                        content_type="text",
+                        body=agent.instruction,
+                    )
+                ],
+                model=chat_input.message.model,
+                children=[],
+                parent="system",
+                create_time=current_time,
+                feedback=None,
+                used_chunks=None,
+                thinking_log=None,
+            )
+            initial_message_map["system"].children.append("instruction")
 
         # Create new conversation
         conversation = ConversationModel(
