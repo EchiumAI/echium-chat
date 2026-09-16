@@ -89,6 +89,19 @@ def decompose_sk(sk: str):
     return sk.split("#")[-1]
 
 
+def default_workspace_id(user_id: str) -> str:
+    """Deterministic id of a user's default personal workspace.
+
+    Phase 1: every user has exactly one workspace, derived from their user id.
+    It's stamped as a plain `WorkspaceId` attribute on conversations, folders
+    and bots (never a partition key), so the existing row-level security
+    envelope (LeadingKeys = "{user_id}*") is untouched and no backfill is ever
+    needed — items missing `WorkspaceId` are read as this default. Multi-
+    workspace support will add stored, user-selectable workspace ids later.
+    """
+    return f"WS#{user_id}"
+
+
 def _get_aws_resource(service_name, table_name: str, user_id: str | None = None):
     """Get AWS resource with optional row-level access control for DynamoDB.
     Ref: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_examples_dynamodb_items.html

@@ -8,6 +8,7 @@ from app.repositories.common import (
     RecordNotFoundError,
     compose_item_type,
     compose_sk,
+    default_workspace_id,
     get_bot_table_client,
     get_dynamodb_client,
 )
@@ -53,6 +54,9 @@ def store_bot(custom_bot: BotModel):
         "PK": custom_bot.owner_user_id,
         "SK": compose_sk(custom_bot.id, "bot"),
         "ItemType": compose_item_type(custom_bot.owner_user_id, "bot"),
+        # Phase 1: stamp the owner's default workspace so bots/agents carry a
+        # WorkspaceId from creation (no backfill when multi-workspace arrives).
+        "WorkspaceId": default_workspace_id(custom_bot.owner_user_id),
         "Title": custom_bot.title,
         "Description": custom_bot.description,
         "Instruction": custom_bot.instruction,

@@ -11,6 +11,7 @@ from app.repositories.common import (
     compose_conv_id,
     compose_folder_id,
     compose_related_document_source_id,
+    default_workspace_id,
     decompose_conv_id,
     decompose_folder_id,
     decompose_related_document_source_id,
@@ -55,6 +56,9 @@ def store_conversation(
         "TotalPrice": decimal(str(conversation.total_price)),
         "LastMessageId": conversation.last_message_id,
         "ShouldContinue": conversation.should_continue,
+        # Phase 1: everything belongs to the user's single default workspace.
+        # Stamped on write so no backfill is needed when multi-workspace lands.
+        "WorkspaceId": default_workspace_id(user_id),
     }
 
     if conversation.bot_id:
@@ -343,6 +347,7 @@ def store_folder(user_id: str, folder: FolderModel):
             "FolderName": folder.name,
             "CreateTime": decimal(folder.create_time),
             "ItemType": "FOLDER",
+            "WorkspaceId": default_workspace_id(user_id),
         }
     )
 
