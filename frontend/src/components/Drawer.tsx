@@ -36,6 +36,9 @@ import { ConversationFolder, ConversationMeta } from '../@types/conversation';
 import { BotListItem } from '../@types/bot';
 import { isMobile } from 'react-device-detect';
 import useChat from '../hooks/useChat';
+import useAgent from '../hooks/useAgent';
+import { Agent } from '../@types/agent';
+import DialogAgentWizard from './DialogAgentWizard';
 import { useTranslation } from 'react-i18next';
 import Menu from './Menu';
 import DrawerItem from './DrawerItem';
@@ -444,6 +447,48 @@ const Drawer: React.FC<Props> = (props) => {
 
   const { newChat, conversationId } = useChat();
   const { botId } = useParams();
+
+  // Sidebar Chats | Agents toggle: swap the drawer body between the chat
+  // history and the list of the user's agents (click an agent to chat).
+  const [drawerTab, setDrawerTab] = useState<'chats' | 'agents'>('chats');
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const {
+    agents,
+    isLoadingAgents,
+    mutateAgents,
+    deleteAgent: removeAgent,
+  } = useAgent();
+
+  const onClickAgent = useCallback(
+    (agent: Agent) => {
+      newChat();
+      navigate(`/agent/${agent.id}`);
+      closeSmallDrawer();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [navigate]
+  );
+
+  const onClickDeleteAgent = useCallback(
+    (agent: Agent) => {
+      if (window.confirm(t('agent.deleteConfirm', { name: agent.name }))) {
+        removeAgent(agent.id).catch(() => {});
+      }
+    },
+    [removeAgent, t]
+  );
+
+  const onAgentCreated = useCallback(
+    (agent: Agent) => {
+      setIsWizardOpen(false);
+      mutateAgents();
+      newChat();
+      navigate(`/agent/${agent.id}`);
+      closeSmallDrawer();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [navigate, mutateAgents]
+  );
   const { getGlobalConfig } = useGlobalConfig();
   const { data: globalConfig } = getGlobalConfig();
   const logoSrc = globalConfig?.logoPath ?? '';
@@ -521,6 +566,11 @@ const Drawer: React.FC<Props> = (props) => {
 
   return (
     <>
+      <DialogAgentWizard
+        isOpen={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+        onCreated={onAgentCreated}
+      />
       <div
         className="relative h-full overflow-y-auto bg-aws-squid-ink-light scrollbar-thin scrollbar-track-white scrollbar-thumb-aws-squid-ink-light/30 dark:bg-aws-ui-color-dark dark:scrollbar-thumb-aws-ui-color-dark/30"
         style={{ '--drawer-width': `${drawerWidth}px` } as React.CSSProperties}>
@@ -559,16 +609,33 @@ const Drawer: React.FC<Props> = (props) => {
                   labelComponent={t('button.newChat')}
                 />
               )}
-              <DrawerItem
-                isActive={
-                  location.pathname === '/conversations' &&
-                  location.search.includes('tab=agents')
-                }
-                icon={<PiRobot />}
-                to="/conversations?tab=agents"
-                onClick={closeSmallDrawer}
-                labelComponent={t('agent.tab')}
-              />
+              {/* Chats | Agents toggle */}
+              <div className="m-2 flex rounded-lg border border-white/10 bg-white/5 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setDrawerTab('chats')}
+                  className={twMerge(
+                    'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
+                    drawerTab === 'chats'
+                      ? 'bg-white/15 text-white'
+                      : 'text-white/60 hover:text-white'
+                  )}>
+                  <PiChat />
+                  {t('app.conversationHistory')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDrawerTab('agents')}
+                  className={twMerge(
+                    'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
+                    drawerTab === 'agents'
+                      ? 'bg-white/15 text-white'
+                      : 'text-white/60 hover:text-white'
+                  )}>
+                  <PiRobot />
+                  {t('agent.tab')}
+                </button>
+              </div>
               {BOTS_ENABLED && drawerOptions.show.myBots && (
                 <DrawerItem
                   isActive={false}
@@ -703,7 +770,61 @@ const Drawer: React.FC<Props> = (props) => {
                 </ExpandableDrawerGroup>
               )}
 
-              {drawerOptions.show.conversationHistory && (
+              {drawerTab === 'agents' && (
+                <div
+                  className={twMerge(
+                    'border-t border-white/10 pt-1',
+                    props.isAdmin ? 'mb-20' : 'mb-10'
+                  )}>
+                  <div className="flex items-center justify-between px-2 py-1 text-xs text-white/70">
+                    <span className="font-semibold uppercase tracking-wider">
+                      {t('agent.tab')}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsWizardOpen(true)}
+                      className="flex items-center gap-1 rounded p-1 hover:bg-white/5">
+                      <PiPlus className="text-base" />
+                      {t('agent.new')}
+                    </button>
+                  </div>
+
+                  {isLoadingAgents && agents === undefined && (
+                    <div className="flex flex-col gap-2 p-2">
+                      <Skeleton className="h-10 w-full bg-aws-sea-blue-light/50 dark:bg-aws-sea-blue-dark/50" />
+                      <Skeleton className="h-10 w-full bg-aws-sea-blue-light/50 dark:bg-aws-sea-blue-dark/50" />
+                      <Skeleton className="h-10 w-full bg-aws-sea-blue-light/50 dark:bg-aws-sea-blue-dark/50" />
+                    </div>
+                  )}
+
+                  {agents && agents.length === 0 && (
+                    <div className="px-3 py-4 text-center text-xs text-white/50">
+                      {t('agent.noAgents')}
+                    </div>
+                  )}
+
+                  {agents?.map((agent) => (
+                    <DrawerItem
+                      key={agent.id}
+                      isActive={false}
+                      to={`/agent/${agent.id}`}
+                      icon={<PiRobot />}
+                      labelComponent={agent.name}
+                      onClick={() => onClickAgent(agent)}
+                      actionComponent={
+                        <ButtonIcon
+                          className="text-base"
+                          onClick={() => onClickDeleteAgent(agent)}>
+                          <PiTrash />
+                        </ButtonIcon>
+                      }
+                    />
+                  ))}
+                </div>
+              )}
+
+              {drawerTab === 'chats' &&
+                drawerOptions.show.conversationHistory && (
                 <ExpandableDrawerGroup
                   label={t('app.conversationHistory')}
                   className={twMerge(
