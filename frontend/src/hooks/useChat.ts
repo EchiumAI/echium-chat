@@ -271,7 +271,8 @@ const useChat = () => {
     setReasoningEnabled,
   } = useChatState();
 
-  const { post: postStreaming } = usePostMessageStreaming();
+  const { post: postStreaming, stop: stopStreaming } =
+    usePostMessageStreaming();
   const { modelId, setModelId, availableModels } = useModel();
 
   const conversationApi = useConversationApi();
@@ -728,6 +729,7 @@ const useChat = () => {
     getPostedModel,
     getShouldContinue,
     continueGenerate,
+    stopGeneration: stopStreaming,
     reasoningEnabled,
     setReasoningEnabled,
     supportReasoning,

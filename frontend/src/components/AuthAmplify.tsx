@@ -1,6 +1,7 @@
 import React, { ReactNode, cloneElement, ReactElement, useState } from 'react';
 import { BaseProps } from '../@types/common';
 import { Authenticator } from '@aws-amplify/ui-react';
+import { signIn, signUp, resetPassword } from 'aws-amplify/auth';
 import { useTranslation } from 'react-i18next';
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import { PiArrowLeft } from 'react-icons/pi';
@@ -81,6 +82,41 @@ const AuthAmplify: React.FC<Props> = ({ socialProviders, children }) => {
           <div className="w-full">
             <Authenticator
               socialProviders={socialProviders}
+              // Normalize the email to lowercase before every auth call so an
+              // account registered with any letter-case can always sign in.
+              // This pool matches the email alias case-sensitively, so without
+              // this "PERSON@x.com" and "person@x.com" are different logins.
+              services={{
+                handleSignIn: (input) =>
+                  signIn({
+                    ...input,
+                    username: input.username.toLowerCase(),
+                  }),
+                handleSignUp: (input) => {
+                  const username = input.username.toLowerCase();
+                  return signUp({
+                    ...input,
+                    username,
+                    options: {
+                      ...input.options,
+                      userAttributes: {
+                        ...input.options?.userAttributes,
+                        ...(input.options?.userAttributes?.email
+                          ? {
+                              email:
+                                input.options.userAttributes.email.toLowerCase(),
+                            }
+                          : {}),
+                      },
+                    },
+                  });
+                },
+                handleForgotPassword: (input) =>
+                  resetPassword({
+                    ...input,
+                    username: input.username.toLowerCase(),
+                  }),
+              }}
               formFields={{
                 signIn: {
                   username: {

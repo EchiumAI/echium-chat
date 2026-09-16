@@ -183,6 +183,7 @@ const ChatPage: React.FC = () => {
     setCurrentMessageId,
     regenerate,
     continueGenerate,
+    stopGeneration,
     getPostedModel,
     loadingConversation,
     getShouldContinue,
@@ -746,6 +747,7 @@ const ChatPage: React.FC = () => {
           isLoading={postingMessage}
           isNewChat={messages.length == 0}
           onSend={onSend}
+          onStop={stopGeneration}
           onRegenerate={onRegenerate}
           continueGenerate={onContinueGenerate}
           ref={focusInputRef}

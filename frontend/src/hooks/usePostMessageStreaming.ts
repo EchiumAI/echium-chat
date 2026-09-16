@@ -25,11 +25,38 @@ const usePostMessageStreaming = create<{
    *  show a precise upgrade prompt. Cleared on the next send / dismiss. */
   planLimitError: PlanLimitError | null;
   clearPlanLimitError: () => void;
-}>((set) => {
+  /** Stop the in-flight generation: finalize the partial message and close
+   *  the WebSocket (the backend aborts when it can no longer post to it). */
+  stop: () => void;
+  activeWs: WebSocket | null;
+  activeHandler: ((event: StreamingEvent) => void) | null;
+}>((set, get) => {
   return {
     errorDetail: null,
     planLimitError: null,
+    activeWs: null,
+    activeHandler: null,
     clearPlanLimitError: () => set(() => ({ planLimitError: null })),
+    stop: () => {
+      const { activeWs, activeHandler } = get();
+      // Finalize the partial assistant message (commit streamed text, end the
+      // "thinking" state) before tearing down the socket.
+      if (activeHandler) {
+        try {
+          activeHandler({ type: 'goodbye' });
+        } catch {
+          // ignore
+        }
+      }
+      if (activeWs) {
+        try {
+          activeWs.close();
+        } catch {
+          // ignore
+        }
+      }
+      set({ activeWs: null, activeHandler: null });
+    },
     post: async ({ input, handleStreamingEvent }) => {
       handleStreamingEvent({ type: 'wakeup' });
       set(() => ({ planLimitError: null }));
@@ -52,6 +79,8 @@ const usePostMessageStreaming = create<{
       let receivedCount = 0;
       return new Promise<void>((resolve, reject) => {
         const ws = new WebSocket(WS_ENDPOINT);
+        // Expose the socket + handler so stop() can abort this generation.
+        set({ activeWs: ws, activeHandler: handleStreamingEvent });
 
         ws.onopen = () => {
           console.log('[FRONTEND_WS] WebSocket connection opened');
@@ -229,6 +258,7 @@ const usePostMessageStreaming = create<{
             event.code,
             event.reason
           );
+          set({ activeWs: null, activeHandler: null });
           resolve();
         };
       });

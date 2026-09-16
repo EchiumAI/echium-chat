@@ -14,6 +14,7 @@ import {
   PiArrowsCounterClockwise,
   PiX,
   PiArrowFatLineRight,
+  PiStopFill,
 } from 'react-icons/pi';
 import { LuFilePlus2 } from 'react-icons/lu';
 import { useTranslation } from 'react-i18next';
@@ -52,6 +53,7 @@ type Props = BaseProps & {
     base64EncodedImages?: string[],
     attachments?: AttachmentType[]
   ) => void;
+  onStop?: () => void;
   onRegenerate: (enableReasoning: boolean) => void;
   continueGenerate: () => void;
   supportReasoning: boolean;
@@ -194,8 +196,16 @@ const InputChatContent = forwardRef<HTMLElement, Props>(
     const { open } = useSnackbar();
 
     const disabledSend = useMemo(() => {
-      return content === '' || props.disabledSend;
-    }, [content, props.disabledSend]);
+      // Allow sending when there's text OR at least one image/attachment.
+      const hasAttachments =
+        base64EncodedImages.length > 0 || attachedFiles.length > 0;
+      return (content === '' && !hasAttachments) || props.disabledSend;
+    }, [
+      content,
+      base64EncodedImages.length,
+      attachedFiles.length,
+      props.disabledSend,
+    ]);
 
     const inputRef = useRef<HTMLDivElement>(null);
 
@@ -518,12 +528,22 @@ const InputChatContent = forwardRef<HTMLElement, Props>(
                 />
               )}
             </div>
-            <ButtonSend
-              className="m-2 align-bottom"
-              disabled={disabledSend || props.disabled}
-              loading={props.isLoading}
-              onClick={sendContent}
-            />
+            {props.isLoading && props.onStop ? (
+              <button
+                type="button"
+                onClick={props.onStop}
+                aria-label="Stop generating"
+                className="m-2 flex items-center justify-center rounded-xl bg-aws-sea-blue-light p-2 text-xl text-white hover:bg-aws-sea-blue-hover-light dark:bg-aws-sea-blue-dark dark:hover:bg-aws-sea-blue-hover-dark">
+                <PiStopFill />
+              </button>
+            ) : (
+              <ButtonSend
+                className="m-2 align-bottom"
+                disabled={disabledSend || props.disabled}
+                loading={props.isLoading}
+                onClick={sendContent}
+              />
+            )}
           </div>
           {base64EncodedImages.length > 0 && (
             <div className="relative m-2 mr-24 flex flex-wrap gap-3">
