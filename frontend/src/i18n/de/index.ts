@@ -169,6 +169,11 @@ const translation = {
     app: {
       name: 'EchiumAI',
       inputMessage: 'Nachricht senden',
+      greeting: {
+        morning: 'Guten Morgen, {{name}}',
+        afternoon: 'Guten Tag, {{name}}',
+        evening: 'Guten Abend, {{name}}',
+      },
       waitingResponse: 'Bitte warte, bis die Antwort fertig ist…',
       pinnedBots: 'Angeheftete Bots',
       starredBots: 'Favorisierte Bots',

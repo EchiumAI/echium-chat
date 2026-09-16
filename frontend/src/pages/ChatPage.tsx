@@ -166,8 +166,26 @@ const ChatPage: React.FC = () => {
   const clearPlanLimitError = usePostMessageStreaming(
     (s) => s.clearPlanLimitError
   );
-  const { isAdmin } = useLoginUser();
+  const { isAdmin, userName } = useLoginUser();
   const { pinBot, unpinBot } = useBotPinning();
+
+  // Time-based greeting for the new-chat screen (localized). The first name is
+  // derived from the email local part, since sign-up only collects an email.
+  const greetingFirstName = useMemo(() => {
+    const local = (userName || '').split('@')[0] || '';
+    const token = local.split(/[._+-]/)[0] || local;
+    return token ? token.charAt(0).toUpperCase() + token.slice(1) : '';
+  }, [userName]);
+  const greetingKey = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      return 'app.greeting.morning' as const;
+    }
+    if (hour < 18) {
+      return 'app.greeting.afternoon' as const;
+    }
+    return 'app.greeting.evening' as const;
+  }, []);
 
   const {
     streamingState,
@@ -610,6 +628,11 @@ const ChatPage: React.FC = () => {
                       activeModels={activeModels}
                       botId={botId}
                     />
+                  )}
+                  {!isLoadingBot && !bot && greetingFirstName && (
+                    <div className="mb-2 text-center text-2xl font-light text-aws-font-color-light dark:text-aws-font-color-dark">
+                      {t(greetingKey, { name: greetingFirstName })}
+                    </div>
                   )}
                   <div className="px-20 text-center">
                     <div className="text-lg font-bold">

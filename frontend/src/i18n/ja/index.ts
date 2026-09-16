@@ -198,6 +198,11 @@ const translation: typeof en = {
     app: {
       name: 'EchiumAI',
       inputMessage: 'お手伝いできることはありますか？',
+      greeting: {
+        morning: 'おはようございます、{{name}}さん',
+        afternoon: 'こんにちは、{{name}}さん',
+        evening: 'こんばんは、{{name}}さん',
+      },
       waitingResponse: '応答が完了するまでお待ちください…',
       myBots: 'マイボット',
       discoverBots: 'ボットを探す',
