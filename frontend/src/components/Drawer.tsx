@@ -336,6 +336,86 @@ const FolderSection: React.FC<FolderSectionProps> = ({
   );
 };
 
+// An agent in the sidebar: a header (name + new-chat + delete) with the
+// agent's own conversations listed beneath it (collapsible). Agent chats live
+// here rather than in the generic chat history.
+type AgentSectionProps = {
+  agent: Agent;
+  conversations: ConversationMeta[];
+  generateTitleConvId?: string;
+  onNewChat: () => void;
+  onDelete: () => void;
+  updateTitle: (conversationId: string, title: string) => Promise<void>;
+  onDeleteConversation: (conversation: ConversationMeta) => void;
+  onClickConversation: () => void;
+};
+
+const AgentSection: React.FC<AgentSectionProps> = ({
+  agent,
+  conversations,
+  generateTitleConvId,
+  onNewChat,
+  onDelete,
+  updateTitle,
+  onDeleteConversation,
+  onClickConversation,
+}) => {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState<boolean>(true);
+
+  return (
+    <div>
+      <div className="group flex items-center justify-between px-2 py-1.5 hover:bg-white/5">
+        <button
+          type="button"
+          className="flex min-w-0 flex-1 items-center gap-1.5 truncate text-left"
+          onClick={() => setOpen((o) => !o)}>
+          {open ? (
+            <PiCaretDown className="shrink-0" />
+          ) : (
+            <PiCaretRight className="shrink-0" />
+          )}
+          <PiRobot className="shrink-0" />
+          <span className="truncate">{agent.name}</span>
+          <span className="shrink-0 text-xs text-white/50">
+            ({conversations.length})
+          </span>
+        </button>
+        <div className="flex shrink-0 gap-1 lg:hidden lg:group-hover:flex">
+          <ButtonIcon className="text-base" onClick={onNewChat}>
+            <PiPlus />
+          </ButtonIcon>
+          <ButtonIcon className="text-base" onClick={onDelete}>
+            <PiTrash />
+          </ButtonIcon>
+        </div>
+      </div>
+      {open && (
+        <div className="ml-2 border-l border-white/10 pl-1">
+          {conversations.length === 0 ? (
+            <div className="px-3 py-1 text-xs text-white/50">
+              {t('agent.noChatsYet')}
+            </div>
+          ) : (
+            conversations.map((conversation) => (
+              <Item
+                key={conversation.id}
+                className="grow"
+                label={conversation.title}
+                conversationId={conversation.id}
+                generatedTitle={conversation.id === generateTitleConvId}
+                updateTitle={updateTitle}
+                onClick={onClickConversation}
+                onDelete={() => onDeleteConversation(conversation)}
+              />
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Drawer: React.FC<Props> = (props) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -804,20 +884,18 @@ const Drawer: React.FC<Props> = (props) => {
                   )}
 
                   {agents?.map((agent) => (
-                    <DrawerItem
+                    <AgentSection
                       key={agent.id}
-                      isActive={false}
-                      to={`/agent/${agent.id}`}
-                      icon={<PiRobot />}
-                      labelComponent={agent.name}
-                      onClick={() => onClickAgent(agent)}
-                      actionComponent={
-                        <ButtonIcon
-                          className="text-base"
-                          onClick={() => onClickDeleteAgent(agent)}>
-                          <PiTrash />
-                        </ButtonIcon>
-                      }
+                      agent={agent}
+                      conversations={(conversations ?? []).filter(
+                        (c) => c.agentId === agent.id
+                      )}
+                      generateTitleConvId={generateTitleConvId}
+                      onNewChat={() => onClickAgent(agent)}
+                      onDelete={() => onClickDeleteAgent(agent)}
+                      updateTitle={props.updateConversationTitle}
+                      onDeleteConversation={props.onDeleteConversation}
+                      onClickConversation={closeSmallDrawer}
                     />
                   ))}
 
@@ -876,7 +954,7 @@ const Drawer: React.FC<Props> = (props) => {
 
                   {(folders ?? []).map((folder) => {
                     const items = (conversations ?? []).filter(
-                      (c) => c.folderId === folder.id
+                      (c) => c.folderId === folder.id && !c.agentId
                     );
                     return (
                       <FolderSection
@@ -947,7 +1025,7 @@ const Drawer: React.FC<Props> = (props) => {
                       </div>
                     )}
                     {conversations
-                      ?.filter((c) => !c.folderId)
+                      ?.filter((c) => !c.folderId && !c.agentId)
                       .slice(0, drawerOptions.displayCount.conversationHistory)
                       .map((conversation) => (
                         <Item

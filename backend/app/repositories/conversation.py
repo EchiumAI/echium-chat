@@ -64,6 +64,9 @@ def store_conversation(
     if conversation.bot_id:
         item_params["BotId"] = conversation.bot_id
 
+    if conversation.agent_id:
+        item_params["AgentId"] = conversation.agent_id
+
     if conversation.folder_id:
         item_params["FolderId"] = conversation.folder_id
 
@@ -119,6 +122,7 @@ def find_conversation_by_user_id(user_id: str) -> list[ConversationMeta]:
             # NOTE: all message has the same model
             model=json.loads(item["MessageMap"]).get("system", {}).get("model", ""),
             bot_id=item["BotId"] if "BotId" in item else None,
+            agent_id=item.get("AgentId"),
             folder_id=item.get("FolderId"),
         )
         for item in response["Items"]
@@ -146,6 +150,7 @@ def find_conversation_by_user_id(user_id: str) -> list[ConversationMeta]:
                     title=item["Title"],
                     model=model,
                     bot_id=item["BotId"] if "BotId" in item else None,
+                    agent_id=item.get("AgentId"),
                     folder_id=item.get("FolderId"),
                 )
                 for item in response["Items"]
@@ -189,6 +194,7 @@ def find_conversation_by_id(user_id: str, conversation_id: str) -> ConversationM
         message_map={k: MessageModel.model_validate(v) for k, v in message_map.items()},
         last_message_id=item["LastMessageId"],
         bot_id=item["BotId"] if "BotId" in item else None,
+        agent_id=item.get("AgentId"),
         should_continue=item.get("ShouldContinue", False),
         folder_id=item.get("FolderId"),
     )

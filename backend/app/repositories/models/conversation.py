@@ -800,6 +800,9 @@ class ConversationModel(BaseModel):
     message_map: dict[str, MessageModel]
     last_message_id: str
     bot_id: str | None
+    # Id of the lightweight agent this conversation is scoped to (None = a
+    # normal chat). Distinct from bot_id; used to group chats under an agent.
+    agent_id: str | None = None
     should_continue: bool
     # Id of the folder this conversation belongs to (None = not filed).
     folder_id: str | None = None
@@ -811,6 +814,7 @@ class ConversationMeta(BaseModel):
     create_time: float
     model: str
     bot_id: str | None
+    agent_id: str | None = None
     folder_id: str | None = None
 
 

@@ -237,6 +237,7 @@ class ConversationMetaOutput(BaseSchema):
     create_time: float
     model: str
     bot_id: str | None
+    agent_id: str | None = None
     folder_id: str | None = None
 
 
@@ -255,6 +256,7 @@ class Conversation(BaseSchema):
     message_map: dict[str, MessageOutput]
     last_message_id: str
     bot_id: str | None
+    agent_id: str | None = None
     should_continue: bool
 
 

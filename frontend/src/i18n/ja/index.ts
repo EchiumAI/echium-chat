@@ -364,6 +364,7 @@ const translation: typeof en = {
       tab: 'エージェント',
       new: '新しいエージェント',
       noAgents: 'エージェントがまだありません。作成して始めましょう。',
+      noChatsYet: 'チャットはまだありません',
       startChat: 'チャットを開始',
       deleteConfirm:
         'エージェント「{{name}}」を削除しますか？この操作は取り消せません。既存のチャットは保持されます。',

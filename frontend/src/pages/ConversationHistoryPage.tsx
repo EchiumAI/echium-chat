@@ -718,7 +718,7 @@ const ConversationHistoryPage: React.FC = () => {
                   (folders ?? []).map((folder, idx) => {
                     const color = FOLDER_COLORS[idx % FOLDER_COLORS.length];
                     const items = (conversations ?? []).filter(
-                      (c) => c.folderId === folder.id
+                      (c) => c.folderId === folder.id && !c.agentId
                     );
                     const isOver = dragOverFolderId === folder.id;
                     return (
@@ -796,7 +796,13 @@ const ConversationHistoryPage: React.FC = () => {
               <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-aws-font-color-light dark:text-aws-font-color-dark">
                 {t('folder.unfiled')}
                 <span className="text-xs text-gray">
-                  ({(conversations ?? []).filter((c) => !c.folderId).length})
+                  (
+                  {
+                    (conversations ?? []).filter(
+                      (c) => !c.folderId && !c.agentId
+                    ).length
+                  }
+                  )
                 </span>
               </div>
               <div
@@ -821,7 +827,9 @@ const ConversationHistoryPage: React.FC = () => {
                   dragOverFolderId === 'unfiled' &&
                     'ring-2 ring-inset ring-aws-sea-blue-light'
                 )}>
-                {conversations?.filter((c) => !c.folderId).map(renderRow)}
+                {conversations
+                  ?.filter((c) => !c.folderId && !c.agentId)
+                  .map(renderRow)}
               </div>
             </div>
           </div>

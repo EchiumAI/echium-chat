@@ -364,6 +364,7 @@ const translation = {
       tab: 'Agents',
       new: 'New agent',
       noAgents: 'No agents yet. Create one to get started.',
+      noChatsYet: 'No chats yet',
       startChat: 'Start chat',
       deleteConfirm:
         'Delete agent "{{name}}"? This cannot be undone. Existing chats are kept.',

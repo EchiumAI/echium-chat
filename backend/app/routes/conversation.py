@@ -128,6 +128,7 @@ def get_all_conversations(
             create_time=conversation.create_time,
             model=conversation.model,
             bot_id=conversation.bot_id,
+            agent_id=conversation.agent_id,
             folder_id=conversation.folder_id,
         )
         for conversation in conversations

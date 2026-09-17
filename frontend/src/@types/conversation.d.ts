@@ -140,6 +140,7 @@ export type ConversationMeta = {
   lastMessageId: string;
   model: Model;
   botId?: string;
+  agentId?: string | null;
   folderId?: string | null;
 };
 

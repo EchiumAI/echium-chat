@@ -177,6 +177,7 @@ def prepare_conversation(
             message_map=initial_message_map,
             last_message_id="",
             bot_id=chat_input.bot_id,
+            agent_id=chat_input.agent_id,
             should_continue=False,
         )
 
@@ -833,6 +834,7 @@ def fetch_conversation(user_id: str, conversation_id: str) -> Conversation:
         last_message_id=conversation.last_message_id,
         message_map=message_map,
         bot_id=conversation.bot_id,
+        agent_id=conversation.agent_id,
         should_continue=conversation.should_continue,
     )
     return output
