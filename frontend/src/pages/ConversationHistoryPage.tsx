@@ -32,6 +32,7 @@ import useAgent from '../hooks/useAgent';
 import DialogConfirmDeleteChat from '../components/DialogConfirmDeleteChat';
 import DialogConfirmClearConversations from '../components/DialogConfirmClearConversations';
 import DialogAgentWizard from '../components/DialogAgentWizard';
+import DialogAgentEdit from '../components/DialogAgentEdit';
 import ModalDialog from '../components/ModalDialog';
 import Button from '../components/Button';
 import ListPageLayout from '../layouts/ListPageLayout';
@@ -114,6 +115,7 @@ const ConversationHistoryPage: React.FC = () => {
   const [isWizardOpen, setIsWizardOpen] = useState(
     searchParams.get('new') === '1'
   );
+  const [editingAgent, setEditingAgent] = useState<Agent | undefined>();
   const { agents, isLoadingAgents, deleteAgent } = useAgent();
 
   // Keep the active tab in sync when the query param changes while the page
@@ -443,6 +445,12 @@ const ConversationHistoryPage: React.FC = () => {
         onCreated={onCreatedAgent}
       />
 
+      <DialogAgentEdit
+        isOpen={!!editingAgent}
+        agent={editingAgent}
+        onClose={() => setEditingAgent(undefined)}
+      />
+
       <ModalDialog
         isOpen={isOpenBulkDeleteDialog}
         title={t('deleteDialog.title')}
@@ -668,6 +676,13 @@ const ConversationHistoryPage: React.FC = () => {
                     <span className="truncate">{agent.name}</span>
                   </div>
                   <div className="flex shrink-0 items-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
+                    <ButtonIcon
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingAgent(agent);
+                      }}>
+                      <PiPencilLine />
+                    </ButtonIcon>
                     <ButtonIcon onClick={(e) => onClickDeleteAgent(e, agent)}>
                       <PiTrash />
                     </ButtonIcon>

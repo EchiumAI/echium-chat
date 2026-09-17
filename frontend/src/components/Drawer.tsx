@@ -39,6 +39,7 @@ import useChat from '../hooks/useChat';
 import useAgent from '../hooks/useAgent';
 import { Agent } from '../@types/agent';
 import DialogAgentWizard from './DialogAgentWizard';
+import DialogAgentEdit from './DialogAgentEdit';
 import { useTranslation } from 'react-i18next';
 import Menu from './Menu';
 import DrawerItem from './DrawerItem';
@@ -344,6 +345,7 @@ type AgentSectionProps = {
   conversations: ConversationMeta[];
   generateTitleConvId?: string;
   onNewChat: () => void;
+  onEdit: () => void;
   onDelete: () => void;
   updateTitle: (conversationId: string, title: string) => Promise<void>;
   onDeleteConversation: (conversation: ConversationMeta) => void;
@@ -355,6 +357,7 @@ const AgentSection: React.FC<AgentSectionProps> = ({
   conversations,
   generateTitleConvId,
   onNewChat,
+  onEdit,
   onDelete,
   updateTitle,
   onDeleteConversation,
@@ -384,6 +387,9 @@ const AgentSection: React.FC<AgentSectionProps> = ({
         <div className="flex shrink-0 gap-1 lg:hidden lg:group-hover:flex">
           <ButtonIcon className="text-base" onClick={onNewChat}>
             <PiPlus />
+          </ButtonIcon>
+          <ButtonIcon className="text-base" onClick={onEdit}>
+            <PiPencilLine />
           </ButtonIcon>
           <ButtonIcon className="text-base" onClick={onDelete}>
             <PiTrash />
@@ -532,6 +538,7 @@ const Drawer: React.FC<Props> = (props) => {
   // history and the list of the user's agents (click an agent to chat).
   const [drawerTab, setDrawerTab] = useState<'chats' | 'agents'>('chats');
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [editingAgent, setEditingAgent] = useState<Agent | undefined>();
   const {
     agents,
     isLoadingAgents,
@@ -650,6 +657,11 @@ const Drawer: React.FC<Props> = (props) => {
         isOpen={isWizardOpen}
         onClose={() => setIsWizardOpen(false)}
         onCreated={onAgentCreated}
+      />
+      <DialogAgentEdit
+        isOpen={!!editingAgent}
+        agent={editingAgent}
+        onClose={() => setEditingAgent(undefined)}
       />
       <div
         className="relative h-full overflow-y-auto bg-aws-squid-ink-light scrollbar-thin scrollbar-track-white scrollbar-thumb-aws-squid-ink-light/30 dark:bg-aws-ui-color-dark dark:scrollbar-thumb-aws-ui-color-dark/30"
@@ -892,6 +904,7 @@ const Drawer: React.FC<Props> = (props) => {
                       )}
                       generateTitleConvId={generateTitleConvId}
                       onNewChat={() => onClickAgent(agent)}
+                      onEdit={() => setEditingAgent(agent)}
                       onDelete={() => onClickDeleteAgent(agent)}
                       updateTitle={props.updateConversationTitle}
                       onDeleteConversation={props.onDeleteConversation}

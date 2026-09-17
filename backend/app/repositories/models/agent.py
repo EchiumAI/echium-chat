@@ -29,6 +29,10 @@ class AgentModel(BaseModel):
     description: str = ""
     # The system prompt that defines the agent's behavior.
     instruction: str = ""
+    # Durable "memory" / steering notes the agent always carries (Markdown).
+    # User-editable and (later) auto-updated after conversations. Injected into
+    # the system prompt after the instruction.
+    memory: str = ""
     # Model id the agent uses; None => use the user's currently selected model.
     model: Optional[str] = None
     # Enabled tool names, e.g. ["internet_search"]. Empty => no tools.

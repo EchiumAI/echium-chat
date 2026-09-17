@@ -7,6 +7,7 @@ class AgentInput(BaseSchema):
     name: str
     description: Optional[str] = None
     instruction: str
+    memory: Optional[str] = None
     model: Optional[str] = None
     tools: list[str] = []
 
@@ -15,6 +16,7 @@ class AgentModifyInput(BaseSchema):
     name: str
     description: Optional[str] = None
     instruction: str
+    memory: Optional[str] = None
     model: Optional[str] = None
     tools: list[str] = []
 
@@ -25,6 +27,7 @@ class AgentOutput(BaseSchema):
     name: str
     description: str
     instruction: str
+    memory: str
     model: Optional[str]
     tools: list[str]
     create_time: float

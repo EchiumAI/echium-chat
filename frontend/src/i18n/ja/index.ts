@@ -366,6 +366,16 @@ const translation: typeof en = {
       noAgents: 'エージェントがまだありません。作成して始めましょう。',
       noChatsYet: 'チャットはまだありません',
       startChat: 'チャットを開始',
+      edit: {
+        title: 'エージェントを編集',
+        name: '名前',
+        description: '説明',
+        instruction: '指示',
+        memory: 'メモリ',
+        memoryHint:
+          'エージェントが常に記憶する永続的なメモです。会話のあとに自動更新されます。いつでも編集・消去できます。',
+        save: '保存',
+      },
       deleteConfirm:
         'エージェント「{{name}}」を削除しますか？この操作は取り消せません。既存のチャットは保持されます。',
       wizard: {

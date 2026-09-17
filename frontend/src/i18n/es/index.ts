@@ -268,6 +268,16 @@ const translation = {
       noAgents: 'Aún no hay agentes. Crea uno para empezar.',
       noChatsYet: 'Aún no hay chats',
       startChat: 'Iniciar chat',
+      edit: {
+        title: 'Editar agente',
+        name: 'Nombre',
+        description: 'Descripción',
+        instruction: 'Instrucción',
+        memory: 'Memoria',
+        memoryHint:
+          'Notas persistentes que el agente siempre recuerda. Se actualizan automáticamente tras las conversaciones; puedes editarlas o borrarlas cuando quieras.',
+        save: 'Guardar',
+      },
       deleteConfirm:
         '¿Eliminar el agente «{{name}}»? Esta acción no se puede deshacer. Los chats existentes se conservan.',
       wizard: {

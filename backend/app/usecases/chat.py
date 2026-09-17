@@ -150,12 +150,20 @@ def prepare_conversation(
             logger.info("Agent id is provided. Fetching agent.")
             parent_id = "instruction"
             agent = find_agent_by_id(user.id, chat_input.agent_id)
+            # System prompt = the agent's instruction plus its durable memory /
+            # steering notes (if any), so the agent "remembers" across chats.
+            agent_system_prompt = agent.instruction
+            if agent.memory.strip():
+                agent_system_prompt = (
+                    f"{agent.instruction}\n\n"
+                    f"# Memory / steering notes\n{agent.memory}"
+                )
             initial_message_map["instruction"] = MessageModel(
                 role="instruction",
                 content=[
                     TextContentModel(
                         content_type="text",
-                        body=agent.instruction,
+                        body=agent_system_prompt,
                     )
                 ],
                 model=chat_input.message.model,

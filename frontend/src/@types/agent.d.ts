@@ -8,6 +8,9 @@ export type Agent = {
   name: string;
   description: string;
   instruction: string;
+  // Durable memory / steering notes (Markdown), injected into the system
+  // prompt and auto-updated after conversations.
+  memory: string;
   model: string | null;
   tools: string[];
   createTime: number;
@@ -18,6 +21,7 @@ export type AgentInput = {
   name: string;
   description?: string;
   instruction: string;
+  memory?: string;
   model?: string;
   tools?: string[];
 };

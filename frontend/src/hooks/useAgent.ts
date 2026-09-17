@@ -31,6 +31,7 @@ const useAgent = () => {
             draft[idx].name = params.name;
             draft[idx].description = params.description ?? '';
             draft[idx].instruction = params.instruction;
+            draft[idx].memory = params.memory ?? '';
             draft[idx].model = params.model ?? null;
             draft[idx].tools = params.tools ?? [];
           }

@@ -27,6 +27,7 @@ def _to_output(agent: AgentModel) -> AgentOutput:
         name=agent.name,
         description=agent.description,
         instruction=agent.instruction,
+        memory=agent.memory,
         model=agent.model,
         tools=agent.tools,
         create_time=agent.create_time,
@@ -42,6 +43,7 @@ def create_agent(user_id: str, agent_input: AgentInput) -> AgentOutput:
         name=agent_input.name,
         description=agent_input.description or "",
         instruction=agent_input.instruction,
+        memory=agent_input.memory or "",
         model=agent_input.model,
         tools=agent_input.tools,
         create_time=now,
@@ -70,6 +72,11 @@ def modify_agent(
         name=agent_input.name,
         description=agent_input.description or "",
         instruction=agent_input.instruction,
+        # If the edit form omits memory, keep the existing memory rather than
+        # wiping it (memory is also updated out-of-band by auto-memory).
+        memory=(
+            agent_input.memory if agent_input.memory is not None else existing.memory
+        ),
         model=agent_input.model,
         tools=agent_input.tools,
         create_time=existing.create_time,
