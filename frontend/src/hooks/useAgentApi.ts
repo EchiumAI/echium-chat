@@ -41,6 +41,14 @@ const useAgentApi = () => {
         params
       );
     },
+    // Auto-memory: distill durable facts from a finished conversation into the
+    // agent's memory. Called fire-and-forget after an agent turn completes.
+    reflectMemory: (agentId: string, conversationId: string) => {
+      return http.post<{ memory: string }, { conversationId: string }>(
+        `agents/${agentId}/reflect`,
+        { conversationId }
+      );
+    },
   };
 };
 

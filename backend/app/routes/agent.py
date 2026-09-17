@@ -2,6 +2,8 @@ from app.routes.schemas.agent import (
     AgentInput,
     AgentModifyInput,
     AgentOutput,
+    AgentReflectInput,
+    AgentReflectOutput,
     AgentWizardInput,
     AgentWizardOutput,
 )
@@ -12,6 +14,7 @@ from app.usecases.agent import (
     list_agents,
     modify_agent,
 )
+from app.usecases.agent_memory import reflect_agent_memory
 from app.usecases.agent_wizard import run_agent_wizard
 from app.user import User
 from fastapi import APIRouter, Request
@@ -61,3 +64,18 @@ def delete_single_agent(request: Request, agent_id: str):
     current_user: User = request.state.current_user
     delete_agent(current_user.id, agent_id)
     return {"status": "ok"}
+
+
+@router.post("/agents/{agent_id}/reflect", response_model=AgentReflectOutput)
+def post_agent_reflect(
+    request: Request, agent_id: str, reflect_input: AgentReflectInput
+):
+    """Update the agent's memory from a finished conversation (auto-memory).
+
+    Called fire-and-forget by the frontend after an agent turn completes.
+    """
+    current_user: User = request.state.current_user
+    memory = reflect_agent_memory(
+        current_user.id, agent_id, reflect_input.conversation_id
+    )
+    return AgentReflectOutput(memory=memory)

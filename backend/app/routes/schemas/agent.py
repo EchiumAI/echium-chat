@@ -21,6 +21,16 @@ class AgentModifyInput(BaseSchema):
     tools: list[str] = []
 
 
+class AgentReflectInput(BaseSchema):
+    # The conversation whose content should be distilled into the agent memory.
+    conversation_id: str
+
+
+class AgentReflectOutput(BaseSchema):
+    # The agent's memory after reflection.
+    memory: str
+
+
 class AgentOutput(BaseSchema):
     id: str
     workspace_id: str

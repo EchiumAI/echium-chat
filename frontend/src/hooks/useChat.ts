@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import useConversationApi from './useConversationApi';
+import useAgentApi from './useAgentApi';
 import { produce } from 'immer';
 import {
   MessageContent,
@@ -276,6 +277,7 @@ const useChat = () => {
   const { modelId, setModelId, availableModels } = useModel();
 
   const conversationApi = useConversationApi();
+  const agentApi = useAgentApi();
   const feedbackApi = useFeedbackApi();
   const {
     data,
@@ -535,6 +537,14 @@ const useChat = () => {
           createNewConversation();
         } else {
           mutate();
+        }
+        // Auto-memory: after an agent turn completes, let the agent distill
+        // durable facts into its memory. Fire-and-forget, off the hot path.
+        if (agentId) {
+          const convId = isNewChat ? newConversationId : conversationId;
+          agentApi.reflectMemory(agentId, convId).catch(() => {
+            // Non-critical; ignore failures.
+          });
         }
       })
       .catch((e) => {
