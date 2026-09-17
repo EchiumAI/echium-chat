@@ -21,17 +21,15 @@ import {
 import Button from '../components/Button';
 import ButtonIcon from '../components/ButtonIcon';
 import { useTranslation } from 'react-i18next';
-import SwitchBedrockModel from '../components/SwitchBedrockModel';
 import ConsumptionIndicator from '../components/ConsumptionIndicator';
 import useSnackbar from '../hooks/useSnackbar';
 import useBot from '../hooks/useBot';
 import useAgent from '../hooks/useAgent';
 import useConversation from '../hooks/useConversation';
-import { ActiveModels, BotSummary } from '../@types/bot';
+import { BotSummary } from '../@types/bot';
 import IconPinnedBot from '../components/IconPinnedBot.tsx';
 
 import { copyBotUrl, isPinnedBot, canBePinned } from '../utils/BotUtils';
-import { toCamelCase } from '../utils/StringUtils';
 import { produce } from 'immer';
 import StatusSyncBot from '../components/StatusSyncBot';
 import Alert from '../components/Alert';
@@ -45,11 +43,9 @@ import { BottomHelper } from '../features/helper/components/BottomHelper';
 import { useIsWindows } from '../hooks/useIsWindows';
 import {
   DisplayMessageContent,
-  Model,
   PutFeedbackRequest,
   RelatedDocument,
 } from '../@types/conversation.ts';
-import { AVAILABLE_MODEL_KEYS } from '../constants/index';
 import usePostMessageStreaming from '../hooks/usePostMessageStreaming.ts';
 import useLoginUser from '../hooks/useLoginUser';
 import useSubscription from '../hooks/useSubscription';
@@ -151,13 +147,6 @@ const ChatMessageWithRelatedDocuments: React.FC<ChatMessageWithRelatedDocumentsP
   );
 });
 
-// Default model activation settings when no bot is selected
-const defaultActiveModels: ActiveModels = (() => {
-  return Object.fromEntries(
-    AVAILABLE_MODEL_KEYS.map((key: Model) => [toCamelCase(key), true])
-  ) as ActiveModels;
-})();
-
 const ChatPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -203,8 +192,6 @@ const ChatPage: React.FC = () => {
     regenerate,
     continueGenerate,
     stopGeneration,
-    getPostedModel,
-    loadingConversation,
     getShouldContinue,
     relatedDocuments,
     giveFeedback,
@@ -511,14 +498,6 @@ const ChatPage: React.FC = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   });
 
-  const activeModels = useMemo(() => {
-    if (!bot) {
-      return defaultActiveModels;
-    }
-    const isActiveModelsEmpty =
-      Object.keys(bot?.activeModels ?? {}).length === 0;
-    return isActiveModelsEmpty ? defaultActiveModels : bot.activeModels;
-  }, [bot]);
 
   const togglePinBot = useCallback(
     (bot: BotSummary) => {
@@ -629,11 +608,6 @@ const ChatPage: React.FC = () => {
               </div>
             )}
           </div>
-          {getPostedModel() && (
-            <div className="absolute right-2 top-10 text-xs text-dark-gray dark:text-light-gray">
-              model: {getPostedModel()}
-            </div>
-          )}
         </div>
 
         {/* Plan-limit upgrade prompt — shown when the backend blocks a message
@@ -666,13 +640,6 @@ const ChatPage: React.FC = () => {
               className="flex h-full flex-col overflow-auto pb-16">
               {messages?.length === 0 ? (
                 <div className="relative mb-[45vh]  flex w-full flex-col items-center justify-center">
-                  {!loadingConversation && (
-                    <SwitchBedrockModel
-                      className="mb-6 mt-3 w-min"
-                      activeModels={activeModels}
-                      botId={botId}
-                    />
-                  )}
                   {!isLoadingBot && !bot && greetingFirstName && (
                     <div className="mb-2 text-center text-2xl font-light text-aws-font-color-light dark:text-aws-font-color-dark">
                       {t(greetingKey, { name: greetingFirstName })}

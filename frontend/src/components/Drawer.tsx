@@ -820,6 +820,19 @@ const Drawer: React.FC<Props> = (props) => {
                       }
                     />
                   ))}
+
+                  {agents && agents.length > 0 && (
+                    <Button
+                      text
+                      rightIcon={<PiArrowRight />}
+                      className="w-full"
+                      onClick={() => {
+                        navigate('/conversations?tab=agents');
+                        closeSmallDrawer();
+                      }}>
+                      {t('button.allChatsAndAgents')}
+                    </Button>
+                  )}
                 </div>
               )}
 
@@ -965,7 +978,7 @@ const Drawer: React.FC<Props> = (props) => {
                         navigate('/conversations');
                         closeSmallDrawer();
                       }}>
-                      {t('bot.button.viewAll')}
+                      {t('button.allChatsAndAgents')}
                     </Button>
                   )}
                 </ExpandableDrawerGroup>

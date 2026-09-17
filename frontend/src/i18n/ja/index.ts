@@ -931,6 +931,7 @@ const translation: typeof en = {
       regenerate: '再生成',
       delete: '削除',
       deleteAll: 'すべて削除',
+      allChatsAndAgents: 'すべてのチャットとエージェント',
       done: '完了',
       ok: 'OK',
       cancel: 'キャンセル',

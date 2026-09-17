@@ -676,6 +676,7 @@ Las categorías de clasificación son:
       regenerate: 'Regenerar',
       delete: 'Eliminar',
       deleteAll: 'Eliminar Todo',
+      allChatsAndAgents: 'Todos los chats y agentes',
       done: 'Hecho',
       ok: 'OK',
       cancel: 'Cancelar',

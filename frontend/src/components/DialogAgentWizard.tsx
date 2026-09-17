@@ -7,6 +7,7 @@ import { Agent, WizardMessage } from '../@types/agent';
 import useAgentApi from '../hooks/useAgentApi';
 import ModalDialog from './ModalDialog';
 import ButtonIcon from './ButtonIcon';
+import ChatMessageMarkdown from './ChatMessageMarkdown';
 
 type Props = BaseProps & {
   isOpen: boolean;
@@ -120,15 +121,23 @@ const DialogAgentWizard: React.FC<Props> = (props) => {
               )}>
               <div
                 className={twMerge(
-                  'max-w-[80%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm',
+                  'max-w-[80%] rounded-2xl px-3 py-2 text-sm',
                   m.role === 'user'
-                    ? 'bg-aws-sea-blue-light text-aws-font-color-white-light dark:bg-aws-ui-color-dark dark:text-aws-font-color-white-dark'
+                    ? 'whitespace-pre-wrap bg-aws-sea-blue-light text-aws-font-color-white-light dark:bg-aws-ui-color-dark dark:text-aws-font-color-white-dark'
                     : 'bg-light-gray text-aws-font-color-light dark:bg-aws-ui-color-dark dark:text-aws-font-color-dark'
                 )}>
-                {idx === 0 && (
-                  <PiSparkle className="mb-1 mr-1 inline text-aws-aqua" />
+                {m.role === 'user' ? (
+                  m.content
+                ) : (
+                  <div className="flex items-start gap-1">
+                    {idx === 0 && (
+                      <PiSparkle className="mt-1 shrink-0 text-aws-aqua" />
+                    )}
+                    <ChatMessageMarkdown messageId={`wizard-${idx}`}>
+                      {m.content}
+                    </ChatMessageMarkdown>
+                  </div>
                 )}
-                {m.content}
               </div>
             </div>
           ))}
