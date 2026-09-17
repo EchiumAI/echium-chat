@@ -74,18 +74,40 @@ const useConversation = () => {
         { revalidate: false }
       );
 
-      // Fire the single-item deletes in parallel, then revalidate once.
-      return Promise.all(
-        conversationIds.map((id) => conversationApi.deleteConversation(id))
-      )
-        .then(() => {
-          mutate();
-        })
-        .catch((error) => {
-          console.error('Failed to delete conversations:', error);
-          mutate();
-          throw error;
-        });
+      // Delete in small concurrency-limited batches. Firing every delete at
+      // once raced the Amplify token refresh in the axios interceptor, so
+      // some requests silently failed and the rows came back after a refresh.
+      // allSettled means one failure can't abort the rest; we always
+      // revalidate at the end so the UI reconciles with the server (anything
+      // that failed to delete reappears, everything that succeeded stays gone).
+      const runBatchedDeletes = async () => {
+        const BATCH_SIZE = 5;
+        const failedIds: string[] = [];
+        for (let i = 0; i < conversationIds.length; i += BATCH_SIZE) {
+          const batch = conversationIds.slice(i, i + BATCH_SIZE);
+          const results = await Promise.allSettled(
+            batch.map((id) => conversationApi.deleteConversation(id))
+          );
+          results.forEach((result, idx) => {
+            if (result.status === 'rejected') {
+              failedIds.push(batch[idx]);
+              console.error(
+                'Failed to delete conversation:',
+                batch[idx],
+                result.reason
+              );
+            }
+          });
+        }
+        await mutate();
+        if (failedIds.length > 0) {
+          throw new Error(
+            `Failed to delete ${failedIds.length} conversation(s)`
+          );
+        }
+      };
+
+      return runBatchedDeletes();
     },
     clearConversations: () => {
       return mutate(async () => {
