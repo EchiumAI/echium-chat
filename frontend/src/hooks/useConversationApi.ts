@@ -91,6 +91,11 @@ const useConversationApi = () => {
     clearConversations: () => {
       return http.delete('conversations');
     },
+    // Fire-and-forget: refresh the conversation's rolling summary (workspace
+    // memory) after a turn completes.
+    summarizeConversation: (conversationId: string) => {
+      return http.post(`conversation/${conversationId}/summarize`, {});
+    },
     updateTitle,
     updateTitleWithGeneratedTitle: async (conversationId: string) => {
       const res = await http.getOnce<{

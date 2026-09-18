@@ -70,6 +70,12 @@ def store_conversation(
     if conversation.folder_id:
         item_params["FolderId"] = conversation.folder_id
 
+    # Preserve the rolling summary across re-persists (M5).
+    if conversation.summary:
+        item_params["Summary"] = conversation.summary
+    if conversation.summary_updated_at is not None:
+        item_params["SummaryUpdatedAt"] = decimal(str(conversation.summary_updated_at))
+
     message_map = {
         k: v.model_dump(by_alias=True) for k, v in conversation.message_map.items()
     }
@@ -295,6 +301,32 @@ def delete_conversation_by_user_id(user_id: str):
 
     except ClientError as e:
         logger.error(f"An error occurred: {e.response['Error']['Message']}")
+        raise e
+
+
+def update_conversation_summary(
+    user_id: str, conversation_id: str, summary: str, updated_at: float
+):
+    """Targeted update of a conversation's rolling summary (M5).
+
+    Avoids re-writing the whole (potentially large) conversation item.
+    """
+    table = get_conversation_table_client(user_id)
+    try:
+        table.update_item(
+            Key={"PK": user_id, "SK": compose_conv_id(user_id, conversation_id)},
+            UpdateExpression="set Summary=:s, SummaryUpdatedAt=:u",
+            ExpressionAttributeValues={
+                ":s": summary,
+                ":u": decimal(str(updated_at)),
+            },
+            ConditionExpression="attribute_exists(PK) AND attribute_exists(SK)",
+        )
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+            raise RecordNotFoundError(
+                f"Conversation with id {conversation_id} not found"
+            )
         raise e
 
 

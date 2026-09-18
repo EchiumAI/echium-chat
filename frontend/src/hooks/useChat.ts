@@ -538,14 +538,19 @@ const useChat = () => {
         } else {
           mutate();
         }
+        const convId = isNewChat ? newConversationId : conversationId;
         // Auto-memory: after an agent turn completes, let the agent distill
         // durable facts into its memory. Fire-and-forget, off the hot path.
         if (agentId) {
-          const convId = isNewChat ? newConversationId : conversationId;
           agentApi.reflectMemory(agentId, convId).catch(() => {
             // Non-critical; ignore failures.
           });
         }
+        // Workspace memory: refresh this conversation's rolling summary (all
+        // chats, agent or not). Fire-and-forget.
+        conversationApi.summarizeConversation(convId).catch(() => {
+          // Non-critical; ignore failures.
+        });
       })
       .catch((e) => {
         console.error(e);

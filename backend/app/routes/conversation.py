@@ -32,6 +32,7 @@ from app.routes.schemas.conversation import (
     RelatedDocument,
 )
 from app.utils import get_current_time
+from app.usecases.conversation_memory import summarize_conversation
 from app.usecases.chat import (
     chat,
     chat_output_from_message,
@@ -217,6 +218,17 @@ def get_proposed_title(request: Request, conversation_id: str):
 
     title = propose_conversation_title(current_user.id, conversation_id)
     return ProposedTitle(title=title)
+
+
+@router.post("/conversation/{conversation_id}/summarize")
+def post_summarize_conversation(request: Request, conversation_id: str):
+    """Update the conversation's rolling summary for workspace memory (M5).
+
+    Called fire-and-forget by the frontend after a turn completes.
+    """
+    current_user: User = request.state.current_user
+    summarize_conversation(current_user.id, conversation_id)
+    return {"status": "ok"}
 
 
 @router.put(

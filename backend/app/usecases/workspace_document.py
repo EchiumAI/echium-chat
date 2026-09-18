@@ -55,6 +55,62 @@ def _text_key(workspace_id: str, doc_id: str) -> str:
     return f"{_doc_prefix(workspace_id, doc_id)}/text.txt"
 
 
+SYSTEM_SUMMARY_FOLDER_ID = "system-chat-summaries"
+
+
+def _ensure_summary_folder(user_id: str, workspace_id: str) -> None:
+    """Idempotently ensure the system 'Chat summaries' folder exists."""
+    store_document_folder(
+        user_id,
+        DocumentFolderModel(
+            id=SYSTEM_SUMMARY_FOLDER_ID,
+            workspace_id=workspace_id,
+            name="Chat summaries",
+            parent_folder_id=None,
+            is_system=True,
+            create_time=float(get_current_time()),
+        ),
+    )
+
+
+def upsert_chat_summary_document(
+    user_id: str, conversation_id: str, summary_text: str, title: str = ""
+) -> None:
+    """Store/update a conversation's summary as a system document (M5).
+
+    One doc per conversation (deterministic id), visible to all agents in the
+    workspace, filed under the system 'Chat summaries' folder.
+    """
+    workspace_id = default_workspace_id(user_id)
+    now = float(get_current_time())
+    _ensure_summary_folder(user_id, workspace_id)
+    doc_id = f"summary-{conversation_id}"
+    text_s3_key = _text_key(workspace_id, doc_id)
+    s3_client.put_object(
+        Bucket=DOCUMENT_BUCKET,
+        Key=text_s3_key,
+        Body=summary_text.encode("utf-8"),
+    )
+    doc = WorkspaceDocumentModel(
+        id=doc_id,
+        workspace_id=workspace_id,
+        filename=f"{title or conversation_id}.md",
+        s3_key="",
+        text_s3_key=text_s3_key,
+        content_type="text/markdown",
+        size=len(summary_text.encode("utf-8")),
+        source="chat_summary",
+        source_conversation_id=conversation_id,
+        folder_id=SYSTEM_SUMMARY_FOLDER_ID,
+        allowed_agent_ids=[],
+        all_agents=True,
+        is_system=True,
+        create_time=now,
+        update_time=now,
+    )
+    store_document(user_id, doc)
+
+
 def _to_output(doc: WorkspaceDocumentModel) -> DocumentOutput:
     return DocumentOutput(
         id=doc.id,
