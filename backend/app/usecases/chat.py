@@ -51,6 +51,7 @@ from app.stream import ConverseApiStreamHandler, OnStopInput, OnThinking
 from app.usecases.bot import fetch_bot, modify_bot_last_used_time, modify_bot_stats
 from app.usecases.global_config import get_title_model
 from app.usecases.workspace_document import persist_uploaded_attachments
+from app.usecases.workspace_retrieval import build_workspace_context
 from app.user import User
 from app.utils import get_current_time
 from app.vector_search import (
@@ -160,6 +161,13 @@ def prepare_conversation(
                     f"{agent.instruction}\n\n"
                     f"# Memory / steering notes\n{agent.memory}"
                 )
+            # Inject workspace knowledge the agent may use (shared documents +
+            # workspace chat summaries). Best-effort (returns '' on any issue).
+            agent_ws_context = build_workspace_context(
+                user.id, chat_input.agent_id, chat_input.conversation_id
+            )
+            if agent_ws_context:
+                agent_system_prompt = f"{agent_system_prompt}\n\n{agent_ws_context}"
             initial_message_map["instruction"] = MessageModel(
                 role="instruction",
                 content=[
@@ -177,6 +185,33 @@ def prepare_conversation(
                 thinking_log=None,
             )
             initial_message_map["system"].children.append("instruction")
+
+        else:
+            # General chat (no bot, no agent): inject workspace knowledge —
+            # recent chat summaries — so a new chat can build on what past
+            # chats discussed. Best-effort (empty string on any issue).
+            general_ws_context = build_workspace_context(
+                user.id, None, chat_input.conversation_id
+            )
+            if general_ws_context:
+                parent_id = "instruction"
+                initial_message_map["instruction"] = MessageModel(
+                    role="instruction",
+                    content=[
+                        TextContentModel(
+                            content_type="text",
+                            body=general_ws_context,
+                        )
+                    ],
+                    model=chat_input.message.model,
+                    children=[],
+                    parent="system",
+                    create_time=current_time,
+                    feedback=None,
+                    used_chunks=None,
+                    thinking_log=None,
+                )
+                initial_message_map["system"].children.append("instruction")
 
         # Create new conversation
         conversation = ConversationModel(
