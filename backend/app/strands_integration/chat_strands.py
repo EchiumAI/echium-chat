@@ -50,6 +50,7 @@ def converse_with_strands(
     on_tool_result: Callable[[ToolRunResult], None] | None = None,
     on_reasoning: Callable[[str], None] | None = None,
     web_search_enabled: bool = False,
+    extra_tools: list | None = None,
 ) -> OnStopInput:
     """
     Chat with Strands agents.
@@ -84,7 +85,11 @@ def converse_with_strands(
     )
 
     prompt_caching_enabled = bot.prompt_caching_enabled if bot is not None else True
-    has_tools = (bot is not None and bot.is_agent_enabled()) or web_search_enabled
+    has_tools = (
+        (bot is not None and bot.is_agent_enabled())
+        or web_search_enabled
+        or bool(extra_tools)
+    )
 
     agent = create_strands_agent(
         bot=bot,
@@ -97,6 +102,7 @@ def converse_with_strands(
         has_tools=has_tools,
         include_web_search=web_search_enabled,
         hooks=[tool_capture],
+        extra_tools=extra_tools,
     )
 
     thinking_log: list[SimpleMessageModel] = []

@@ -460,6 +460,16 @@ def chat(
 
     use_strands = os.environ.get("USE_STRANDS", "true").lower() == "true"
 
+    # Give lightweight agents the ability to save documents into the workspace
+    # (stored in the document library and auto-shared with the agent).
+    agent_extra_tools = None
+    if chat_input.agent_id:
+        from app.strands_integration.tools.save_document import (
+            create_save_document_tool,
+        )
+
+        agent_extra_tools = [create_save_document_tool(user.id, chat_input.agent_id)]
+
     if use_strands:
         from app.strands_integration.chat_strands import converse_with_strands
 
@@ -477,6 +487,7 @@ def chat(
             on_tool_result=on_tool_run_result,
             on_reasoning=on_reasoning,
             web_search_enabled=web_search_enabled,
+            extra_tools=agent_extra_tools,
         )
 
     else:

@@ -31,6 +31,7 @@ def create_strands_agent(
     has_tools: bool = False,
     include_web_search: bool = False,
     hooks: list[HookProvider] | None = None,
+    extra_tools: list | None = None,
 ) -> Agent:
     model_config = get_bedrock_model_config(
         model_name=model_name,
@@ -50,9 +51,13 @@ def create_strands_agent(
     # Strands does not support list of instructions, so we join them into a single string.
     system_prompt = "\n\n".join(instructions).strip() if instructions else None
 
+    tools = get_strands_tools(bot, model_name, include_web_search=include_web_search)
+    if extra_tools:
+        tools = [*tools, *extra_tools]
+
     agent = Agent(
         model=model,
-        tools=get_strands_tools(bot, model_name, include_web_search=include_web_search),  # type: ignore
+        tools=tools,  # type: ignore
         hooks=hooks or [],
         system_prompt=system_prompt,
     )

@@ -189,6 +189,48 @@ def create_document(user_id: str, doc_input: DocumentCreateInput) -> DocumentOut
     return _to_output(doc)
 
 
+def create_text_document(
+    user_id: str,
+    title: str,
+    content: str,
+    agent_id: str | None = None,
+) -> WorkspaceDocumentModel:
+    """Create a generated (text) document in the workspace.
+
+    Used by the agent 'save_document' tool. Stores the text in S3 and, when an
+    agent created it, auto-grants that agent access.
+    """
+    workspace_id = default_workspace_id(user_id)
+    now = float(get_current_time())
+    doc_id = str(ULID())
+    text_s3_key = _text_key(workspace_id, doc_id)
+    s3_client.put_object(
+        Bucket=DOCUMENT_BUCKET,
+        Key=text_s3_key,
+        Body=content.encode("utf-8"),
+    )
+    safe_title = (title or "Untitled").strip()
+    doc = WorkspaceDocumentModel(
+        id=doc_id,
+        workspace_id=workspace_id,
+        filename=f"{safe_title}.md",
+        s3_key="",
+        text_s3_key=text_s3_key,
+        content_type="text/markdown",
+        size=len(content.encode("utf-8")),
+        source="agent" if agent_id else "manual",
+        source_conversation_id=None,
+        folder_id=None,
+        allowed_agent_ids=[agent_id] if agent_id else [],
+        all_agents=False,
+        is_system=False,
+        create_time=now,
+        update_time=now,
+    )
+    store_document(user_id, doc)
+    return doc
+
+
 def list_documents(user_id: str) -> list[DocumentOutput]:
     workspace_id = default_workspace_id(user_id)
     return [_to_output(d) for d in find_documents_by_user_id(user_id, workspace_id)]
