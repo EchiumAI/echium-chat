@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  PiArrowSquareOut,
   PiFolder,
   PiFolderPlus,
   PiFile,
@@ -16,6 +17,7 @@ import Button from '../components/Button';
 import ButtonIcon from '../components/ButtonIcon';
 import ModalDialog from '../components/ModalDialog';
 import DialogShareDocument from '../components/DialogShareDocument';
+import useGlobalConfig from '../hooks/useGlobalConfig';
 
 const formatSize = (bytes: number): string => {
   if (!bytes) {
@@ -46,10 +48,29 @@ const WorkspaceDocumentsPage: React.FC = () => {
     deleteFolder,
   } = useWorkspaceDocument();
 
+  const { getGlobalConfig } = useGlobalConfig();
+  const { data: globalConfig } = getGlobalConfig();
+  const docsAppUrl = globalConfig?.docsAppUrl ?? '';
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [shareTarget, setShareTarget] = useState<WorkspaceDocument>();
   const [moveTarget, setMoveTarget] = useState<WorkspaceDocument>();
+
+  const onOpenInEditor = useCallback(
+    (doc: WorkspaceDocument) => {
+      if (!docsAppUrl) {
+        return;
+      }
+      const base = docsAppUrl.replace(/\/$/, '');
+      window.open(
+        `${base}/w/${doc.workspaceId}/d/${doc.id}`,
+        '_blank',
+        'noopener,noreferrer'
+      );
+    },
+    [docsAppUrl]
+  );
 
   const onFilesSelected = useCallback(
     async (files: FileList | null) => {
@@ -169,6 +190,11 @@ const WorkspaceDocumentsPage: React.FC = () => {
         </div>
       </div>
       <div className="flex shrink-0 items-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
+        {docsAppUrl && (
+          <ButtonIcon onClick={() => onOpenInEditor(doc)}>
+            <PiArrowSquareOut />
+          </ButtonIcon>
+        )}
         <ButtonIcon onClick={() => setShareTarget(doc)}>
           <PiShareNetwork />
         </ButtonIcon>

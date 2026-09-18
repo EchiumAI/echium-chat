@@ -72,3 +72,13 @@ class DocumentFolderOutput(BaseSchema):
     parent_folder_id: Optional[str]
     is_system: bool
     create_time: float
+
+
+class DocumentContentOutput(BaseSchema):
+    id: str
+    filename: str
+    content_type: str
+    # Plain/Markdown text if available (generated docs, summaries, extracted).
+    text: Optional[str] = None
+    # Presigned GET URL for the raw file if present (for binary documents).
+    download_url: Optional[str] = None

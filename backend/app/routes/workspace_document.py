@@ -1,4 +1,5 @@
 from app.routes.schemas.workspace_document import (
+    DocumentContentOutput,
     DocumentCreateInput,
     DocumentFolderCreateInput,
     DocumentFolderModifyInput,
@@ -14,6 +15,7 @@ from app.usecases.workspace_document import (
     create_presigned_upload,
     delete_document,
     delete_document_folder,
+    get_document_content,
     list_document_folders,
     list_documents,
     modify_document,
@@ -49,6 +51,19 @@ def post_document(request: Request, doc_input: DocumentCreateInput):
 def get_documents(request: Request):
     current_user: User = request.state.current_user
     return list_documents(current_user.id)
+
+
+@router.get(
+    "/workspaces/default/documents/{doc_id}/content",
+    response_model=DocumentContentOutput,
+)
+def get_single_document_content(request: Request, doc_id: str):
+    """Return a document's text and/or a presigned download URL.
+
+    Contract for the separate collaborative-docs editor to load a document.
+    """
+    current_user: User = request.state.current_user
+    return get_document_content(current_user.id, doc_id)
 
 
 @router.patch("/workspaces/default/documents/{doc_id}", response_model=DocumentOutput)

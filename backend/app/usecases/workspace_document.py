@@ -27,6 +27,7 @@ from app.repositories.workspace_document import (
     store_document_folder,
 )
 from app.routes.schemas.workspace_document import (
+    DocumentContentOutput,
     DocumentCreateInput,
     DocumentFolderCreateInput,
     DocumentFolderModifyInput,
@@ -234,6 +235,41 @@ def create_text_document(
 def list_documents(user_id: str) -> list[DocumentOutput]:
     workspace_id = default_workspace_id(user_id)
     return [_to_output(d) for d in find_documents_by_user_id(user_id, workspace_id)]
+
+
+def get_document_content(user_id: str, doc_id: str) -> DocumentContentOutput:
+    """Return a document's text and/or a presigned download URL.
+
+    This is the contract the separate collaborative-docs editor uses to load a
+    document for viewing/editing.
+    """
+    doc = find_document_by_id(user_id, doc_id)
+    text: str | None = None
+    if doc.text_s3_key:
+        try:
+            response = s3_client.get_object(Bucket=DOCUMENT_BUCKET, Key=doc.text_s3_key)
+            text = response["Body"].read().decode("utf-8")
+        except Exception:
+            logger.warning(f"Failed to read doc text {doc.text_s3_key}", exc_info=True)
+    download_url: str | None = None
+    if doc.s3_key:
+        try:
+            download_url = generate_presigned_url(
+                bucket=DOCUMENT_BUCKET,
+                key=doc.s3_key,
+                client_method="get_object",
+            )
+        except Exception:
+            logger.warning(
+                f"Failed to presign download for {doc.s3_key}", exc_info=True
+            )
+    return DocumentContentOutput(
+        id=doc.id,
+        filename=doc.filename,
+        content_type=doc.content_type,
+        text=text,
+        download_url=download_url,
+    )
 
 
 def modify_document(

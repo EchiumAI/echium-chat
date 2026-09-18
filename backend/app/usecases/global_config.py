@@ -11,6 +11,9 @@ GLOBAL_AVAILABLE_MODELS = os.environ.get("GLOBAL_AVAILABLE_MODELS")
 DEFAULT_MODEL = os.environ.get("DEFAULT_MODEL")
 TITLE_MODEL = os.environ.get("TITLE_MODEL")
 LOGO_PATH = os.environ.get("LOGO_PATH", "")
+# Base URL of the separate collaborative-docs ("Quip-like") app. Empty until
+# that service is deployed; the frontend hides "Open in editor" when unset.
+DOCS_APP_URL = os.environ.get("DOCS_APP_URL", "")
 
 
 def get_global_available_models() -> list[str]:
@@ -59,3 +62,8 @@ def get_title_model() -> type_model_name:
 def get_logo_path() -> str:
     """Return the configured drawer logo path."""
     return LOGO_PATH
+
+
+def get_docs_app_url() -> str:
+    """Return the base URL of the collaborative-docs app ('' if not configured)."""
+    return DOCS_APP_URL

@@ -4,6 +4,9 @@ export interface GlobalConfig {
   globalAvailableModels: string[];
   defaultModel?: string;
   logoPath?: string;
+  // Base URL of the collaborative-docs ("Quip-like") app. Empty/undefined
+  // until that service is deployed; the Documents page hides "Open in editor".
+  docsAppUrl?: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
