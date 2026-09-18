@@ -79,6 +79,24 @@ def decompose_agent_id(composed_id: str):
     return composed_id.split("#")[-1]
 
 
+def compose_workspace_document_id(user_id: str, doc_id: str):
+    # Add user_id prefix for row level security to match with `LeadingKeys` condition
+    return f"{user_id}#WSDOC#{doc_id}"
+
+
+def decompose_workspace_document_id(composed_id: str):
+    return composed_id.split("#")[-1]
+
+
+def compose_document_folder_id(user_id: str, folder_id: str):
+    # Add user_id prefix for row level security to match with `LeadingKeys` condition
+    return f"{user_id}#DOCFOLDER#{folder_id}"
+
+
+def decompose_document_folder_id(composed_id: str):
+    return composed_id.split("#")[-1]
+
+
 def compose_item_type(user_id: str, item_type: Literal["bot", "alias"]):
     if item_type == "bot":
         return f"{user_id}#BOT"

@@ -26,6 +26,7 @@ import BotDiscoverPage from './features/discover/pages/BotDiscoverPage.tsx';
 import BotRecentlyUsedPage from './pages/BotRecentlyUsedPage.tsx';
 import BotStarredPage from './pages/BotStarredPage.tsx';
 import ConversationHistoryPage from './pages/ConversationHistoryPage.tsx';
+import WorkspaceDocumentsPage from './pages/WorkspaceDocumentsPage.tsx';
 
 const rootChildren = [
   {
@@ -71,6 +72,10 @@ const rootChildren = [
   {
     path: '/conversations',
     element: <ConversationHistoryPage />,
+  },
+  {
+    path: '/documents',
+    element: <WorkspaceDocumentsPage />,
   },
   {
     path: '/account',

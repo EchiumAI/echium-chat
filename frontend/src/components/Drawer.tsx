@@ -19,6 +19,7 @@ import {
   PiChatCenteredDotsDuotone,
   PiCheck,
   PiCompass,
+  PiFiles,
   PiFolder,
   PiFolderPlus,
   PiListBullets,
@@ -728,6 +729,13 @@ const Drawer: React.FC<Props> = (props) => {
                   {t('agent.tab')}
                 </button>
               </div>
+              <DrawerItem
+                isActive={location.pathname === '/documents'}
+                icon={<PiFiles />}
+                to="/documents"
+                onClick={closeSmallDrawer}
+                labelComponent={t('document.pageTitle')}
+              />
               {BOTS_ENABLED && drawerOptions.show.myBots && (
                 <DrawerItem
                   isActive={false}

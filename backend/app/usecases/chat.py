@@ -21,6 +21,7 @@ from app.repositories.conversation import (
 from app.repositories.conversation_search import find_conversations_by_query
 from app.repositories.custom_bot import alias_exists, store_alias
 from app.repositories.models.conversation import (
+    AttachmentContentModel,
     ConversationModel,
     MessageModel,
     ReasoningContentModel,
@@ -49,6 +50,7 @@ from app.routes.schemas.conversation import (
 from app.stream import ConverseApiStreamHandler, OnStopInput, OnThinking
 from app.usecases.bot import fetch_bot, modify_bot_last_used_time, modify_bot_stats
 from app.usecases.global_config import get_title_model
+from app.usecases.workspace_document import persist_uploaded_attachments
 from app.user import User
 from app.utils import get_current_time
 from app.vector_search import (
@@ -202,6 +204,25 @@ def prepare_conversation(
 
         conversation.message_map[message_id] = new_message
         conversation.message_map[parent_id].children.append(message_id)  # type: ignore
+
+        # Persist any attached files into the workspace document store, so
+        # everything uploaded in a chat is retained (and, for agent chats,
+        # auto-shared with that agent). Best-effort — never break the chat.
+        try:
+            attachments = [
+                content
+                for content in new_message.content
+                if isinstance(content, AttachmentContentModel)
+            ]
+            if attachments:
+                persist_uploaded_attachments(
+                    user_id=user.id,
+                    conversation_id=conversation.id,
+                    agent_id=chat_input.agent_id,
+                    attachments=attachments,
+                )
+        except Exception:
+            logger.warning("Failed to persist chat attachments", exc_info=True)
 
     # If the "Generate continue" button is pressed, a new_message is not generated.
     else:
