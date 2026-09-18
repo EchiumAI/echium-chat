@@ -197,6 +197,10 @@ def find_conversation_by_id(user_id: str, conversation_id: str) -> ConversationM
         agent_id=item.get("AgentId"),
         should_continue=item.get("ShouldContinue", False),
         folder_id=item.get("FolderId"),
+        summary=item.get("Summary", ""),
+        summary_updated_at=(
+            float(item["SummaryUpdatedAt"]) if "SummaryUpdatedAt" in item else None
+        ),
     )
     logger.info(f"Found conversation: {conv}")
     return conv

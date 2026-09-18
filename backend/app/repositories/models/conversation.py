@@ -806,6 +806,10 @@ class ConversationModel(BaseModel):
     should_continue: bool
     # Id of the folder this conversation belongs to (None = not filed).
     folder_id: str | None = None
+    # Rolling summary of the conversation for workspace memory (M5). Generated
+    # incrementally off the hot path; also stored as a system document.
+    summary: str = ""
+    summary_updated_at: float | None = None
 
 
 class ConversationMeta(BaseModel):

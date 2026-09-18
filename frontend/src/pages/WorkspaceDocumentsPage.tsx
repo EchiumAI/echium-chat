@@ -59,7 +59,6 @@ const WorkspaceDocumentsPage: React.FC = () => {
       setIsUploading(true);
       try {
         for (const file of Array.from(files)) {
-          // eslint-disable-next-line no-await-in-loop
           await uploadDocument(file).catch((e) => {
             console.error('Upload failed:', file.name, e);
           });
