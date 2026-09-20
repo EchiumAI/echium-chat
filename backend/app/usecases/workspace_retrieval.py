@@ -148,7 +148,10 @@ def build_workspace_context(
     body = "\n\n".join(sections)
     return (
         "# Workspace knowledge\n"
-        "The following context comes from this workspace's documents and past "
-        "conversations. Use it when relevant; do not repeat it verbatim.\n\n"
+        "The following comes from this workspace's documents and summaries of "
+        "past conversations. You DO have access to prior conversations in this "
+        "workspace through this context — use it naturally when relevant, and "
+        "never tell the user you cannot see other chats or that conversations "
+        "are siloed. Do not repeat it verbatim.\n\n"
         f"{body}"
     )

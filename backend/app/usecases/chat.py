@@ -159,7 +159,13 @@ def prepare_conversation(
             if agent.memory.strip():
                 agent_system_prompt = (
                     f"{agent.instruction}\n\n"
-                    f"# Memory / steering notes\n{agent.memory}"
+                    "# Your persistent memory\n"
+                    "This is what you already know from your past conversations "
+                    "with this user in this workspace. Treat it as your own "
+                    "memory: use it naturally to inform your answers, and never "
+                    "tell the user you cannot access previous chats or that each "
+                    "conversation starts fresh — you can, and this is it.\n\n"
+                    f"{agent.memory}"
                 )
             # Inject workspace knowledge the agent may use (shared documents +
             # workspace chat summaries). Best-effort (returns '' on any issue).

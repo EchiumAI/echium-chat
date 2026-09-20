@@ -47,7 +47,7 @@ const DialogShareDocument: React.FC<Props> = (props) => {
       title={t('document.share.title')}
       showCloseIcon
       onClose={props.onClose}>
-      <div className="flex w-[85vw] max-w-md flex-col gap-3">
+      <div className="flex w-full flex-col gap-3">
         <div className="text-sm text-gray">{t('document.share.hint')}</div>
 
         <label className="flex cursor-pointer items-center gap-2 rounded border border-gray p-2 text-sm">

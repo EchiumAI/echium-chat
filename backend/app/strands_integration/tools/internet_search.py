@@ -32,6 +32,10 @@ logger.setLevel(logging.INFO)
 # A single normalized search hit.
 SearchResult = dict[str, str]  # {"content", "source_name", "source_link"}
 
+# Below this many results, treat a provider as "thin" and try the next one
+# (a degraded primary returning empty/near-empty no longer ends the search).
+MIN_ACCEPTABLE_RESULTS = int(os.environ.get("SEARCH_MIN_RESULTS", "3"))
+
 
 # ==========================================================================
 # Provider interface
@@ -320,10 +324,13 @@ PROVIDER_REGISTRY: dict[str, Callable[[], Optional[SearchProvider]]] = {
     "duckduckgo": _duckduckgo_from_env,
 }
 
-# Default order when SEARCH_PROVIDER is unset. Only configured providers (with a
-# key) actually run, so this is effectively: Brave primary, Tavily fallback once
-# TAVILY_API_KEY is set, DuckDuckGo as a keyless last resort (local dev).
-DEFAULT_PROVIDER_ORDER = ["brave", "tavily", "duckduckgo"]
+# Default order when SEARCH_PROVIDER is unset. Tavily is primary: it is built
+# for LLM/agentic research and returns cleaner, more relevant results than Brave
+# for the local/specific queries agents tend to run. Brave is the fallback,
+# DuckDuckGo a keyless last resort (local dev). Only providers with a key run,
+# and the search falls through on thin/empty results (see MIN_ACCEPTABLE_RESULTS).
+# Override at runtime with SEARCH_PROVIDER (e.g. "brave,tavily").
+DEFAULT_PROVIDER_ORDER = ["tavily", "brave", "duckduckgo"]
 
 
 def _configured_order() -> list[str]:
@@ -453,7 +460,13 @@ def create_internet_search_tool(bot: BotModel | None) -> StrandsAgentTool:
                 ],
             }
 
+        # Fall through to the next provider not only on hard errors but also
+        # when a provider returns too few results. A degraded primary (e.g.
+        # Brave returning HTTP 200 with empty/thin results) previously ended
+        # the search with junk; now the next provider (e.g. Tavily) gets a shot.
         errors: list[str] = []
+        best_results: list[SearchResult] = []
+        best_provider = ""
         for provider in providers:
             try:
                 results = provider.search(query, locale, time_limit)
@@ -461,25 +474,48 @@ def create_internet_search_tool(bot: BotModel | None) -> StrandsAgentTool:
                     f"[INTERNET_SEARCH] Provider '{provider.name}' returned "
                     f"{len(results)} results"
                 )
-                return {
-                    "status": "success",
-                    "content": [{"json": result} for result in results],
-                }
+                # Enough results — use them immediately.
+                if len(results) >= MIN_ACCEPTABLE_RESULTS:
+                    return {
+                        "status": "success",
+                        "content": [{"json": result} for result in results],
+                    }
+                # Empty/thin — remember the best so far and try the next provider.
+                if len(results) > len(best_results):
+                    best_results = results
+                    best_provider = provider.name
+                errors.append(f"{provider.name}: only {len(results)} results")
+                logger.info(
+                    f"[INTERNET_SEARCH] Provider '{provider.name}' thin "
+                    f"({len(results)} < {MIN_ACCEPTABLE_RESULTS}); trying next"
+                )
             except Exception as e:
                 errors.append(f"{provider.name}: {type(e).__name__}: {e}")
                 logger.warning(
                     f"[INTERNET_SEARCH] Provider '{provider.name}' failed: {e}"
                 )
 
-        logger.error(f"[INTERNET_SEARCH] All providers failed: {errors}")
+        # No provider hit the threshold. Return the best non-empty set we saw
+        # (better than nothing) rather than erroring.
+        if best_results:
+            logger.info(
+                f"[INTERNET_SEARCH] Returning best thin result set from "
+                f"'{best_provider}' ({len(best_results)} results)"
+            )
+            return {
+                "status": "success",
+                "content": [{"json": result} for result in best_results],
+            }
+
+        logger.error(f"[INTERNET_SEARCH] All providers failed/empty: {errors}")
         return {
             "status": "error",
             "content": [
                 {
                     "text": (
                         "The internet search could not be completed (all providers "
-                        "failed). Tell the user search is temporarily unavailable "
-                        "rather than guessing an answer."
+                        "failed or returned nothing). Tell the user search is "
+                        "temporarily unavailable rather than guessing an answer."
                     )
                 }
             ],

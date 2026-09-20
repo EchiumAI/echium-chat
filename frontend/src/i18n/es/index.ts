@@ -268,6 +268,9 @@ const translation = {
       empty: 'Aún no hay documentos. Sube uno para empezar.',
       root: 'Todos los documentos',
       folderEmpty: 'Aún no hay documentos aquí.',
+      badge: {
+        summary: 'Resumen',
+      },
       namePrompt: 'Nombre',
       deleteConfirm: '¿Eliminar «{{name}}»? Esta acción no se puede deshacer.',
       folderDeleteConfirm:

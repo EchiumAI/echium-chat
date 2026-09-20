@@ -366,6 +366,9 @@ const translation: typeof en = {
       empty: 'ドキュメントがまだありません。アップロードして始めましょう。',
       root: 'すべてのドキュメント',
       folderEmpty: 'ここにはまだドキュメントがありません。',
+      badge: {
+        summary: '要約',
+      },
       namePrompt: '名前',
       deleteConfirm: '「{{name}}」を削除しますか？この操作は取り消せません。',
       folderDeleteConfirm:

@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   PiArrowSquareOut,
+  PiChatCircleText,
   PiFolder,
   PiFolderPlus,
   PiFile,
@@ -180,9 +181,20 @@ const WorkspaceDocumentsPage: React.FC = () => {
       key={doc.id}
       className="group flex items-center justify-between border-b border-gray p-2 hover:bg-light-gray dark:hover:bg-aws-ui-color-dark">
       <div className="flex min-w-0 items-center gap-2">
-        <PiFile className="shrink-0 text-aws-sea-blue-light" />
+        {doc.source === 'chat_summary' ? (
+          <PiChatCircleText className="shrink-0 text-aws-aqua" />
+        ) : (
+          <PiFile className="shrink-0 text-aws-sea-blue-light" />
+        )}
         <div className="flex min-w-0 flex-col">
-          <span className="truncate text-sm font-medium">{doc.filename}</span>
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-sm font-medium">{doc.filename}</span>
+            {doc.source === 'chat_summary' && (
+              <span className="shrink-0 rounded-full bg-aws-aqua/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-aws-aqua">
+                {t('document.badge.summary')}
+              </span>
+            )}
+          </div>
           <span className="text-xs text-gray">
             {shareSummary(doc)}
             {formatSize(doc.size) ? ` · ${formatSize(doc.size)}` : ''}
@@ -233,7 +245,7 @@ const WorkspaceDocumentsPage: React.FC = () => {
         title={t('document.moveTo')}
         showCloseIcon
         onClose={() => setMoveTarget(undefined)}>
-        <div className="flex max-h-80 w-[85vw] max-w-sm flex-col gap-1 overflow-y-auto">
+        <div className="flex max-h-80 w-full flex-col gap-1 overflow-y-auto">
           {(folders ?? []).length === 0 && (
             <div className="p-2 text-xs text-gray">
               {t('document.noFolders')}

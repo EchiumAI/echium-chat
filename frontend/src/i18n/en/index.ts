@@ -366,6 +366,9 @@ const translation = {
       empty: 'No documents yet. Upload one to get started.',
       root: 'All documents',
       folderEmpty: 'No documents here yet.',
+      badge: {
+        summary: 'Summary',
+      },
       namePrompt: 'Name',
       deleteConfirm: 'Delete "{{name}}"? This cannot be undone.',
       folderDeleteConfirm:
