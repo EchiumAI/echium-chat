@@ -11,8 +11,6 @@ code change. Nothing about a specific vendor is hardcoded into the tool logic.
 
 Current setup: Brave is the primary provider. Tavily is registered as a
 fallback and activates automatically once a TAVILY_API_KEY is present.
-DuckDuckGo is a keyless, best-effort local-dev fallback only (it is rate-limited
-from datacenter IPs like AWS Lambda).
 """
 
 import abc
@@ -243,57 +241,6 @@ class FirecrawlProvider(SearchProvider):
         return formatted
 
 
-class DuckDuckGoProvider(SearchProvider):
-    """Keyless, best-effort fallback. Rate-limited from datacenter IPs, so it
-    fails fast (one attempt per backend, no long retry/backoff). Local-dev only."""
-
-    name = "duckduckgo"
-
-    def search(
-        self, query: str, locale: str, time_limit: str, count: int = 10
-    ) -> list[SearchResult]:
-        from duckduckgo_search import DDGS
-
-        language, country = _parse_locale(locale)
-        region = f"{country}-{language}".lower()
-
-        last_error: Optional[Exception] = None
-        for backend in ("api", "html", "lite"):
-            try:
-                logger.info(
-                    f"[duckduckgo] query={query}, region={region}, backend={backend}"
-                )
-                with DDGS(timeout=5) as ddgs:
-                    hits = list(
-                        ddgs.text(
-                            keywords=query,
-                            region=region,
-                            safesearch="moderate",
-                            timelimit=time_limit or None,
-                            max_results=min(count, 10),
-                            backend=backend,
-                        )
-                    )
-                formatted = [
-                    {
-                        "content": hit.get("body", ""),
-                        "source_name": hit.get("title", ""),
-                        "source_link": hit.get("href", ""),
-                    }
-                    for hit in hits
-                ]
-                if formatted:
-                    logger.info(f"[duckduckgo] found {len(formatted)} via '{backend}'")
-                    return formatted
-            except Exception as e:
-                last_error = e
-                logger.warning(f"[duckduckgo] backend '{backend}' failed: {e}")
-
-        if last_error:
-            raise last_error
-        return []
-
-
 # ==========================================================================
 # Provider registry + runtime selection
 # ==========================================================================
@@ -312,25 +259,21 @@ def _firecrawl_from_env() -> Optional[SearchProvider]:
     return FirecrawlProvider(key) if key else None
 
 
-def _duckduckgo_from_env() -> Optional[SearchProvider]:
-    return DuckDuckGoProvider()
-
-
 # name -> factory that builds the provider from env (None if unconfigured).
 PROVIDER_REGISTRY: dict[str, Callable[[], Optional[SearchProvider]]] = {
     "brave": _brave_from_env,
     "tavily": _tavily_from_env,
     "firecrawl": _firecrawl_from_env,
-    "duckduckgo": _duckduckgo_from_env,
 }
 
-# Default order when SEARCH_PROVIDER is unset. Tavily is primary: it is built
-# for LLM/agentic research and returns cleaner, more relevant results than Brave
-# for the local/specific queries agents tend to run. Brave is the fallback,
-# DuckDuckGo a keyless last resort (local dev). Only providers with a key run,
-# and the search falls through on thin/empty results (see MIN_ACCEPTABLE_RESULTS).
-# Override at runtime with SEARCH_PROVIDER (e.g. "brave,tavily").
-DEFAULT_PROVIDER_ORDER = ["tavily", "brave", "duckduckgo"]
+# Default order when SEARCH_PROVIDER is unset. Brave is primary: it returns
+# ranked, relevant results directly and has proven reliable in production.
+# Tavily is the automatic fallback once TAVILY_API_KEY is set. Only providers
+# with a key run, and the search falls through on thin/empty results (see
+# MIN_ACCEPTABLE_RESULTS). DuckDuckGo has been removed: from datacenter IPs it
+# is rate-limited and returns low-relevance junk. Override the order at runtime
+# with SEARCH_PROVIDER (e.g. "tavily,brave").
+DEFAULT_PROVIDER_ORDER = ["brave", "tavily"]
 
 
 def _configured_order() -> list[str]:
@@ -428,7 +371,7 @@ def create_internet_search_tool(bot: BotModel | None) -> StrandsAgentTool:
 
     @tool
     def internet_search(
-        query: str, locale: str = "en-us", time_limit: str = "d"
+        query: str, locale: str = "en-us", time_limit: str = ""
     ) -> dict:
         """
         Search the internet for information.
@@ -436,7 +379,7 @@ def create_internet_search_tool(bot: BotModel | None) -> StrandsAgentTool:
         Args:
             query: The query to search for on the internet.
             locale: The language and country code for the search, formatted `{language}-{country}`, for example `en-us` (English - United States), `es-es` (Spanish - Spain), `de-de` (German - Germany), `de-at` (German - Austria), `pt-pt` (Portuguese - Portugal), `it-it` (Italian - Italy), `fr-fr` (French - France). Set this to the country whose local sources best answer the query. If empty the default is `en-us`.
-            time_limit: Retrieve only the most recent results, for example `w` only returns results from the last week. Units are 'd' (day), 'w' (week), 'm' (month), 'y' (year). Use empty string to retrieve all results.
+            time_limit: Restrict results by recency. LEAVE THIS EMPTY (the default) for the vast majority of queries — evergreen topics like schools, places, products, history, or general facts must search the whole web, not a recent window. Only set it when the query is explicitly about recent events (news, prices, sports scores, releases): 'd' (last day), 'w' (last week), 'm' (last month), 'y' (last year). Setting a time limit on an evergreen query returns almost nothing useful, so when in doubt leave it empty.
 
         Returns:
             dict: ToolResult format with search results in json field
