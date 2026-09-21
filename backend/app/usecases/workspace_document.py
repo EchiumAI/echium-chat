@@ -12,7 +12,7 @@ import logging
 import os
 
 import boto3
-from app.repositories.common import default_workspace_id
+from app.repositories.common import RecordNotFoundError, default_workspace_id
 from app.repositories.models.workspace_document import (
     DocumentFolderModel,
     WorkspaceDocumentModel,
@@ -75,12 +75,23 @@ def _ensure_summary_folder(user_id: str, workspace_id: str) -> None:
 
 
 def upsert_chat_summary_document(
-    user_id: str, conversation_id: str, summary_text: str, title: str = ""
+    user_id: str,
+    conversation_id: str,
+    summary_text: str,
+    title: str = "",
+    origin_agent_id: str | None = None,
 ) -> None:
     """Store/update a conversation's summary as a system document (M5).
 
-    One doc per conversation (deterministic id), visible to all agents in the
-    workspace, filed under the system 'Chat summaries' folder.
+    One doc per conversation (deterministic id), filed under the system
+    'Chat summaries' folder.
+
+    Sharing scope: by default a summary is visible only to the agent whose chat
+    produced it (``origin_agent_id``); a summary from a plain, non-agent chat is
+    visible only to plain chat. It is NOT shared across all the user's agents.
+    The user can widen this later with the document share dialog (which sets
+    ``all_agents`` / ``allowed_agent_ids``); that choice is preserved across
+    re-summarization and never reset here.
     """
     workspace_id = default_workspace_id(user_id)
     now = float(get_current_time())
@@ -92,6 +103,19 @@ def upsert_chat_summary_document(
         Key=text_s3_key,
         Body=summary_text.encode("utf-8"),
     )
+
+    # Preserve any sharing choice the user already made; only apply the default
+    # (scoped to the originating agent) when the summary is first created.
+    try:
+        existing = find_document_by_id(user_id, doc_id)
+        allowed_agent_ids = existing.allowed_agent_ids
+        all_agents = existing.all_agents
+        create_time = existing.create_time
+    except RecordNotFoundError:
+        allowed_agent_ids = [origin_agent_id] if origin_agent_id else []
+        all_agents = False
+        create_time = now
+
     doc = WorkspaceDocumentModel(
         id=doc_id,
         workspace_id=workspace_id,
@@ -103,10 +127,10 @@ def upsert_chat_summary_document(
         source="chat_summary",
         source_conversation_id=conversation_id,
         folder_id=SYSTEM_SUMMARY_FOLDER_ID,
-        allowed_agent_ids=[],
-        all_agents=True,
+        allowed_agent_ids=allowed_agent_ids,
+        all_agents=all_agents,
         is_system=True,
-        create_time=now,
+        create_time=create_time,
         update_time=now,
     )
     store_document(user_id, doc)

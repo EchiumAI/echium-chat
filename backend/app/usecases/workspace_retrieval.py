@@ -75,14 +75,22 @@ class SimpleWorkspaceRetriever:
         workspace_id = default_workspace_id(user_id)
         docs = find_documents_by_user_id(user_id, workspace_id)
 
-        # Workspace chat summaries are public within the workspace (exclude the
-        # current conversation's own summary to avoid self-reference).
+        # Chat summaries are scoped like other docs: a summary is visible only
+        # to the agent whose chat produced it, unless the user shared it with
+        # all agents. A plain (non-agent) chat sees only plain-chat summaries
+        # (those scoped to no agent). The current conversation's own summary is
+        # excluded to avoid self-reference.
         summaries = [
             d
             for d in docs
             if d.source == "chat_summary"
             and d.source_conversation_id != exclude_conversation_id
             and d.text_s3_key
+            and (
+                d.all_agents
+                or (agent_id is not None and agent_id in d.allowed_agent_ids)
+                or (agent_id is None and not d.allowed_agent_ids)
+            )
         ]
 
         # Regular documents are only injected for agents, and only those the

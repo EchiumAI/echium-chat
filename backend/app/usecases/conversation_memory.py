@@ -97,7 +97,11 @@ def summarize_conversation(user_id: str, conversation_id: str) -> str:
     update_conversation_summary(user_id, conversation_id, summary, now)
     try:
         upsert_chat_summary_document(
-            user_id, conversation_id, summary, conversation.title
+            user_id,
+            conversation_id,
+            summary,
+            conversation.title,
+            origin_agent_id=conversation.agent_id,
         )
     except Exception:
         logger.warning(
