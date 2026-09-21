@@ -131,6 +131,9 @@ export class WebSocket extends Construct {
         BRAVE_API_KEY: process.env.BRAVE_API_KEY ?? "",
         TAVILY_API_KEY: process.env.TAVILY_API_KEY ?? "",
         FIRECRAWL_API_KEY: process.env.FIRECRAWL_API_KEY ?? "",
+        // Base URL of the collaborative-docs app (see api.ts). Kept in sync
+        // across handlers; defaults to the live docs app, override via env.
+        DOCS_APP_URL: process.env.DOCS_APP_URL ?? "https://docs.echium.ai",
         ENABLE_PLAN_ENFORCEMENT:
           this.node.tryGetContext("enableMessageEnforcement") === true
             ? "true"

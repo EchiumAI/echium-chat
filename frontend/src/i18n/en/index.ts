@@ -206,7 +206,7 @@ const translation = {
       pinnedBots: 'Pinned Bots',
       starredBots: 'Starred Bots',
       recentlyUsedBots: 'Recently Used Bots',
-      conversationHistory: 'Recent Chats',
+      conversationHistory: 'Chats',
       chatWaitingSymbol: '▍',
       adminConsoles: 'Admin Panel',
       backChat: 'Back to Chat',
@@ -360,7 +360,7 @@ const translation = {
       },
     },
     document: {
-      pageTitle: 'Documents',
+      pageTitle: 'Files',
       upload: 'Upload',
       newFolder: 'New folder',
       empty: 'No documents yet. Upload one to get started.',
@@ -369,6 +369,7 @@ const translation = {
       badge: {
         summary: 'Summary',
       },
+      editorApp: 'Docs editor',
       namePrompt: 'Name',
       deleteConfirm: 'Delete "{{name}}"? This cannot be undone.',
       folderDeleteConfirm:

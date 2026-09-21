@@ -64,11 +64,11 @@ const WorkspaceDocumentsPage: React.FC = () => {
         return;
       }
       const base = docsAppUrl.replace(/\/$/, '');
-      window.open(
-        `${base}/w/${doc.workspaceId}/d/${doc.id}`,
-        '_blank',
-        'noopener,noreferrer'
-      );
+      // Reuse a single docs tab: the stable window name navigates an already
+      // open docs tab to this document, otherwise opens one. `noopener` is
+      // omitted deliberately — it forces a fresh tab each time and would defeat
+      // reuse; docs.echium.ai is first-party (shares our Cognito pool).
+      window.open(`${base}/w/${doc.workspaceId}/d/${doc.id}`, 'echium-docs');
     },
     [docsAppUrl]
   );

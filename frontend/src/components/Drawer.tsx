@@ -12,6 +12,7 @@ import useDrawer from '../hooks/useDrawer';
 import ButtonIcon from './ButtonIcon';
 import {
   PiArrowRight,
+  PiArrowSquareOut,
   PiCaretDown,
   PiCaretRight,
   PiChartLine,
@@ -537,7 +538,7 @@ const Drawer: React.FC<Props> = (props) => {
 
   // Sidebar Chats | Agents toggle: swap the drawer body between the chat
   // history and the list of the user's agents (click an agent to chat).
-  const [drawerTab, setDrawerTab] = useState<'chats' | 'agents'>('chats');
+  const [drawerTab, setDrawerTab] = useState<'chats' | 'agents'>('agents');
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | undefined>();
   const {
@@ -580,6 +581,7 @@ const Drawer: React.FC<Props> = (props) => {
   const { getGlobalConfig } = useGlobalConfig();
   const { data: globalConfig } = getGlobalConfig();
   const logoSrc = globalConfig?.logoPath ?? '';
+  const docsAppUrl = globalConfig?.docsAppUrl ?? '';
 
   useEffect(() => {
     setPrevConversations(conversations);
@@ -736,6 +738,26 @@ const Drawer: React.FC<Props> = (props) => {
                 onClick={closeSmallDrawer}
                 labelComponent={t('document.pageTitle')}
               />
+              {/* Opens the separate docs editor (docs.echium.ai). External
+                  action, so it's a button (not a route) and reuses a single
+                  docs tab via the stable 'echium-docs' window name. Hidden when
+                  DOCS_APP_URL is unset. */}
+              {docsAppUrl && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.open(docsAppUrl, 'echium-docs');
+                    closeSmallDrawer();
+                  }}
+                  className="group mx-2 my-1 flex h-10 w-[calc(100%-1rem)] items-center rounded px-2 text-white hover:bg-aws-sea-blue-hover-light dark:hover:bg-aws-paper-dark">
+                  <div className="mr-2 pt-0.5">
+                    <PiArrowSquareOut />
+                  </div>
+                  <span className="flex-1 truncate text-left">
+                    {t('document.editorApp')}
+                  </span>
+                </button>
+              )}
               {BOTS_ENABLED && drawerOptions.show.myBots && (
                 <DrawerItem
                   isActive={false}

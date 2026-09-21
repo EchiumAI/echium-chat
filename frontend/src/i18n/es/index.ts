@@ -197,7 +197,7 @@ const translation = {
       pinnedBots: 'Bots Fijados',
       starredBots: 'Bots Favoritos',
       recentlyUsedBots: 'Bots Usados Recientemente',
-      conversationHistory: 'Historial',
+      conversationHistory: 'Chats',
       chatWaitingSymbol: '▍',
       adminConsoles: 'Solo Administrador',
     },
@@ -262,7 +262,7 @@ const translation = {
       },
     },
     document: {
-      pageTitle: 'Documentos',
+      pageTitle: 'Archivos',
       upload: 'Subir',
       newFolder: 'Nueva carpeta',
       empty: 'Aún no hay documentos. Sube uno para empezar.',
@@ -271,6 +271,7 @@ const translation = {
       badge: {
         summary: 'Resumen',
       },
+      editorApp: 'Editor de documentos',
       namePrompt: 'Nombre',
       deleteConfirm: '¿Eliminar «{{name}}»? Esta acción no se puede deshacer.',
       folderDeleteConfirm:

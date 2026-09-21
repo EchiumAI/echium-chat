@@ -209,7 +209,7 @@ const translation: typeof en = {
       pinnedBots: 'ピン留めボット',
       starredBots: 'スター付きのボット',
       recentlyUsedBots: '最近使用したボット',
-      conversationHistory: '最近のチャット',
+      conversationHistory: 'チャット',
       chatWaitingSymbol: '▍',
       adminConsoles: '管理者用機能',
       userGroups: 'ユーザーグループ',
@@ -360,7 +360,7 @@ const translation: typeof en = {
       },
     },
     document: {
-      pageTitle: 'ドキュメント',
+      pageTitle: 'ファイル',
       upload: 'アップロード',
       newFolder: '新しいフォルダ',
       empty: 'ドキュメントがまだありません。アップロードして始めましょう。',
@@ -369,6 +369,7 @@ const translation: typeof en = {
       badge: {
         summary: '要約',
       },
+      editorApp: 'ドキュメントエディタ',
       namePrompt: '名前',
       deleteConfirm: '「{{name}}」を削除しますか？この操作は取り消せません。',
       folderDeleteConfirm:
