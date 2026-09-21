@@ -2,24 +2,40 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: >
   One-time setup for GitHub Actions to deploy this app via OIDC.
   Creates the GitHub OIDC identity provider (if missing) and an IAM role
-  trusted only to a specific GitHub repo. The role is granted the permissions
-  CDK needs to deploy this stack.
+  trusted only to specific GitHub Actions OIDC subjects (the `prod`-environment
+  deploy jobs of the repos that share this role — echium-chat and echium-docs).
+  The role is granted the permissions CDK needs to deploy this stack.
 
 Parameters:
-  GitHubOrg:
-    Type: String
-    Default: EchiumAI
-    Description: GitHub organization or username that owns the repo.
-
-  GitHubRepo:
-    Type: String
-    Default: echium-chat
-    Description: Repository name (without the org prefix).
-
   RoleName:
     Type: String
     Default: github-actions-echium-deploy
     Description: Name for the IAM role that GitHub Actions will assume.
+
+  TrustedSubjects:
+    Type: CommaDelimitedList
+    Default: 'repo:EchiumAI/echium-chat:environment:prod,repo:EchiumAI@287532042/echium-docs@1374325976:environment:prod'
+    Description: >
+      OIDC `sub` claims allowed to assume this role. Scoped to the `prod`
+      GitHub Environment of each repo that shares this role, so only
+      environment-gated deploy jobs can assume it — never an arbitrary branch
+      or pull request. A job that references `environment: prod` gets the sub
+      `<repo-prefix>:environment:prod`, which is why this is the correct scope
+      and `ref:refs/tags/v*` is NOT — the deploy job never presents a ref-based
+      sub.
+
+      Note the two repos use DIFFERENT subject formats:
+        - echium-chat predates GitHub's 2026-07-15 change, so it still emits the
+          classic name-based subject `repo:EchiumAI/echium-chat:...`.
+        - echium-docs was created after that date, so GitHub forces the
+          IMMUTABLE subject with numeric owner/repo IDs
+          (`repo:EchiumAI@287532042/echium-docs@1374325976:...`). There is no
+          opt-out; the numbers are the permanent org id (287532042) and repo id
+          (1374325976), so this is stable across renames. echium-chat will move
+          to the immutable form if it is ever renamed/transferred or opts in.
+
+      Protect the `prod` environment and make the `v*.*.*` tags immutable in each
+      repo's settings to complete the chain.
 
   CreateOidcProvider:
     Type: String
@@ -48,7 +64,8 @@ Resources:
         - 1c58a3a8518e8759bf075b76b750d4f2df264fcd
 
   # The role GitHub Actions assumes via OIDC.
-  # Trust is locked to the specific GitHub repo. Permissions are broad
+  # Trust is locked to the exact subjects in TrustedSubjects (the prod-environment
+  # deploy jobs of echium-chat and echium-docs). Permissions are broad
   # (AdministratorAccess) because CDK needs to provision diverse resources
   # (CloudFront, Cognito, Lambda, IAM, OpenSearch, etc.). The trust policy
   # is the security boundary, not the permission policy.
@@ -56,7 +73,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Ref RoleName
-      Description: !Sub 'Assumed by GitHub Actions in ${GitHubOrg}/${GitHubRepo} to run cdk deploy.'
+      Description: 'Assumed by GitHub Actions (prod deploy jobs of echium-chat and echium-docs) to run cdk deploy.'
       MaxSessionDuration: 3600
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -68,11 +85,11 @@ Resources:
             Condition:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
-              StringLike:
-                # Restrict to this specific repo. To allow all branches/tags use `*`.
-                # Tighten further (e.g. only on tagged releases) by replacing
-                # `*` with `ref:refs/tags/v*` etc.
-                token.actions.githubusercontent.com:sub: !Sub 'repo:${GitHubOrg}/${GitHubRepo}:*'
+                # Immutable, environment-scoped subjects (see TrustedSubjects).
+                # StringEquals (not StringLike) means no wildcards: only these
+                # exact subjects — the `prod`-environment deploy jobs — may
+                # assume the role. Branches, PRs, and moved/forged refs cannot.
+                token.actions.githubusercontent.com:sub: !Ref TrustedSubjects
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess
 
