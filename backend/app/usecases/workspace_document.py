@@ -296,6 +296,29 @@ def get_document_content(user_id: str, doc_id: str) -> DocumentContentOutput:
     )
 
 
+def update_document_content(
+    user_id: str, doc_id: str, text: str, content_type: str | None = None
+) -> DocumentOutput:
+    """Overwrite a document's canonical text body (write-back from the editor).
+
+    Stores the body at the doc's text S3 key (creating one if the doc had none),
+    bumps size + update_time. This is the save path for the collaborative-docs
+    editor. Sharing/agent-visibility metadata is preserved.
+    """
+    doc = find_document_by_id(user_id, doc_id)
+    workspace_id = doc.workspace_id or default_workspace_id(user_id)
+    text_s3_key = doc.text_s3_key or _text_key(workspace_id, doc_id)
+    body = text.encode("utf-8")
+    s3_client.put_object(Bucket=DOCUMENT_BUCKET, Key=text_s3_key, Body=body)
+    doc.text_s3_key = text_s3_key
+    doc.size = len(body)
+    if content_type:
+        doc.content_type = content_type
+    doc.update_time = float(get_current_time())
+    store_document(user_id, doc)
+    return _to_output(doc)
+
+
 def modify_document(
     user_id: str, doc_id: str, doc_input: DocumentModifyInput
 ) -> DocumentOutput:

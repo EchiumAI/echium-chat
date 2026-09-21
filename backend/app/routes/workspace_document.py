@@ -1,4 +1,5 @@
 from app.routes.schemas.workspace_document import (
+    DocumentContentInput,
     DocumentContentOutput,
     DocumentCreateInput,
     DocumentFolderCreateInput,
@@ -20,6 +21,7 @@ from app.usecases.workspace_document import (
     list_documents,
     modify_document,
     modify_document_folder,
+    update_document_content,
 )
 from app.user import User
 from fastapi import APIRouter, Request
@@ -64,6 +66,23 @@ def get_single_document_content(request: Request, doc_id: str):
     """
     current_user: User = request.state.current_user
     return get_document_content(current_user.id, doc_id)
+
+
+@router.put(
+    "/workspaces/default/documents/{doc_id}/content",
+    response_model=DocumentOutput,
+)
+def put_single_document_content(
+    request: Request, doc_id: str, content_input: DocumentContentInput
+):
+    """Save (overwrite) a document's canonical text body.
+
+    Write-back contract for the collaborative-docs editor.
+    """
+    current_user: User = request.state.current_user
+    return update_document_content(
+        current_user.id, doc_id, content_input.text, content_input.content_type
+    )
 
 
 @router.patch("/workspaces/default/documents/{doc_id}", response_model=DocumentOutput)

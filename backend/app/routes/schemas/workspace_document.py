@@ -82,3 +82,10 @@ class DocumentContentOutput(BaseSchema):
     text: Optional[str] = None
     # Presigned GET URL for the raw file if present (for binary documents).
     download_url: Optional[str] = None
+
+
+class DocumentContentInput(BaseSchema):
+    # Canonical document body written back by the collaborative-docs editor.
+    text: str
+    # Optional MIME type for the stored body (e.g. "text/html", "text/markdown").
+    content_type: Optional[str] = None
