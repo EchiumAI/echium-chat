@@ -14,6 +14,8 @@ import useScroll from '../hooks/useScroll';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   PiArrowsCounterClockwise,
+  PiMagnifyingGlassMinus,
+  PiMagnifyingGlassPlus,
   PiPenNib,
   PiWarningCircleFill,
   PiX,
@@ -229,6 +231,33 @@ const ChatPage: React.FC = () => {
   const { getBotId } = useConversation();
 
   const { scrollToBottom, scrollToTop } = useScroll(conversationId);
+
+  // Conversation zoom for readability. Persisted; applied to the #messages
+  // container via CSS `zoom` so text and spacing scale and reflow cleanly.
+  const CHAT_ZOOM_MIN = 0.8;
+  const CHAT_ZOOM_MAX = 1.6;
+  const [chatZoom, setChatZoom] = useState<number>(() => {
+    try {
+      const v = parseFloat(localStorage.getItem('echium:chatZoom') ?? '');
+      return Number.isFinite(v)
+        ? Math.min(Math.max(v, CHAT_ZOOM_MIN), CHAT_ZOOM_MAX)
+        : 1;
+    } catch {
+      return 1;
+    }
+  });
+  const setZoom = useCallback((next: number) => {
+    const clamped = Math.min(
+      Math.max(Math.round(next * 10) / 10, CHAT_ZOOM_MIN),
+      CHAT_ZOOM_MAX
+    );
+    setChatZoom(clamped);
+    try {
+      localStorage.setItem('echium:chatZoom', String(clamped));
+    } catch {
+      // ignore storage errors (e.g. storage disabled/full)
+    }
+  }, []);
 
   const {
     conversationId: paramConversationId,
@@ -637,7 +666,8 @@ const ChatPage: React.FC = () => {
             <div
               id="messages"
               role="presentation"
-              className="flex h-full flex-col overflow-auto pb-16">
+              className="flex h-full flex-col overflow-auto pb-16"
+              style={{ zoom: chatZoom } as React.CSSProperties}>
               {messages?.length === 0 ? (
                 <div className="relative mb-[45vh]  flex w-full flex-col items-center justify-center">
                   {!isLoadingBot && !bot && greetingFirstName && (
@@ -760,7 +790,26 @@ const ChatPage: React.FC = () => {
           </div>
         )}
 
-        <div className="mb-1 flex w-11/12 items-center justify-end md:w-10/12 lg:w-4/6 xl:w-3/6">
+        <div className="mb-1 flex w-11/12 items-center justify-between md:w-10/12 lg:w-4/6 xl:w-3/6">
+          <div className="flex items-center gap-0.5 text-aws-font-color-gray">
+            <ButtonIcon
+              disabled={chatZoom <= CHAT_ZOOM_MIN}
+              onClick={() => setZoom(chatZoom - 0.1)}>
+              <PiMagnifyingGlassMinus />
+            </ButtonIcon>
+            <button
+              type="button"
+              onClick={() => setZoom(1)}
+              className="min-w-11 rounded px-1 text-xs tabular-nums hover:bg-black/5 dark:hover:bg-white/10"
+              title={t('app.zoomReset')}>
+              {Math.round(chatZoom * 100)}%
+            </button>
+            <ButtonIcon
+              disabled={chatZoom >= CHAT_ZOOM_MAX}
+              onClick={() => setZoom(chatZoom + 0.1)}>
+              <PiMagnifyingGlassPlus />
+            </ButtonIcon>
+          </div>
           <ConsumptionIndicator variant="compact" />
         </div>
 
