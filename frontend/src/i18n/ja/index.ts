@@ -196,7 +196,7 @@ const translation: typeof en = {
       },
     },
     app: {
-      name: 'EchiumAI',
+      name: 'Echium Chat',
       inputMessage: 'お手伝いできることはありますか？',
       greeting: {
         morning: 'おはようございます、{{name}}さん',

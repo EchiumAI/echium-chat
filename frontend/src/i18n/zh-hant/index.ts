@@ -4,7 +4,7 @@
 const translation = {
   translation: {
     app: {
-      name: 'EchiumAI',
+      name: 'Echium Chat',
       inputMessage: '請輸入訊息',
       pinnedBots: '置頂 Bots',
       starredBots: '我的最愛 Bots',

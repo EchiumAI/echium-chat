@@ -6,7 +6,7 @@ const translation = {
       },
     },
     app: {
-      name: 'EchiumAI',
+      name: 'Echium Chat',
       inputMessage: 'Jak mogę pomóc?',
       pinnedBots: 'Przypięte boty',
       starredBots: 'Ulubione Boty',

@@ -172,7 +172,7 @@ const translation = {
       },
     },
     app: {
-      name: 'EchiumAI',
+      name: 'Echium Chat',
       inputMessage: 'Como posso te ajudar?',
       greeting: {
         morning: 'Bom dia, {{name}}',

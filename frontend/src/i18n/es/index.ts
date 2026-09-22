@@ -186,7 +186,7 @@ const translation = {
       },
     },
     app: {
-      name: 'EchiumAI',
+      name: 'Echium Chat',
       inputMessage: 'Enviar un mensaje',
       greeting: {
         morning: 'Buenos días, {{name}}',

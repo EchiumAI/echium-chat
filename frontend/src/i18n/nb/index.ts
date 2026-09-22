@@ -35,7 +35,7 @@ const translation = {
           error: 'Feil',
         },
         app: {
-          name: 'EchiumAI',
+          name: 'Echium Chat',
           inputMessage: 'Send en melding',
           pinnedBots: 'Faste boter',
           starredBots: 'Favorittbot',
