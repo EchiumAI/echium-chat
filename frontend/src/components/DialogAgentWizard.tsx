@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PiPaperPlaneRight, PiSparkle, PiSpinnerGap } from 'react-icons/pi';
 import { twMerge } from 'tailwind-merge';
+import { isMobile } from 'react-device-detect';
 import { BaseProps } from '../@types/common';
 import { Agent, WizardMessage } from '../@types/agent';
 import useAgentApi from '../hooks/useAgentApi';
@@ -93,7 +94,8 @@ const DialogAgentWizard: React.FC<Props> = (props) => {
 
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      // No Shift key on mobile → let Enter insert a newline; send via button.
+      if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
         e.preventDefault();
         send();
       }

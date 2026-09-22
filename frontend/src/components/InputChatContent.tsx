@@ -22,6 +22,7 @@ import ButtonIcon from './ButtonIcon';
 import useModel from '../hooks/useModel';
 import { produce } from 'immer';
 import { twMerge } from 'tailwind-merge';
+import { isMobile } from 'react-device-detect';
 import { create } from 'zustand';
 import ButtonFileChoose from './ButtonFileChoose';
 import ButtonReasoning from './ButtonReasoning';
@@ -368,7 +369,10 @@ const InputChatContent = forwardRef<HTMLElement, Props>(
     useEffect(() => {
       const currentElem = inputRef?.current;
       const keypressListener = (e: DocumentEventMap['keypress']) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
+        // Mobile keyboards have no Shift key, so Enter must insert a newline
+        // instead of sending (customers reported being unable to add line
+        // breaks from phones). On mobile, sending is done via the send button.
+        if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
           e.preventDefault();
 
           if (!disabledSend) {
