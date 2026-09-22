@@ -370,7 +370,7 @@ const translation: typeof en = {
       badge: {
         summary: '要約',
       },
-      editorApp: 'ドキュメントエディタ',
+      editorApp: 'ドキュメント',
       drawApp: 'ドロー',
       namePrompt: '名前',
       deleteConfirm: '「{{name}}」を削除しますか？この操作は取り消せません。',

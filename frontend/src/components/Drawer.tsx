@@ -12,7 +12,7 @@ import useDrawer from '../hooks/useDrawer';
 import ButtonIcon from './ButtonIcon';
 import {
   PiArrowRight,
-  PiArrowSquareOut,
+  PiFileText,
   PiShapes,
   PiCaretDown,
   PiCaretRight,
@@ -753,7 +753,7 @@ const Drawer: React.FC<Props> = (props) => {
                   }}
                   className="group mx-2 my-1 flex h-10 w-[calc(100%-1rem)] items-center rounded px-2 text-white hover:bg-aws-sea-blue-hover-light dark:hover:bg-aws-paper-dark">
                   <div className="mr-2 pt-0.5">
-                    <PiArrowSquareOut />
+                    <PiFileText className="text-aws-aqua" />
                   </div>
                   <span className="flex-1 truncate text-left">
                     {t('document.editorApp')}
@@ -772,7 +772,7 @@ const Drawer: React.FC<Props> = (props) => {
                   }}
                   className="group mx-2 my-1 flex h-10 w-[calc(100%-1rem)] items-center rounded px-2 text-white hover:bg-aws-sea-blue-hover-light dark:hover:bg-aws-paper-dark">
                   <div className="mr-2 pt-0.5">
-                    <PiShapes />
+                    <PiShapes className="text-aws-lab" />
                   </div>
                   <span className="flex-1 truncate text-left">
                     {t('document.drawApp')}

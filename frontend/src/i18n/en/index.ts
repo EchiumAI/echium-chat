@@ -370,7 +370,7 @@ const translation = {
       badge: {
         summary: 'Summary',
       },
-      editorApp: 'Docs editor',
+      editorApp: 'Docs',
       drawApp: 'Draw',
       namePrompt: 'Name',
       deleteConfirm: 'Delete "{{name}}"? This cannot be undone.',
