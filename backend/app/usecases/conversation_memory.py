@@ -43,6 +43,25 @@ Capture the durable, reusable substance: the topics discussed, key facts and dat
 Return ONLY the updated summary as Markdown, with no preamble, code fences, or explanation."""
 
 
+def _strip_code_fences(text: str) -> str:
+    """Remove a single wrapping ```lang ... ``` fence if the model added one.
+
+    The summary is meant to be raw Markdown; some models wrap their whole output
+    in a fenced block (e.g. ```markdown ... ```), which then renders as a literal
+    code block downstream instead of formatted text.
+    """
+    stripped = text.strip()
+    if not (stripped.startswith("```") and stripped.endswith("```")):
+        return text
+    newline = stripped.find("\n")
+    if newline == -1:
+        return text
+    inner = stripped[newline + 1 :].rstrip()
+    if inner.endswith("```"):
+        inner = inner[:-3]
+    return inner.strip()
+
+
 def summarize_conversation(user_id: str, conversation_id: str) -> str:
     """(Re)generate a conversation's rolling summary. Returns the summary."""
     conversation = find_conversation_by_id(user_id, conversation_id)
@@ -90,6 +109,7 @@ def summarize_conversation(user_id: str, conversation_id: str) -> str:
         logger.exception("[CONVERSATION_MEMORY] summarization failed")
         return conversation.summary
 
+    summary = _strip_code_fences(summary)
     if not summary:
         return conversation.summary
 
