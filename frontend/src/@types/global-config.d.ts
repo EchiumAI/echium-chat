@@ -7,6 +7,9 @@ export interface GlobalConfig {
   // Base URL of the collaborative-docs ("Quip-like") app. Empty/undefined
   // until that service is deployed; the Documents page hides "Open in editor".
   docsAppUrl?: string;
+  // Base URL of the Echium Draw app. Empty/undefined until deployed; the drawer
+  // hides the "Draw" entry when unset.
+  drawAppUrl?: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type

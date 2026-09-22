@@ -13,6 +13,7 @@ import ButtonIcon from './ButtonIcon';
 import {
   PiArrowRight,
   PiArrowSquareOut,
+  PiShapes,
   PiCaretDown,
   PiCaretRight,
   PiChartLine,
@@ -582,6 +583,7 @@ const Drawer: React.FC<Props> = (props) => {
   const { data: globalConfig } = getGlobalConfig();
   const logoSrc = globalConfig?.logoPath ?? '';
   const docsAppUrl = globalConfig?.docsAppUrl ?? '';
+  const drawAppUrl = globalConfig?.drawAppUrl ?? '';
 
   useEffect(() => {
     setPrevConversations(conversations);
@@ -755,6 +757,25 @@ const Drawer: React.FC<Props> = (props) => {
                   </div>
                   <span className="flex-1 truncate text-left">
                     {t('document.editorApp')}
+                  </span>
+                </button>
+              )}
+              {/* Opens Echium Draw (draw.echium.ai). Same single-tab reuse via
+                  the 'echium-draw' window name. Hidden when DRAW_APP_URL is
+                  unset. */}
+              {drawAppUrl && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.open(drawAppUrl, 'echium-draw');
+                    closeSmallDrawer();
+                  }}
+                  className="group mx-2 my-1 flex h-10 w-[calc(100%-1rem)] items-center rounded px-2 text-white hover:bg-aws-sea-blue-hover-light dark:hover:bg-aws-paper-dark">
+                  <div className="mr-2 pt-0.5">
+                    <PiShapes />
+                  </div>
+                  <span className="flex-1 truncate text-left">
+                    {t('document.drawApp')}
                   </span>
                 </button>
               )}

@@ -134,6 +134,8 @@ export class WebSocket extends Construct {
         // Base URL of the collaborative-docs app (see api.ts). Kept in sync
         // across handlers; defaults to the live docs app, override via env.
         DOCS_APP_URL: process.env.DOCS_APP_URL ?? "https://docs.echium.ai",
+        // Base URL of Echium Draw (see api.ts). Defaults to the live app.
+        DRAW_APP_URL: process.env.DRAW_APP_URL ?? "https://draw.echium.ai",
         // RAG retriever mode (see api.ts). "embedding" enables Titan-embedding
         // similarity retrieval; empty = direct text injection. Off by default.
         WORKSPACE_RETRIEVER: process.env.WORKSPACE_RETRIEVER ?? "",

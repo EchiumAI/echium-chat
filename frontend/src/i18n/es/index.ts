@@ -272,6 +272,7 @@ const translation = {
         summary: 'Resumen',
       },
       editorApp: 'Editor de documentos',
+      drawApp: 'Draw',
       namePrompt: 'Nombre',
       deleteConfirm: '¿Eliminar «{{name}}»? Esta acción no se puede deshacer.',
       folderDeleteConfirm:

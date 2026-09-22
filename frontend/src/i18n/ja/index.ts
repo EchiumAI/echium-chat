@@ -370,6 +370,7 @@ const translation: typeof en = {
         summary: '要約',
       },
       editorApp: 'ドキュメントエディタ',
+      drawApp: 'ドロー',
       namePrompt: '名前',
       deleteConfirm: '「{{name}}」を削除しますか？この操作は取り消せません。',
       folderDeleteConfirm:

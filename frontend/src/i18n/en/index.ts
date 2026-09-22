@@ -370,6 +370,7 @@ const translation = {
         summary: 'Summary',
       },
       editorApp: 'Docs editor',
+      drawApp: 'Draw',
       namePrompt: 'Name',
       deleteConfirm: 'Delete "{{name}}"? This cannot be undone.',
       folderDeleteConfirm:

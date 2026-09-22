@@ -281,6 +281,9 @@ export class Api extends Construct {
         // /config/global as docsAppUrl; enables the "Open in editor" action on
         // the Files page. Defaults to the live docs app; override via env.
         DOCS_APP_URL: process.env.DOCS_APP_URL ?? "https://docs.echium.ai",
+        // Base URL of Echium Draw; surfaced as drawAppUrl and used by the
+        // drawer "Draw" entry. Defaults to the live app; blank to hide.
+        DRAW_APP_URL: process.env.DRAW_APP_URL ?? "https://draw.echium.ai",
         // RAG retriever mode. "embedding" turns on Titan-embedding + in-Lambda
         // cosine over workspace docs/summaries (chunks stored in DynamoDB, no
         // OpenSearch); empty/other = direct text injection (recency). Off by
