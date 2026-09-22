@@ -21,9 +21,14 @@ class EmbeddingConfig(TypedDict):
 # Adjust the values according to your application.
 # See: https://docs.anthropic.com/claude/reference/complete_post
 DEFAULT_GENERATION_CONFIG: GenerationParams = {
-    # Minimum (Haiku) is 4096
+    # 8192 gives the model room to finish larger responses and, crucially,
+    # complete tool calls that carry big payloads (e.g. the agent's
+    # save_document with a long generated document) — at 4096 those were
+    # truncated with "tool use incomplete due to maximum token limits".
+    # All currently-selectable models (Claude Haiku 4.5) support >= 8192 output;
+    # keep this at/under the smallest enabled model's cap when adding models.
     # Ref: https://docs.anthropic.com/en/docs/about-claude/models/all-models#model-comparison
-    "max_tokens": 4096,
+    "max_tokens": 8192,
     "top_k": 250,
     "top_p": 0.999,
     "temperature": 1.0,
