@@ -3,8 +3,9 @@ Description: >
   One-time setup for GitHub Actions to deploy this app via OIDC.
   Creates the GitHub OIDC identity provider (if missing) and an IAM role
   trusted only to specific GitHub Actions OIDC subjects (the `prod`-environment
-  deploy jobs of the repos that share this role — echium-chat and echium-docs).
-  The role is granted the permissions CDK needs to deploy this stack.
+  deploy jobs of the repos that share this role — echium-chat, echium-docs, and
+  echium-draw). The role is granted the permissions CDK needs to deploy this
+  stack.
 
 Parameters:
   RoleName:
@@ -14,7 +15,7 @@ Parameters:
 
   TrustedSubjects:
     Type: CommaDelimitedList
-    Default: 'repo:EchiumAI/echium-chat:environment:prod,repo:EchiumAI@287532042/echium-docs@1374325976:environment:prod'
+    Default: 'repo:EchiumAI/echium-chat:environment:prod,repo:EchiumAI@287532042/echium-docs@1374325976:environment:prod,repo:EchiumAI@287532042/echium-draw@1380474905:environment:prod'
     Description: >
       OIDC `sub` claims allowed to assume this role. Scoped to the `prod`
       GitHub Environment of each repo that shares this role, so only
@@ -24,15 +25,17 @@ Parameters:
       and `ref:refs/tags/v*` is NOT — the deploy job never presents a ref-based
       sub.
 
-      Note the two repos use DIFFERENT subject formats:
+      Note the repos use DIFFERENT subject formats:
         - echium-chat predates GitHub's 2026-07-15 change, so it still emits the
           classic name-based subject `repo:EchiumAI/echium-chat:...`.
-        - echium-docs was created after that date, so GitHub forces the
-          IMMUTABLE subject with numeric owner/repo IDs
-          (`repo:EchiumAI@287532042/echium-docs@1374325976:...`). There is no
-          opt-out; the numbers are the permanent org id (287532042) and repo id
-          (1374325976), so this is stable across renames. echium-chat will move
-          to the immutable form if it is ever renamed/transferred or opts in.
+        - echium-docs and echium-draw were created after that date, so GitHub
+          forces the IMMUTABLE subject with numeric owner/repo IDs
+          (`repo:EchiumAI@287532042/echium-docs@1374325976:...` and
+          `repo:EchiumAI@287532042/echium-draw@1380474905:...`). There is no
+          opt-out; the numbers are the permanent org id (287532042) and repo ids
+          (docs 1374325976, draw 1380474905), so this is stable across renames.
+          echium-chat will move to the immutable form if it is ever
+          renamed/transferred or opts in.
 
       Protect the `prod` environment and make the `v*.*.*` tags immutable in each
       repo's settings to complete the chain.
@@ -65,7 +68,7 @@ Resources:
 
   # The role GitHub Actions assumes via OIDC.
   # Trust is locked to the exact subjects in TrustedSubjects (the prod-environment
-  # deploy jobs of echium-chat and echium-docs). Permissions are broad
+  # deploy jobs of echium-chat, echium-docs, and echium-draw). Permissions are broad
   # (AdministratorAccess) because CDK needs to provision diverse resources
   # (CloudFront, Cognito, Lambda, IAM, OpenSearch, etc.). The trust policy
   # is the security boundary, not the permission policy.
@@ -73,7 +76,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Ref RoleName
-      Description: 'Assumed by GitHub Actions (prod deploy jobs of echium-chat and echium-docs) to run cdk deploy.'
+      Description: 'Assumed by GitHub Actions (prod deploy jobs of echium-chat, echium-docs, and echium-draw) to run cdk deploy.'
       MaxSessionDuration: 3600
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
