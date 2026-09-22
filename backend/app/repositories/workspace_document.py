@@ -5,6 +5,8 @@ no OpenSearch — deliberately cheap.
 """
 
 import logging
+from array import array
+from dataclasses import dataclass, field
 from decimal import Decimal as decimal
 
 from app.repositories.common import (
@@ -110,6 +112,128 @@ def delete_document_by_id(user_id: str, doc_id: str):
         )
     except table.meta.client.exceptions.ConditionalCheckFailedException:
         raise RecordNotFoundError(f"Document {doc_id} not found for user {user_id}")
+
+
+# --- Document embedding chunks (RAG Phase B) ------------------------------ #
+#
+# One item per text chunk of a workspace document, storing the chunk text and
+# its embedding vector (packed float32 in a Binary attribute) plus a copy of the
+# owning document's visibility so retrieval can scope without a second lookup.
+# SK = "{user_id}#WSDOCCHUNK#{doc_id}#{index}" — deliberately NOT a prefix of the
+# document SK ("{user_id}#WSDOC#..."), so document queries never pick up chunks.
+
+_CHUNK_MARKER = "WSDOCCHUNK"
+
+
+@dataclass
+class DocumentChunkRecord:
+    doc_id: str
+    chunk_index: int
+    text: str
+    vector: list[float]
+    filename: str = ""
+    source: str = "manual"
+    source_conversation_id: str | None = None
+    allowed_agent_ids: list[str] = field(default_factory=list)
+    all_agents: bool = False
+
+
+def _chunk_sk(user_id: str, doc_id: str, index: int) -> str:
+    return f"{user_id}#{_CHUNK_MARKER}#{doc_id}#{index:04d}"
+
+
+def _chunk_doc_prefix(user_id: str, doc_id: str) -> str:
+    return f"{user_id}#{_CHUNK_MARKER}#{doc_id}#"
+
+
+def _chunk_user_prefix(user_id: str) -> str:
+    return f"{user_id}#{_CHUNK_MARKER}#"
+
+
+def _bytes_of(value) -> bytes:
+    # boto3 returns binary attributes as a Binary wrapper (has `.value`).
+    return value.value if hasattr(value, "value") else bytes(value)
+
+
+def _item_to_chunk(item: dict) -> DocumentChunkRecord:
+    vec = array("f")
+    raw = _bytes_of(item.get("Vector", b""))
+    if raw:
+        vec.frombytes(raw)
+    return DocumentChunkRecord(
+        doc_id=item.get("DocId", ""),
+        chunk_index=int(item.get("ChunkIndex", 0)),
+        text=item.get("Text", ""),
+        vector=list(vec),
+        filename=item.get("Filename", ""),
+        source=item.get("Source", "manual"),
+        source_conversation_id=item.get("SourceConversationId"),
+        allowed_agent_ids=list(item.get("AllowedAgentIds", []) or []),
+        all_agents=bool(item.get("AllAgents", False)),
+    )
+
+
+def store_document_chunks(user_id: str, records: list[DocumentChunkRecord]) -> None:
+    if not records:
+        return
+    table = get_conversation_table_client(user_id)
+    with table.batch_writer() as batch:
+        for record in records:
+            batch.put_item(
+                Item={
+                    "PK": user_id,
+                    "SK": _chunk_sk(user_id, record.doc_id, record.chunk_index),
+                    "ItemType": "WORKSPACE_DOC_CHUNK",
+                    "DocId": record.doc_id,
+                    "ChunkIndex": record.chunk_index,
+                    "Text": record.text,
+                    "Vector": array("f", record.vector).tobytes(),
+                    "Filename": record.filename,
+                    "Source": record.source,
+                    "SourceConversationId": record.source_conversation_id,
+                    "AllowedAgentIds": record.allowed_agent_ids,
+                    "AllAgents": record.all_agents,
+                }
+            )
+
+
+def find_document_chunks_by_user_id(user_id: str) -> list[DocumentChunkRecord]:
+    table = get_conversation_table_client(user_id)
+    items: list[dict] = []
+    kwargs: dict = {
+        "KeyConditionExpression": Key("PK").eq(user_id)
+        & Key("SK").begins_with(_chunk_user_prefix(user_id)),
+    }
+    while True:
+        response = table.query(**kwargs)
+        items.extend(response.get("Items", []))
+        last = response.get("LastEvaluatedKey")
+        if not last:
+            break
+        kwargs["ExclusiveStartKey"] = last
+    return [_item_to_chunk(item) for item in items]
+
+
+def delete_document_chunks(user_id: str, doc_id: str) -> None:
+    table = get_conversation_table_client(user_id)
+    kwargs: dict = {
+        "KeyConditionExpression": Key("PK").eq(user_id)
+        & Key("SK").begins_with(_chunk_doc_prefix(user_id, doc_id)),
+        "ProjectionExpression": "SK",
+    }
+    keys: list[str] = []
+    while True:
+        response = table.query(**kwargs)
+        keys.extend(item["SK"] for item in response.get("Items", []))
+        last = response.get("LastEvaluatedKey")
+        if not last:
+            break
+        kwargs["ExclusiveStartKey"] = last
+    if not keys:
+        return
+    with table.batch_writer() as batch:
+        for sk in keys:
+            batch.delete_item(Key={"PK": user_id, "SK": sk})
 
 
 # --- Folders -------------------------------------------------------------- #

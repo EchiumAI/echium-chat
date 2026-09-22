@@ -281,6 +281,11 @@ export class Api extends Construct {
         // /config/global as docsAppUrl; enables the "Open in editor" action on
         // the Files page. Defaults to the live docs app; override via env.
         DOCS_APP_URL: process.env.DOCS_APP_URL ?? "https://docs.echium.ai",
+        // RAG retriever mode. "embedding" turns on Titan-embedding + in-Lambda
+        // cosine over workspace docs/summaries (chunks stored in DynamoDB, no
+        // OpenSearch); empty/other = direct text injection (recency). Off by
+        // default; embedding-on-write only runs when this is "embedding".
+        WORKSPACE_RETRIEVER: process.env.WORKSPACE_RETRIEVER ?? "",
         ENABLE_PLAN_ENFORCEMENT:
           this.node.tryGetContext("enableMessageEnforcement") === true
             ? "true"

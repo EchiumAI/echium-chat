@@ -56,6 +56,52 @@ def _text_key(workspace_id: str, doc_id: str) -> str:
     return f"{_doc_prefix(workspace_id, doc_id)}/text.txt"
 
 
+def _reindex_document_embeddings(
+    user_id: str, doc: WorkspaceDocumentModel, text: str
+) -> None:
+    """Re-embed a document's text into chunk items (RAG Phase B).
+
+    Best-effort and gated by the WORKSPACE_RETRIEVER flag: a failure here must
+    never break the document write. Chunks copy the document's visibility so the
+    retriever can scope results exactly like direct injection does.
+    """
+    from app.repositories.workspace_document import (
+        DocumentChunkRecord,
+        delete_document_chunks,
+        store_document_chunks,
+    )
+    from app.usecases.embeddings import chunk_text, embed_texts, embeddings_enabled
+
+    if not embeddings_enabled():
+        return
+    try:
+        delete_document_chunks(user_id, doc.id)
+        chunks = chunk_text(text)
+        if not chunks:
+            return
+        vectors = embed_texts(chunks)
+        records = [
+            DocumentChunkRecord(
+                doc_id=doc.id,
+                chunk_index=i,
+                text=chunk,
+                vector=vectors[i],
+                filename=doc.filename,
+                source=doc.source,
+                source_conversation_id=doc.source_conversation_id,
+                allowed_agent_ids=doc.allowed_agent_ids,
+                all_agents=doc.all_agents,
+            )
+            for i, chunk in enumerate(chunks)
+        ]
+        store_document_chunks(user_id, records)
+        logger.info(f"Indexed {len(records)} embedding chunks for document {doc.id}")
+    except Exception:
+        logger.warning(
+            f"Failed to index embeddings for document {doc.id}", exc_info=True
+        )
+
+
 SYSTEM_SUMMARY_FOLDER_ID = "system-chat-summaries"
 
 
@@ -134,6 +180,7 @@ def upsert_chat_summary_document(
         update_time=now,
     )
     store_document(user_id, doc)
+    _reindex_document_embeddings(user_id, doc, summary_text)
 
 
 def _to_output(doc: WorkspaceDocumentModel) -> DocumentOutput:
@@ -211,6 +258,7 @@ def create_document(user_id: str, doc_input: DocumentCreateInput) -> DocumentOut
         update_time=now,
     )
     store_document(user_id, doc)
+    _reindex_document_embeddings(user_id, doc, doc_input.extracted_text or "")
     return _to_output(doc)
 
 
@@ -253,6 +301,7 @@ def create_text_document(
         update_time=now,
     )
     store_document(user_id, doc)
+    _reindex_document_embeddings(user_id, doc, content)
     return doc
 
 
@@ -393,6 +442,14 @@ def delete_document(user_id: str, doc_id: str) -> None:
             except Exception:
                 logger.warning(f"Failed to delete S3 object {key}", exc_info=True)
     delete_document_by_id(user_id, doc_id)
+    try:
+        from app.repositories.workspace_document import delete_document_chunks
+
+        delete_document_chunks(user_id, doc_id)
+    except Exception:
+        logger.warning(
+            f"Failed to delete embedding chunks for document {doc_id}", exc_info=True
+        )
 
 
 # --- Folders -------------------------------------------------------------- #

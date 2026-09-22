@@ -71,6 +71,13 @@ def prepare_conversation(
     chat_input: ChatInput,
 ) -> tuple[str, ConversationModel, BotModel | None]:
     current_time = get_current_time()
+    # The user's current message text — used to rank workspace knowledge by
+    # relevance when the embedding retriever is enabled (ignored otherwise).
+    query_text = " ".join(
+        getattr(c, "body", "")
+        for c in chat_input.message.content
+        if getattr(c, "content_type", None) == "text" and getattr(c, "body", None)
+    ).strip()
     bot = None
 
     try:
@@ -170,7 +177,10 @@ def prepare_conversation(
             # Inject workspace knowledge the agent may use (shared documents +
             # workspace chat summaries). Best-effort (returns '' on any issue).
             agent_ws_context = build_workspace_context(
-                user.id, chat_input.agent_id, chat_input.conversation_id
+                user.id,
+                chat_input.agent_id,
+                chat_input.conversation_id,
+                query=query_text,
             )
             if agent_ws_context:
                 agent_system_prompt = f"{agent_system_prompt}\n\n{agent_ws_context}"
@@ -197,7 +207,7 @@ def prepare_conversation(
             # recent chat summaries — so a new chat can build on what past
             # chats discussed. Best-effort (empty string on any issue).
             general_ws_context = build_workspace_context(
-                user.id, None, chat_input.conversation_id
+                user.id, None, chat_input.conversation_id, query=query_text
             )
             if general_ws_context:
                 parent_id = "instruction"
