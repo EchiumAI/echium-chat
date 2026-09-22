@@ -66,7 +66,7 @@ const ModalDialog: React.FC<Props> = (props) => {
                   {props.title && (
                     <Dialog.Title
                       as="h3"
-                      className="border-b pb-2 text-lg font-medium leading-6 text-aws-font-color-light dark:text-aws-font-color-white-dark">
+                      className="border-b border-black/5 pb-2 text-lg font-medium leading-6 text-aws-font-color-light dark:border-white/10 dark:text-aws-font-color-white-dark">
                       {props.title}
                     </Dialog.Title>
                   )}

@@ -34,7 +34,7 @@ const ListPageLayout: React.FC<Props> = (props) => {
           {props.searchCondition && (
             <div className="my-2">{props.searchCondition}</div>
           )}
-          <div className="mt-2 border-b border-gray"></div>
+          <div className="mt-2 border-b border-black/5 dark:border-white/10"></div>
 
           <div className="-mr-2 h-[calc(100%-3rem)] overflow-x-auto overflow-y-scroll border-gray scrollbar-thin scrollbar-thumb-aws-font-color-light/20 dark:scrollbar-thumb-aws-font-color-dark/20">
             <div className="mr-2 h-full pb-8">

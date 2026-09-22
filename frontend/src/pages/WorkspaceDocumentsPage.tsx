@@ -179,7 +179,7 @@ const WorkspaceDocumentsPage: React.FC = () => {
   const renderDoc = (doc: WorkspaceDocument) => (
     <div
       key={doc.id}
-      className="group flex items-center justify-between border-b border-gray p-2 hover:bg-light-gray dark:hover:bg-aws-ui-color-dark">
+      className="group flex items-center justify-between rounded-lg px-3 py-2 hover:bg-black/5 dark:hover:bg-white/10">
       <div className="flex min-w-0 items-center gap-2">
         {doc.source === 'chat_summary' ? (
           <PiChatCircleText className="shrink-0 text-aws-aqua" />
@@ -255,7 +255,7 @@ const WorkspaceDocumentsPage: React.FC = () => {
             <button
               key={folder.id}
               type="button"
-              className="flex items-center gap-2 rounded p-2 text-left hover:bg-light-gray dark:hover:bg-aws-ui-color-dark"
+              className="flex items-center gap-2 rounded-lg p-2 text-left hover:bg-black/5 dark:hover:bg-white/10"
               onClick={() => {
                 if (moveTarget) {
                   moveDocumentToFolder(moveTarget.id, folder.id).catch(() => {});
@@ -269,7 +269,7 @@ const WorkspaceDocumentsPage: React.FC = () => {
           {moveTarget?.folderId && (
             <button
               type="button"
-              className="mt-1 flex items-center gap-2 rounded border-t border-gray p-2 text-left hover:bg-light-gray dark:hover:bg-aws-ui-color-dark"
+              className="mt-1 flex items-center gap-2 rounded-lg border-t border-black/5 p-2 text-left hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/10"
               onClick={() => {
                 if (moveTarget) {
                   moveDocumentToFolder(moveTarget.id, null).catch(() => {});
