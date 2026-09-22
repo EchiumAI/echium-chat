@@ -19,9 +19,11 @@ export default {
       // component class reference; the values are remapped to the EchiumAI
       // purple/violet/blue scheme inspired by the logo gradient.
       colors: {
-        // Dark surfaces (sidebar, headers): deep purple-black
+        // Dark surfaces (sidebar, headers): a calm dark slate with only a hint
+        // of brand purple. Softened from the original saturated #1E1438, which
+        // was harsh against the bright content area.
         'aws-squid-ink': {
-          light: '#1E1438',
+          light: '#211E2C',
           dark: '#0F0820',
         },
         // Primary accent (buttons, links): vibrant violet
