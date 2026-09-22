@@ -188,6 +188,7 @@ const translation = {
     app: {
       name: 'Echium Chat',
       zoomReset: 'Restablecer zoom',
+      appsSection: 'Apps',
       inputMessage: 'Enviar un mensaje',
       greeting: {
         morning: 'Buenos días, {{name}}',

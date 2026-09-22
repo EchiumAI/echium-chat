@@ -198,6 +198,7 @@ const translation: typeof en = {
     app: {
       name: 'Echium Chat',
       zoomReset: 'ズームをリセット',
+      appsSection: 'アプリ',
       inputMessage: 'お手伝いできることはありますか？',
       greeting: {
         morning: 'おはようございます、{{name}}さん',

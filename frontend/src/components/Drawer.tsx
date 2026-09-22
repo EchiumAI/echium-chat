@@ -12,6 +12,7 @@ import useDrawer from '../hooks/useDrawer';
 import ButtonIcon from './ButtonIcon';
 import {
   PiArrowRight,
+  PiArrowUpRight,
   PiFileText,
   PiShapes,
   PiCaretDown,
@@ -740,44 +741,45 @@ const Drawer: React.FC<Props> = (props) => {
                 onClick={closeSmallDrawer}
                 labelComponent={t('document.pageTitle')}
               />
-              {/* Opens the separate docs editor (docs.echium.ai). External
-                  action, so it's a button (not a route) and reuses a single
-                  docs tab via the stable 'echium-docs' window name. Hidden when
-                  DOCS_APP_URL is unset. */}
-              {docsAppUrl && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    window.open(docsAppUrl, 'echium-docs');
-                    closeSmallDrawer();
-                  }}
-                  className="group mx-2 my-1 flex h-10 w-[calc(100%-1rem)] items-center rounded px-2 text-white hover:bg-aws-sea-blue-hover-light dark:hover:bg-aws-paper-dark">
-                  <div className="mr-2 pt-0.5">
-                    <PiFileText className="text-aws-aqua" />
+              {/* Companion apps (docs.echium.ai / draw.echium.ai), grouped in a
+                  subtle block. External launchers: each reuses a single named
+                  tab. Hidden per-app when its *_APP_URL is unset. */}
+              {(docsAppUrl || drawAppUrl) && (
+                <div className="m-2 overflow-hidden rounded-lg border border-white/10 bg-white/5">
+                  <div className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                    {t('app.appsSection')}
                   </div>
-                  <span className="flex-1 truncate text-left">
-                    {t('document.editorApp')}
-                  </span>
-                </button>
-              )}
-              {/* Opens Echium Draw (draw.echium.ai). Same single-tab reuse via
-                  the 'echium-draw' window name. Hidden when DRAW_APP_URL is
-                  unset. */}
-              {drawAppUrl && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    window.open(drawAppUrl, 'echium-draw');
-                    closeSmallDrawer();
-                  }}
-                  className="group mx-2 my-1 flex h-10 w-[calc(100%-1rem)] items-center rounded px-2 text-white hover:bg-aws-sea-blue-hover-light dark:hover:bg-aws-paper-dark">
-                  <div className="mr-2 pt-0.5">
-                    <PiShapes className="text-aws-lab" />
-                  </div>
-                  <span className="flex-1 truncate text-left">
-                    {t('document.drawApp')}
-                  </span>
-                </button>
+                  {docsAppUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.open(docsAppUrl, 'echium-docs');
+                        closeSmallDrawer();
+                      }}
+                      className="group flex h-10 w-full items-center px-3 text-white transition-colors hover:bg-white/10">
+                      <PiFileText className="mr-2 shrink-0 text-aws-aqua" />
+                      <span className="flex-1 truncate text-left">
+                        {t('document.editorApp')}
+                      </span>
+                      <PiArrowUpRight className="shrink-0 text-white/30 transition-colors group-hover:text-white/60" />
+                    </button>
+                  )}
+                  {drawAppUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.open(drawAppUrl, 'echium-draw');
+                        closeSmallDrawer();
+                      }}
+                      className="group flex h-10 w-full items-center px-3 text-white transition-colors hover:bg-white/10">
+                      <PiShapes className="mr-2 shrink-0 text-aws-lab" />
+                      <span className="flex-1 truncate text-left">
+                        {t('document.drawApp')}
+                      </span>
+                      <PiArrowUpRight className="shrink-0 text-white/30 transition-colors group-hover:text-white/60" />
+                    </button>
+                  )}
+                </div>
               )}
               {BOTS_ENABLED && drawerOptions.show.myBots && (
                 <DrawerItem
