@@ -14,6 +14,9 @@ LOGO_PATH = os.environ.get("LOGO_PATH", "")
 # Base URL of the separate collaborative-docs ("Quip-like") app. Empty until
 # that service is deployed; the frontend hides "Open in editor" when unset.
 DOCS_APP_URL = os.environ.get("DOCS_APP_URL", "")
+# Base URL of the Echium Draw app (diagrams/whiteboard). Empty until deployed;
+# the frontend hides the drawer "Draw" entry when unset.
+DRAW_APP_URL = os.environ.get("DRAW_APP_URL", "")
 
 
 def get_global_available_models() -> list[str]:
@@ -67,3 +70,8 @@ def get_logo_path() -> str:
 def get_docs_app_url() -> str:
     """Return the base URL of the collaborative-docs app ('' if not configured)."""
     return DOCS_APP_URL
+
+
+def get_draw_app_url() -> str:
+    """Return the base URL of the Echium Draw app ('' if not configured)."""
+    return DRAW_APP_URL
