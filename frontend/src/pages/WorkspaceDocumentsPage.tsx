@@ -68,7 +68,12 @@ const WorkspaceDocumentsPage: React.FC = () => {
       // open docs tab to this document, otherwise opens one. `noopener` is
       // omitted deliberately — it forces a fresh tab each time and would defeat
       // reuse; docs.echium.ai is first-party (shares our Cognito pool).
-      window.open(`${base}/w/${doc.workspaceId}/d/${doc.id}`, 'echium-docs');
+      // Encode the segments — the workspace id contains '#' (WS#…) which would
+      // otherwise be parsed as a URL fragment and break the path.
+      window.open(
+        `${base}/w/${encodeURIComponent(doc.workspaceId)}/d/${encodeURIComponent(doc.id)}`,
+        'echium-docs'
+      );
     },
     [docsAppUrl]
   );
