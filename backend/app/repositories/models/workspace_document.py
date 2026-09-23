@@ -39,6 +39,8 @@ class WorkspaceDocumentModel(BaseModel):
     # Visibility: explicit agent grants, or visible to every agent.
     allowed_agent_ids: list[str] = Field(default_factory=list)
     all_agents: bool = False
+    # User-marked favorite (single-user workspace for now).
+    is_favorite: bool = False
     # System-managed docs (e.g. chat summaries) are not user-editable/deletable.
     is_system: bool = False
     create_time: float

@@ -7,6 +7,8 @@ from app.routes.schemas.workspace_document import (
     DocumentFolderOutput,
     DocumentModifyInput,
     DocumentOutput,
+    DocumentRevisionContentOutput,
+    DocumentRevisionOutput,
     PresignedUploadInput,
     PresignedUploadOutput,
 )
@@ -17,10 +19,13 @@ from app.usecases.workspace_document import (
     delete_document,
     delete_document_folder,
     get_document_content,
+    get_document_revision_content,
     list_document_folders,
+    list_document_revisions,
     list_documents,
     modify_document,
     modify_document_folder,
+    restore_document_revision,
     update_document_content,
 )
 from app.user import User
@@ -83,6 +88,36 @@ def put_single_document_content(
     return update_document_content(
         current_user.id, doc_id, content_input.text, content_input.content_type
     )
+
+
+@router.get(
+    "/workspaces/default/documents/{doc_id}/revisions",
+    response_model=list[DocumentRevisionOutput],
+)
+def get_document_revisions(request: Request, doc_id: str):
+    """Version history: who saved each checkpoint and when (newest first)."""
+    current_user: User = request.state.current_user
+    return list_document_revisions(current_user.id, doc_id)
+
+
+@router.get(
+    "/workspaces/default/documents/{doc_id}/revisions/{revision_id}",
+    response_model=DocumentRevisionContentOutput,
+)
+def get_document_revision(request: Request, doc_id: str, revision_id: str):
+    """Fetch a single revision's text (for preview / diff before restoring)."""
+    current_user: User = request.state.current_user
+    return get_document_revision_content(current_user.id, doc_id, revision_id)
+
+
+@router.post(
+    "/workspaces/default/documents/{doc_id}/revisions/{revision_id}/restore",
+    response_model=DocumentOutput,
+)
+def post_restore_document_revision(request: Request, doc_id: str, revision_id: str):
+    """Restore a document to a previous revision (records a new checkpoint)."""
+    current_user: User = request.state.current_user
+    return restore_document_revision(current_user.id, doc_id, revision_id)
 
 
 @router.patch("/workspaces/default/documents/{doc_id}", response_model=DocumentOutput)

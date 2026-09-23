@@ -18,13 +18,18 @@ from app.repositories.models.workspace_document import (
     WorkspaceDocumentModel,
 )
 from app.repositories.workspace_document import (
+    DocumentRevisionRecord,
     delete_document_by_id,
     delete_document_folder_by_id,
+    delete_document_revision,
     find_document_by_id,
     find_document_folders_by_user_id,
+    find_document_revision,
+    find_document_revisions,
     find_documents_by_user_id,
     store_document,
     store_document_folder,
+    store_document_revision,
 )
 from app.routes.schemas.workspace_document import (
     DocumentContentOutput,
@@ -34,6 +39,8 @@ from app.routes.schemas.workspace_document import (
     DocumentFolderOutput,
     DocumentModifyInput,
     DocumentOutput,
+    DocumentRevisionContentOutput,
+    DocumentRevisionOutput,
     PresignedUploadInput,
     PresignedUploadOutput,
 )
@@ -194,6 +201,7 @@ def _to_output(doc: WorkspaceDocumentModel) -> DocumentOutput:
         folder_id=doc.folder_id,
         allowed_agent_ids=doc.allowed_agent_ids,
         all_agents=doc.all_agents,
+        is_favorite=doc.is_favorite,
         is_system=doc.is_system,
         create_time=doc.create_time,
         update_time=doc.update_time,
@@ -365,7 +373,108 @@ def update_document_content(
         doc.content_type = content_type
     doc.update_time = float(get_current_time())
     store_document(user_id, doc)
+    _reindex_document_embeddings(user_id, doc, text)
+    _snapshot_revision(user_id, doc, text)
     return _to_output(doc)
+
+
+# --- Version history (revisions) ------------------------------------------ #
+
+REVISION_CAP = 50
+# Autosave fires frequently; keep at most one revision per this interval (ms),
+# so history is a series of meaningful checkpoints rather than every keystroke.
+REVISION_MIN_INTERVAL_MS = 120_000.0
+
+
+def _snapshot_revision(user_id: str, doc: WorkspaceDocumentModel, text: str) -> None:
+    """Record a version-history checkpoint (best-effort, throttled + capped).
+
+    Never breaks the save: a failure here just means no new checkpoint.
+    """
+    try:
+        now = float(get_current_time())
+        existing = find_document_revisions(user_id, doc.id)
+        if existing and (now - existing[0].create_time) < REVISION_MIN_INTERVAL_MS:
+            return
+        revision_id = str(ULID())
+        rev_s3_key = (
+            f"{_doc_prefix(doc.workspace_id, doc.id)}/revisions/{revision_id}.txt"
+        )
+        s3_client.put_object(
+            Bucket=DOCUMENT_BUCKET, Key=rev_s3_key, Body=text.encode("utf-8")
+        )
+        store_document_revision(
+            user_id,
+            DocumentRevisionRecord(
+                doc_id=doc.id,
+                revision_id=revision_id,
+                author=user_id,
+                content_type=doc.content_type,
+                size=len(text.encode("utf-8")),
+                s3_key=rev_s3_key,
+                create_time=now,
+            ),
+        )
+        # Prune oldest checkpoints beyond the cap.
+        for old in find_document_revisions(user_id, doc.id)[REVISION_CAP:]:
+            if old.s3_key:
+                try:
+                    s3_client.delete_object(Bucket=DOCUMENT_BUCKET, Key=old.s3_key)
+                except Exception:
+                    pass
+            delete_document_revision(user_id, doc.id, old.revision_id)
+    except Exception:
+        logger.warning(
+            f"Failed to snapshot revision for document {doc.id}", exc_info=True
+        )
+
+
+def list_document_revisions(user_id: str, doc_id: str) -> list[DocumentRevisionOutput]:
+    find_document_by_id(user_id, doc_id)  # ownership / existence check
+    return [
+        DocumentRevisionOutput(
+            revision_id=r.revision_id,
+            author=r.author,
+            content_type=r.content_type,
+            size=r.size,
+            create_time=r.create_time,
+        )
+        for r in find_document_revisions(user_id, doc_id)
+    ]
+
+
+def get_document_revision_content(
+    user_id: str, doc_id: str, revision_id: str
+) -> DocumentRevisionContentOutput:
+    rev = find_document_revision(user_id, doc_id, revision_id)
+    if rev is None:
+        raise RecordNotFoundError(
+            f"Revision {revision_id} not found for document {doc_id}"
+        )
+    text = ""
+    if rev.s3_key:
+        try:
+            response = s3_client.get_object(Bucket=DOCUMENT_BUCKET, Key=rev.s3_key)
+            text = response["Body"].read().decode("utf-8")
+        except Exception:
+            logger.warning(f"Failed to read revision text {rev.s3_key}", exc_info=True)
+    return DocumentRevisionContentOutput(
+        revision_id=revision_id, text=text, content_type=rev.content_type
+    )
+
+
+def restore_document_revision(
+    user_id: str, doc_id: str, revision_id: str
+) -> DocumentOutput:
+    rev = find_document_revision(user_id, doc_id, revision_id)
+    if rev is None:
+        raise RecordNotFoundError(
+            f"Revision {revision_id} not found for document {doc_id}"
+        )
+    content = get_document_revision_content(user_id, doc_id, revision_id)
+    return update_document_content(
+        user_id, doc_id, content.text, content_type=rev.content_type
+    )
 
 
 def modify_document(
@@ -381,6 +490,8 @@ def modify_document(
         doc.allowed_agent_ids = doc_input.allowed_agent_ids
     if doc_input.all_agents is not None:
         doc.all_agents = doc_input.all_agents
+    if doc_input.is_favorite is not None:
+        doc.is_favorite = doc_input.is_favorite
     doc.update_time = float(get_current_time())
     store_document(user_id, doc)
     return _to_output(doc)

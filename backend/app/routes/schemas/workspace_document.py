@@ -37,6 +37,7 @@ class DocumentModifyInput(BaseSchema):
     folder_id: Optional[str] = None
     allowed_agent_ids: Optional[list[str]] = None
     all_agents: Optional[bool] = None
+    is_favorite: Optional[bool] = None
 
 
 class DocumentOutput(BaseSchema):
@@ -49,6 +50,7 @@ class DocumentOutput(BaseSchema):
     folder_id: Optional[str]
     allowed_agent_ids: list[str]
     all_agents: bool
+    is_favorite: bool
     is_system: bool
     create_time: float
     update_time: float
@@ -89,3 +91,20 @@ class DocumentContentInput(BaseSchema):
     text: str
     # Optional MIME type for the stored body (e.g. "text/html", "text/markdown").
     content_type: Optional[str] = None
+
+
+# --- Revisions (version history) ------------------------------------------ #
+
+
+class DocumentRevisionOutput(BaseSchema):
+    revision_id: str
+    author: str
+    content_type: str
+    size: int
+    create_time: float
+
+
+class DocumentRevisionContentOutput(BaseSchema):
+    revision_id: str
+    text: str
+    content_type: str

@@ -45,6 +45,7 @@ def _item_to_document(user_id: str, item: dict) -> WorkspaceDocumentModel:
         folder_id=item.get("FolderId"),
         allowed_agent_ids=list(item.get("AllowedAgentIds", []) or []),
         all_agents=bool(item.get("AllAgents", False)),
+        is_favorite=bool(item.get("IsFavorite", False)),
         is_system=bool(item.get("IsSystem", False)),
         create_time=float(item.get("CreateTime", 0)),
         update_time=float(item.get("UpdateTime", 0)),
@@ -70,6 +71,7 @@ def store_document(user_id: str, document: WorkspaceDocumentModel):
             "FolderId": document.folder_id,
             "AllowedAgentIds": document.allowed_agent_ids,
             "AllAgents": document.all_agents,
+            "IsFavorite": document.is_favorite,
             "IsSystem": document.is_system,
             "CreateTime": decimal(document.create_time),
             "UpdateTime": decimal(document.update_time),
@@ -234,6 +236,101 @@ def delete_document_chunks(user_id: str, doc_id: str) -> None:
     with table.batch_writer() as batch:
         for sk in keys:
             batch.delete_item(Key={"PK": user_id, "SK": sk})
+
+
+# --- Document revisions (version history) --------------------------------- #
+#
+# One item per saved version of a document, with author + timestamp + the S3
+# key of that version's text. SK = "{user_id}#WSDOCREV#{doc_id}#{revision_id}"
+# (revision_id is a ULID, so SK sorts chronologically).
+
+_REVISION_MARKER = "WSDOCREV"
+
+
+@dataclass
+class DocumentRevisionRecord:
+    doc_id: str
+    revision_id: str
+    author: str
+    content_type: str
+    size: int
+    s3_key: str
+    create_time: float
+
+
+def _revision_sk(user_id: str, doc_id: str, revision_id: str) -> str:
+    return f"{user_id}#{_REVISION_MARKER}#{doc_id}#{revision_id}"
+
+
+def _revision_doc_prefix(user_id: str, doc_id: str) -> str:
+    return f"{user_id}#{_REVISION_MARKER}#{doc_id}#"
+
+
+def _item_to_revision(item: dict) -> DocumentRevisionRecord:
+    return DocumentRevisionRecord(
+        doc_id=item.get("DocId", ""),
+        revision_id=item.get("RevisionId", ""),
+        author=item.get("Author", ""),
+        content_type=item.get("ContentType", ""),
+        size=int(item.get("Size", 0)),
+        s3_key=item.get("S3Key", ""),
+        create_time=float(item.get("CreateTime", 0)),
+    )
+
+
+def store_document_revision(user_id: str, record: DocumentRevisionRecord) -> None:
+    table = get_conversation_table_client(user_id)
+    table.put_item(
+        Item={
+            "PK": user_id,
+            "SK": _revision_sk(user_id, record.doc_id, record.revision_id),
+            "ItemType": "WORKSPACE_DOC_REVISION",
+            "DocId": record.doc_id,
+            "RevisionId": record.revision_id,
+            "Author": record.author,
+            "ContentType": record.content_type,
+            "Size": int(record.size),
+            "S3Key": record.s3_key,
+            "CreateTime": decimal(record.create_time),
+        }
+    )
+
+
+def find_document_revisions(user_id: str, doc_id: str) -> list[DocumentRevisionRecord]:
+    table = get_conversation_table_client(user_id)
+    items: list[dict] = []
+    kwargs: dict = {
+        "KeyConditionExpression": Key("PK").eq(user_id)
+        & Key("SK").begins_with(_revision_doc_prefix(user_id, doc_id)),
+    }
+    while True:
+        response = table.query(**kwargs)
+        items.extend(response.get("Items", []))
+        last = response.get("LastEvaluatedKey")
+        if not last:
+            break
+        kwargs["ExclusiveStartKey"] = last
+    revisions = [_item_to_revision(item) for item in items]
+    revisions.sort(key=lambda r: r.create_time, reverse=True)
+    return revisions
+
+
+def find_document_revision(
+    user_id: str, doc_id: str, revision_id: str
+) -> DocumentRevisionRecord | None:
+    table = get_conversation_table_client(user_id)
+    response = table.get_item(
+        Key={"PK": user_id, "SK": _revision_sk(user_id, doc_id, revision_id)}
+    )
+    item = response.get("Item")
+    return _item_to_revision(item) if item else None
+
+
+def delete_document_revision(user_id: str, doc_id: str, revision_id: str) -> None:
+    table = get_conversation_table_client(user_id)
+    table.delete_item(
+        Key={"PK": user_id, "SK": _revision_sk(user_id, doc_id, revision_id)}
+    )
 
 
 # --- Folders -------------------------------------------------------------- #
