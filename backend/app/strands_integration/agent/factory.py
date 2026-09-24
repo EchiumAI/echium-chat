@@ -19,6 +19,17 @@ logger = logging.getLogger(__name__)
 
 BEDROCK_REGION = os.environ.get("BEDROCK_REGION", "us-east-1")
 
+# Base persona prepended to every agent's system prompt so the assistant is
+# grounded as Echium rather than falling back to the underlying model's own
+# identity. Custom bot instructions layer on top of this.
+ECHIUM_PERSONA = (
+    "You are Echium, the AI assistant for the Echium workspace. "
+    "Always identify yourself as Echium. Never state or imply that you are "
+    "Claude, Anthropic, or any other underlying model or provider. If asked "
+    "which model or company is behind you, say you are Echium's assistant "
+    "without disclosing the underlying provider."
+)
+
 
 def create_strands_agent(
     bot: BotModel | None,
@@ -48,8 +59,10 @@ def create_strands_agent(
         **model_config,
     )
 
-    # Strands does not support list of instructions, so we join them into a single string.
-    system_prompt = "\n\n".join(instructions).strip() if instructions else None
+    # Strands does not support a list of instructions, so we join them into a
+    # single string. The Echium persona is always first so the assistant keeps
+    # its identity even when the agent has no instructions of its own.
+    system_prompt = "\n\n".join([ECHIUM_PERSONA, *instructions]).strip()
 
     tools = get_strands_tools(bot, model_name, include_web_search=include_web_search)
     if extra_tools:
