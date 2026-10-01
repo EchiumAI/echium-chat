@@ -363,6 +363,11 @@ const translation = {
     },
     document: {
       pageTitle: 'Files',
+      storage: '{{count}} files · {{size}} used',
+      storageOne: '1 file · {{size}} used',
+      searchPlaceholder: 'Search files…',
+      searchResults: '{{count}} matching files',
+      searchNoResults: 'No files match "{{query}}".',
       upload: 'Upload',
       newFolder: 'New folder',
       empty: 'No documents yet. Upload one to get started.',

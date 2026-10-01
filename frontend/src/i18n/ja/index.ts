@@ -363,6 +363,11 @@ const translation: typeof en = {
     },
     document: {
       pageTitle: 'ファイル',
+      storage: '{{count}}個のファイル · {{size}}使用中',
+      storageOne: '1個のファイル · {{size}}使用中',
+      searchPlaceholder: 'ファイルを検索…',
+      searchResults: '{{count}}件のファイルが一致',
+      searchNoResults: '「{{query}}」に一致するファイルはありません。',
       upload: 'アップロード',
       newFolder: '新しいフォルダ',
       empty: 'ドキュメントがまだありません。アップロードして始めましょう。',

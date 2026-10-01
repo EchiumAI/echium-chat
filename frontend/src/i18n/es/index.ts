@@ -267,6 +267,11 @@ const translation = {
     },
     document: {
       pageTitle: 'Archivos',
+      storage: '{{count}} archivos · {{size}} usados',
+      storageOne: '1 archivo · {{size}} usados',
+      searchPlaceholder: 'Buscar archivos…',
+      searchResults: '{{count}} archivos coinciden',
+      searchNoResults: 'Ningún archivo coincide con "{{query}}".',
       upload: 'Subir',
       newFolder: 'Nueva carpeta',
       empty: 'Aún no hay documentos. Sube uno para empezar.',

@@ -2,20 +2,25 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   PiArrowSquareOut,
+  PiCaretDown,
+  PiCaretRight,
   PiChatCircleText,
   PiFolder,
   PiFolderPlus,
   PiFile,
+  PiMagnifyingGlass,
   PiPencilLine,
   PiShareNetwork,
   PiTrash,
   PiUploadSimple,
+  PiX,
 } from 'react-icons/pi';
 import { WorkspaceDocument } from '../@types/workspaceDocument';
 import useWorkspaceDocument from '../hooks/useWorkspaceDocument';
 import ListPageLayout from '../layouts/ListPageLayout';
 import Button from '../components/Button';
 import ButtonIcon from '../components/ButtonIcon';
+import InputText from '../components/InputText';
 import ModalDialog from '../components/ModalDialog';
 import DialogShareDocument from '../components/DialogShareDocument';
 import useGlobalConfig from '../hooks/useGlobalConfig';
@@ -30,7 +35,10 @@ const formatSize = (bytes: number): string => {
   if (bytes < 1024 * 1024) {
     return `${(bytes / 1024).toFixed(1)} KB`;
   }
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes < 1024 * 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 };
 
 const WorkspaceDocumentsPage: React.FC = () => {
@@ -159,6 +167,66 @@ const WorkspaceDocumentsPage: React.FC = () => {
 
   const isShared = (doc: WorkspaceDocument) =>
     doc.allAgents || doc.allowedAgentIds.length > 0;
+
+  // Collapsed folders, remembered per browser. System folders (the auto-
+  // generated "Chat summaries") start collapsed so they don't crowd the list.
+  const COLLAPSE_KEY = 'echium.files.collapsedFolders';
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(COLLAPSE_KEY) ?? '{}');
+    } catch {
+      return {};
+    }
+  });
+  const isCollapsed = useCallback(
+    (folderId: string, isSystem: boolean) =>
+      collapsed[folderId] ?? isSystem,
+    [collapsed]
+  );
+  const toggleCollapsed = useCallback(
+    (folderId: string, isSystem: boolean) => {
+      setCollapsed((prev) => {
+        const next = { ...prev, [folderId]: !(prev[folderId] ?? isSystem) };
+        try {
+          localStorage.setItem(COLLAPSE_KEY, JSON.stringify(next));
+        } catch {
+          // Storage full/unavailable: the toggle still works for this session.
+        }
+        return next;
+      });
+    },
+    []
+  );
+
+  // Filename search. While a query is active the folder tree is replaced by a
+  // flat result list (same behaviour as the Docs ⌘K search).
+  const [query, setQuery] = useState('');
+  const searchResults = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) {
+      return null;
+    }
+    const folderName = new Map((folders ?? []).map((f) => [f.id, f.name]));
+    return (documents ?? [])
+      .filter((d) => {
+        const inName = d.filename.toLowerCase().includes(q);
+        const inFolder = d.folderId
+          ? (folderName.get(d.folderId) ?? '').toLowerCase().includes(q)
+          : false;
+        return inName || inFolder;
+      })
+      .sort((a, b) => b.updateTime - a.updateTime);
+  }, [query, documents, folders]);
+
+  // Storage consumed by the workspace: sum of stored sizes across all files.
+  const storageSummary = useMemo(() => {
+    const docs = documents ?? [];
+    const bytes = docs.reduce((acc, d) => acc + (d.size || 0), 0);
+    const size = formatSize(bytes) || '0 B';
+    return docs.length === 1
+      ? t('document.storageOne', { size })
+      : t('document.storage', { count: docs.length, size });
+  }, [documents, t]);
 
   const shareSummary = useCallback(
     (doc: WorkspaceDocument): string => {
@@ -325,7 +393,12 @@ const WorkspaceDocumentsPage: React.FC = () => {
       <ListPageLayout
         pageTitle={t('document.pageTitle')}
         pageTitleActions={
-          <div className="flex flex-wrap justify-end gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <span
+              className="mr-1 rounded-full bg-black/5 px-3 py-1 text-xs text-gray dark:bg-white/10"
+              title={storageSummary}>
+              {storageSummary}
+            </span>
             <Button
               className="text-sm"
               outlined
@@ -347,21 +420,67 @@ const WorkspaceDocumentsPage: React.FC = () => {
           (documents?.length ?? 0) === 0 && (folders?.length ?? 0) === 0
         }
         emptyMessage={t('document.empty')}>
+        <div className="relative mt-3">
+          <InputText
+            icon={<PiMagnifyingGlass />}
+            placeholder={t('document.searchPlaceholder')}
+            value={query}
+            onChange={setQuery}
+          />
+          {query && (
+            <button
+              type="button"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray hover:text-dark-gray"
+              onClick={() => setQuery('')}
+              aria-label="Clear search">
+              <PiX size={20} />
+            </button>
+          )}
+        </div>
+
+        {searchResults ? (
+          <div className="flex flex-col gap-2 pt-3">
+            <div className="text-xs text-gray">
+              {searchResults.length === 0
+                ? t('document.searchNoResults', { query: query.trim() })
+                : t('document.searchResults', { count: searchResults.length })}
+            </div>
+            {searchResults.length > 0 && (
+              <div className="rounded-lg border border-gray">
+                {searchResults.map(renderDoc)}
+              </div>
+            )}
+          </div>
+        ) : (
         <div className="flex flex-col gap-4 pt-3">
           {(folders ?? []).map((folder) => {
             const items = docsByFolder.get(folder.id) ?? [];
+            const folded = isCollapsed(folder.id, folder.isSystem);
             return (
               <div
                 key={folder.id}
                 className="overflow-hidden rounded-lg border border-gray">
                 <div className="flex items-center justify-between gap-1 bg-light-gray px-2 py-1.5 dark:bg-aws-ui-color-dark">
-                  <div className="flex min-w-0 items-center gap-2 font-medium">
-                    <PiFolder className="shrink-0 text-aws-sea-blue-light" />
+                  <button
+                    type="button"
+                    onClick={() => toggleCollapsed(folder.id, folder.isSystem)}
+                    aria-expanded={!folded}
+                    className="flex min-w-0 flex-1 items-center gap-2 text-left font-medium">
+                    {folded ? (
+                      <PiCaretRight className="shrink-0 text-gray" />
+                    ) : (
+                      <PiCaretDown className="shrink-0 text-gray" />
+                    )}
+                    {folder.isSystem ? (
+                      <PiChatCircleText className="shrink-0 text-aws-aqua" />
+                    ) : (
+                      <PiFolder className="shrink-0 text-aws-sea-blue-light" />
+                    )}
                     <span className="truncate">{folder.name}</span>
                     <span className="shrink-0 text-xs text-gray">
                       ({items.length})
                     </span>
-                  </div>
+                  </button>
                   {!folder.isSystem && (
                     <div className="flex shrink-0 gap-1">
                       <ButtonIcon
@@ -375,7 +494,7 @@ const WorkspaceDocumentsPage: React.FC = () => {
                     </div>
                   )}
                 </div>
-                {items.length === 0 ? (
+                {folded ? null : items.length === 0 ? (
                   <div className="p-3 text-xs text-gray">
                     {t('document.folderEmpty')}
                   </div>
@@ -405,6 +524,7 @@ const WorkspaceDocumentsPage: React.FC = () => {
             </div>
           </div>
         </div>
+        )}
       </ListPageLayout>
     </>
   );
