@@ -1,26 +1,31 @@
-from app.usecases.workspace import (
-    get_default_workspace_overview,
-    list_workspaces_overview,
-)
+from app.routes.schemas.team import WorkspaceOverviewOutput
+from app.usecases.team import list_workspaces_for_user
+from app.usecases.workspace_scope import resolve_workspace
 from app.user import User
 from fastapi import APIRouter, Request
 
 router = APIRouter(tags=["workspace"])
 
 
-@router.get("/workspaces")
+@router.get("/workspaces", response_model=list[WorkspaceOverviewOutput])
 def get_my_workspaces(request: Request):
-    """List the current user's workspaces.
-
-    Phase 1: always returns just the single default personal workspace. The
-    frontend can treat the list as forward-compatible with multi-workspace.
-    """
+    """The caller's workspaces: their personal one plus every team they are in."""
     current_user: User = request.state.current_user
-    return list_workspaces_overview(current_user.id)
+    return list_workspaces_for_user(current_user)
 
 
-@router.get("/workspaces/default")
-def get_my_default_workspace(request: Request):
-    """The user's default (current) workspace; created on first access."""
+@router.get("/workspaces/{workspace}", response_model=WorkspaceOverviewOutput)
+def get_workspace(request: Request, workspace: str):
+    """One workspace by id ("default", a team id, or WS#TEAM#{id})."""
     current_user: User = request.state.current_user
-    return get_default_workspace_overview(current_user.id)
+    scope = resolve_workspace(current_user.id, workspace)
+    for ws in list_workspaces_for_user(current_user):
+        if ws.workspace_id == scope.workspace_id:
+            return ws
+    # Personal workspace always exists.
+    return WorkspaceOverviewOutput(
+        workspace_id=scope.workspace_id,
+        name="Personal",
+        kind="personal",
+        is_default=True,
+    )

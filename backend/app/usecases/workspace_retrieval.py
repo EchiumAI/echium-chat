@@ -18,9 +18,9 @@ from dataclasses import dataclass
 from typing import Optional, Protocol
 
 import boto3
-from app.repositories.common import default_workspace_id
 from app.repositories.models.workspace_document import WorkspaceDocumentModel
 from app.repositories.workspace_document import find_documents_by_user_id
+from app.usecases.workspace_scope import all_scopes_for_user
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -98,6 +98,22 @@ def _doc_visible(
     return doc.all_agents or agent_id in doc.allowed_agent_ids
 
 
+def _all_visible_documents(user_id: str) -> list[WorkspaceDocumentModel]:
+    """Documents from the user's personal workspace and every team they belong
+    to, newest first. Team lookups are best-effort so a single bad team never
+    breaks chat."""
+    docs: list[WorkspaceDocumentModel] = []
+    for scope in all_scopes_for_user(user_id):
+        try:
+            docs.extend(find_documents_by_user_id(scope.owner_key, scope.workspace_id))
+        except Exception:
+            logger.warning(
+                f"Document lookup failed for {scope.workspace_id}", exc_info=True
+            )
+    docs.sort(key=lambda d: d.update_time, reverse=True)
+    return docs
+
+
 class SimpleWorkspaceRetriever:
     """Phase A retriever: visibility-filtered, recency-ordered, no embeddings."""
 
@@ -109,8 +125,7 @@ class SimpleWorkspaceRetriever:
         query: Optional[str] = None,  # unused: recency, not relevance
         limit: int = MAX_ITEMS,
     ) -> list[RetrievedDoc]:
-        workspace_id = default_workspace_id(user_id)
-        docs = find_documents_by_user_id(user_id, workspace_id)
+        docs = _all_visible_documents(user_id)
 
         visible = [
             d
@@ -166,13 +181,19 @@ class EmbeddingWorkspaceRetriever:
             )
             from app.usecases.embeddings import cosine, embed_query
 
-            workspace_id = default_workspace_id(user_id)
-            doc_by_id = {
-                d.id: d for d in find_documents_by_user_id(user_id, workspace_id)
-            }
+            doc_by_id = {d.id: d for d in _all_visible_documents(user_id)}
+            # Chunks live in each workspace's own partition (user or team).
+            all_chunks = []
+            for scope in all_scopes_for_user(user_id):
+                try:
+                    all_chunks.extend(find_document_chunks_by_user_id(scope.owner_key))
+                except Exception:
+                    logger.warning(
+                        f"Chunk lookup failed for {scope.workspace_id}", exc_info=True
+                    )
             visible_chunks = [
                 chunk
-                for chunk in find_document_chunks_by_user_id(user_id)
+                for chunk in all_chunks
                 if chunk.doc_id in doc_by_id
                 and _doc_visible(
                     doc_by_id[chunk.doc_id], agent_id, exclude_conversation_id

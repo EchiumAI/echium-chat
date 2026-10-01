@@ -48,6 +48,7 @@ from app.routes.schemas.workspace_document import (
     PresignedUploadInput,
     PresignedUploadOutput,
 )
+from app.usecases.workspace_scope import resolve_workspace
 from app.utils import generate_presigned_url, get_current_time
 from ulid import ULID
 
@@ -224,10 +225,10 @@ def _folder_to_output(folder: DocumentFolderModel) -> DocumentFolderOutput:
 
 
 def create_presigned_upload(
-    user_id: str, upload_input: PresignedUploadInput
+    user_id: str, upload_input: PresignedUploadInput, workspace: str = "default"
 ) -> PresignedUploadOutput:
     """Mint a doc id + S3 key and return a presigned PUT URL for the raw file."""
-    workspace_id = default_workspace_id(user_id)
+    workspace_id = resolve_workspace(user_id, workspace).workspace_id
     doc_id = str(ULID())
     s3_key = f"{_doc_prefix(workspace_id, doc_id)}/{upload_input.filename}"
     url = generate_presigned_url(
@@ -256,9 +257,13 @@ def _validate_owned_s3_key(workspace_id: str, doc_id: str, s3_key: str) -> str:
     return s3_key
 
 
-def create_document(user_id: str, doc_input: DocumentCreateInput) -> DocumentOutput:
+def create_document(
+    user_id: str, doc_input: DocumentCreateInput, workspace: str = "default"
+) -> DocumentOutput:
     """Finalize a manual upload: store extracted text + metadata."""
-    workspace_id = default_workspace_id(user_id)
+    scope = resolve_workspace(user_id, workspace)
+    workspace_id = scope.workspace_id
+    owner = scope.owner_key
     now = float(get_current_time())
     s3_key = _validate_owned_s3_key(workspace_id, doc_input.doc_id, doc_input.s3_key)
 
@@ -297,8 +302,8 @@ def create_document(user_id: str, doc_input: DocumentCreateInput) -> DocumentOut
         create_time=now,
         update_time=now,
     )
-    store_document(user_id, doc)
-    _reindex_document_embeddings(user_id, doc, extracted_text)
+    store_document(owner, doc)
+    _reindex_document_embeddings(owner, doc, extracted_text)
     return _to_output(doc)
 
 
@@ -358,18 +363,24 @@ def create_text_document(
     return doc
 
 
-def list_documents(user_id: str) -> list[DocumentOutput]:
-    workspace_id = default_workspace_id(user_id)
-    return [_to_output(d) for d in find_documents_by_user_id(user_id, workspace_id)]
+def list_documents(user_id: str, workspace: str = "default") -> list[DocumentOutput]:
+    scope = resolve_workspace(user_id, workspace)
+    return [
+        _to_output(d)
+        for d in find_documents_by_user_id(scope.owner_key, scope.workspace_id)
+    ]
 
 
-def get_document_content(user_id: str, doc_id: str) -> DocumentContentOutput:
+def get_document_content(
+    user_id: str, doc_id: str, workspace: str = "default"
+) -> DocumentContentOutput:
     """Return a document's text and/or a presigned download URL.
 
     This is the contract the separate collaborative-docs editor uses to load a
     document for viewing/editing.
     """
-    doc = find_document_by_id(user_id, doc_id)
+    owner = resolve_workspace(user_id, workspace).owner_key
+    doc = find_document_by_id(owner, doc_id)
     text: str | None = None
     if doc.text_s3_key:
         try:
@@ -427,7 +438,11 @@ def _is_binary_document(doc: WorkspaceDocumentModel) -> bool:
 
 
 def update_document_content(
-    user_id: str, doc_id: str, text: str, content_type: str | None = None
+    user_id: str,
+    doc_id: str,
+    text: str,
+    content_type: str | None = None,
+    workspace: str = "default",
 ) -> DocumentOutput:
     """Overwrite a document's canonical text body (write-back from the editor).
 
@@ -435,7 +450,8 @@ def update_document_content(
     bumps size + update_time. This is the save path for the collaborative-docs
     editor. Sharing/agent-visibility metadata is preserved.
     """
-    doc = find_document_by_id(user_id, doc_id)
+    owner = resolve_workspace(user_id, workspace).owner_key
+    doc = find_document_by_id(owner, doc_id)
     if _is_binary_document(doc) and (content_type or "").lower().startswith(
         "text/html"
     ):
@@ -455,14 +471,13 @@ def update_document_content(
     if content_type:
         doc.content_type = content_type
     doc.update_time = float(get_current_time())
-    store_document(user_id, doc)
+    store_document(owner, doc)
     # The editor saves HTML; index readable text, not markup.
     from app.usecases.document_text import body_to_plain_text
 
-    _reindex_document_embeddings(
-        user_id, doc, body_to_plain_text(text, doc.content_type)
-    )
-    _snapshot_revision(user_id, doc, text)
+    _reindex_document_embeddings(owner, doc, body_to_plain_text(text, doc.content_type))
+    # Revision author is the real editor, even in a shared team workspace.
+    _snapshot_revision(owner, doc, text, author=user_id)
     return _to_output(doc)
 
 
@@ -474,10 +489,17 @@ REVISION_CAP = 50
 REVISION_MIN_INTERVAL_MS = 120_000.0
 
 
-def _snapshot_revision(user_id: str, doc: WorkspaceDocumentModel, text: str) -> None:
+def _snapshot_revision(
+    user_id: str,
+    doc: WorkspaceDocumentModel,
+    text: str,
+    author: str | None = None,
+) -> None:
     """Record a version-history checkpoint (best-effort, throttled + capped).
 
-    Never breaks the save: a failure here just means no new checkpoint.
+    ``user_id`` is the storage owner (user or team partition); ``author`` is the
+    person who saved. Never breaks the save: a failure here just means no new
+    checkpoint.
     """
     try:
         now = float(get_current_time())
@@ -496,7 +518,7 @@ def _snapshot_revision(user_id: str, doc: WorkspaceDocumentModel, text: str) -> 
             DocumentRevisionRecord(
                 doc_id=doc.id,
                 revision_id=revision_id,
-                author=user_id,
+                author=author or user_id,
                 content_type=doc.content_type,
                 size=len(text.encode("utf-8")),
                 s3_key=rev_s3_key,
@@ -517,8 +539,11 @@ def _snapshot_revision(user_id: str, doc: WorkspaceDocumentModel, text: str) -> 
         )
 
 
-def list_document_revisions(user_id: str, doc_id: str) -> list[DocumentRevisionOutput]:
-    find_document_by_id(user_id, doc_id)  # ownership / existence check
+def list_document_revisions(
+    user_id: str, doc_id: str, workspace: str = "default"
+) -> list[DocumentRevisionOutput]:
+    owner = resolve_workspace(user_id, workspace).owner_key
+    find_document_by_id(owner, doc_id)  # ownership / existence check
     return [
         DocumentRevisionOutput(
             revision_id=r.revision_id,
@@ -527,14 +552,15 @@ def list_document_revisions(user_id: str, doc_id: str) -> list[DocumentRevisionO
             size=r.size,
             create_time=r.create_time,
         )
-        for r in find_document_revisions(user_id, doc_id)
+        for r in find_document_revisions(owner, doc_id)
     ]
 
 
 def get_document_revision_content(
-    user_id: str, doc_id: str, revision_id: str
+    user_id: str, doc_id: str, revision_id: str, workspace: str = "default"
 ) -> DocumentRevisionContentOutput:
-    rev = find_document_revision(user_id, doc_id, revision_id)
+    owner = resolve_workspace(user_id, workspace).owner_key
+    rev = find_document_revision(owner, doc_id, revision_id)
     if rev is None:
         raise RecordNotFoundError(
             f"Revision {revision_id} not found for document {doc_id}"
@@ -552,23 +578,32 @@ def get_document_revision_content(
 
 
 def restore_document_revision(
-    user_id: str, doc_id: str, revision_id: str
+    user_id: str, doc_id: str, revision_id: str, workspace: str = "default"
 ) -> DocumentOutput:
-    rev = find_document_revision(user_id, doc_id, revision_id)
+    owner = resolve_workspace(user_id, workspace).owner_key
+    rev = find_document_revision(owner, doc_id, revision_id)
     if rev is None:
         raise RecordNotFoundError(
             f"Revision {revision_id} not found for document {doc_id}"
         )
-    content = get_document_revision_content(user_id, doc_id, revision_id)
+    content = get_document_revision_content(user_id, doc_id, revision_id, workspace)
     return update_document_content(
-        user_id, doc_id, content.text, content_type=rev.content_type
+        user_id,
+        doc_id,
+        content.text,
+        content_type=rev.content_type,
+        workspace=workspace,
     )
 
 
 def modify_document(
-    user_id: str, doc_id: str, doc_input: DocumentModifyInput
+    user_id: str,
+    doc_id: str,
+    doc_input: DocumentModifyInput,
+    workspace: str = "default",
 ) -> DocumentOutput:
-    doc = find_document_by_id(user_id, doc_id)
+    owner = resolve_workspace(user_id, workspace).owner_key
+    doc = find_document_by_id(owner, doc_id)
     if doc_input.filename is not None:
         doc.filename = doc_input.filename
     if doc_input.folder_id is not None:
@@ -581,7 +616,7 @@ def modify_document(
     if doc_input.is_favorite is not None:
         doc.is_favorite = doc_input.is_favorite
     doc.update_time = float(get_current_time())
-    store_document(user_id, doc)
+    store_document(owner, doc)
     return _to_output(doc)
 
 
@@ -649,19 +684,20 @@ def persist_uploaded_attachments(
             )
 
 
-def delete_document(user_id: str, doc_id: str) -> None:
-    doc = find_document_by_id(user_id, doc_id)
+def delete_document(user_id: str, doc_id: str, workspace: str = "default") -> None:
+    owner = resolve_workspace(user_id, workspace).owner_key
+    doc = find_document_by_id(owner, doc_id)
     for key in (doc.s3_key, doc.text_s3_key):
         if key:
             try:
                 s3_client.delete_object(Bucket=DOCUMENT_BUCKET, Key=key)
             except Exception:
                 logger.warning(f"Failed to delete S3 object {key}", exc_info=True)
-    delete_document_by_id(user_id, doc_id)
+    delete_document_by_id(owner, doc_id)
     try:
         from app.repositories.workspace_document import delete_document_chunks
 
-        delete_document_chunks(user_id, doc_id)
+        delete_document_chunks(owner, doc_id)
     except Exception:
         logger.warning(
             f"Failed to delete embedding chunks for document {doc_id}", exc_info=True
@@ -672,38 +708,48 @@ def delete_document(user_id: str, doc_id: str) -> None:
 
 
 def create_document_folder(
-    user_id: str, folder_input: DocumentFolderCreateInput
+    user_id: str, folder_input: DocumentFolderCreateInput, workspace: str = "default"
 ) -> DocumentFolderOutput:
+    scope = resolve_workspace(user_id, workspace)
     folder = DocumentFolderModel(
         id=str(ULID()),
-        workspace_id=default_workspace_id(user_id),
+        workspace_id=scope.workspace_id,
         name=folder_input.name,
         parent_folder_id=folder_input.parent_folder_id,
         is_system=False,
         create_time=float(get_current_time()),
     )
-    store_document_folder(user_id, folder)
+    store_document_folder(scope.owner_key, folder)
     return _folder_to_output(folder)
 
 
-def list_document_folders(user_id: str) -> list[DocumentFolderOutput]:
-    workspace_id = default_workspace_id(user_id)
+def list_document_folders(
+    user_id: str, workspace: str = "default"
+) -> list[DocumentFolderOutput]:
+    scope = resolve_workspace(user_id, workspace)
     return [
         _folder_to_output(f)
-        for f in find_document_folders_by_user_id(user_id, workspace_id)
+        for f in find_document_folders_by_user_id(scope.owner_key, scope.workspace_id)
     ]
 
 
 def modify_document_folder(
-    user_id: str, folder_id: str, folder_input: DocumentFolderModifyInput
+    user_id: str,
+    folder_id: str,
+    folder_input: DocumentFolderModifyInput,
+    workspace: str = "default",
 ) -> DocumentFolderOutput:
     from app.repositories.workspace_document import find_document_folder_by_id
 
-    folder = find_document_folder_by_id(user_id, folder_id)
+    owner = resolve_workspace(user_id, workspace).owner_key
+    folder = find_document_folder_by_id(owner, folder_id)
     folder.name = folder_input.name
-    store_document_folder(user_id, folder)
+    store_document_folder(owner, folder)
     return _folder_to_output(folder)
 
 
-def delete_document_folder(user_id: str, folder_id: str) -> None:
-    delete_document_folder_by_id(user_id, folder_id)
+def delete_document_folder(
+    user_id: str, folder_id: str, workspace: str = "default"
+) -> None:
+    owner = resolve_workspace(user_id, workspace).owner_key
+    delete_document_folder_by_id(owner, folder_id)

@@ -19,6 +19,7 @@ from app.routes.global_config import router as global_config_router
 from app.routes.published_api import router as published_api_router
 from app.routes.subscription import router as subscription_router
 from app.routes.user import router as user_router
+from app.routes.team import router as team_router
 from app.routes.user_feedback import router as user_feedback_router
 from app.routes.workspace import router as workspace_router
 from app.routes.workspace_document import router as workspace_document_router
@@ -76,6 +77,7 @@ if not is_published_api:
     app.include_router(global_config_router)
     app.include_router(subscription_router)
     app.include_router(workspace_router)
+    app.include_router(team_router)
     app.include_router(workspace_document_router)
     app.include_router(user_feedback_router)
     app.include_router(webhook_paddle_router)

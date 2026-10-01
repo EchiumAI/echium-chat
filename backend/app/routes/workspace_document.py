@@ -1,3 +1,10 @@
+"""Workspace documents (Files) and folders.
+
+All routes are ``/workspaces/{workspace}/...`` where ``workspace`` is
+``default`` (the caller's personal workspace) or a team id / ``WS#TEAM#{id}``.
+Team access is enforced in ``usecases.workspace_scope.resolve_workspace``.
+"""
+
 from app.routes.schemas.workspace_document import (
     DocumentContentInput,
     DocumentContentOutput,
@@ -38,99 +45,107 @@ router = APIRouter(tags=["workspace_document"])
 
 
 @router.post(
-    "/workspaces/default/documents/presigned-url",
+    "/workspaces/{workspace}/documents/presigned-url",
     response_model=PresignedUploadOutput,
 )
-def post_presigned_upload(request: Request, upload_input: PresignedUploadInput):
+def post_presigned_upload(
+    request: Request, workspace: str, upload_input: PresignedUploadInput
+):
     """Get a presigned PUT URL to upload a document's raw file to S3."""
     current_user: User = request.state.current_user
-    return create_presigned_upload(current_user.id, upload_input)
+    return create_presigned_upload(current_user.id, upload_input, workspace)
 
 
-@router.post("/workspaces/default/documents", response_model=DocumentOutput)
-def post_document(request: Request, doc_input: DocumentCreateInput):
+@router.post("/workspaces/{workspace}/documents", response_model=DocumentOutput)
+def post_document(request: Request, workspace: str, doc_input: DocumentCreateInput):
     """Finalize a document after its file was uploaded via the presigned URL."""
     current_user: User = request.state.current_user
-    return create_document(current_user.id, doc_input)
+    return create_document(current_user.id, doc_input, workspace)
 
 
-@router.get("/workspaces/default/documents", response_model=list[DocumentOutput])
-def get_documents(request: Request):
+@router.get("/workspaces/{workspace}/documents", response_model=list[DocumentOutput])
+def get_documents(request: Request, workspace: str):
     current_user: User = request.state.current_user
-    return list_documents(current_user.id)
+    return list_documents(current_user.id, workspace)
 
 
 @router.get(
-    "/workspaces/default/documents/{doc_id}/content",
+    "/workspaces/{workspace}/documents/{doc_id}/content",
     response_model=DocumentContentOutput,
 )
-def get_single_document_content(request: Request, doc_id: str):
-    """Return a document's text and/or a presigned download URL.
-
-    Contract for the separate collaborative-docs editor to load a document.
-    """
+def get_single_document_content(request: Request, workspace: str, doc_id: str):
+    """Return a document's text and/or a presigned download URL."""
     current_user: User = request.state.current_user
-    return get_document_content(current_user.id, doc_id)
+    return get_document_content(current_user.id, doc_id, workspace)
 
 
 @router.put(
-    "/workspaces/default/documents/{doc_id}/content",
+    "/workspaces/{workspace}/documents/{doc_id}/content",
     response_model=DocumentOutput,
 )
 def put_single_document_content(
-    request: Request, doc_id: str, content_input: DocumentContentInput
+    request: Request, workspace: str, doc_id: str, content_input: DocumentContentInput
 ):
-    """Save (overwrite) a document's canonical text body.
-
-    Write-back contract for the collaborative-docs editor.
-    """
+    """Save (overwrite) a document's canonical text body (editor write-back)."""
     current_user: User = request.state.current_user
     return update_document_content(
-        current_user.id, doc_id, content_input.text, content_input.content_type
+        current_user.id,
+        doc_id,
+        content_input.text,
+        content_input.content_type,
+        workspace,
     )
 
 
 @router.get(
-    "/workspaces/default/documents/{doc_id}/revisions",
+    "/workspaces/{workspace}/documents/{doc_id}/revisions",
     response_model=list[DocumentRevisionOutput],
 )
-def get_document_revisions(request: Request, doc_id: str):
+def get_document_revisions(request: Request, workspace: str, doc_id: str):
     """Version history: who saved each checkpoint and when (newest first)."""
     current_user: User = request.state.current_user
-    return list_document_revisions(current_user.id, doc_id)
+    return list_document_revisions(current_user.id, doc_id, workspace)
 
 
 @router.get(
-    "/workspaces/default/documents/{doc_id}/revisions/{revision_id}",
+    "/workspaces/{workspace}/documents/{doc_id}/revisions/{revision_id}",
     response_model=DocumentRevisionContentOutput,
 )
-def get_document_revision(request: Request, doc_id: str, revision_id: str):
-    """Fetch a single revision's text (for preview / diff before restoring)."""
+def get_document_revision(
+    request: Request, workspace: str, doc_id: str, revision_id: str
+):
     current_user: User = request.state.current_user
-    return get_document_revision_content(current_user.id, doc_id, revision_id)
+    return get_document_revision_content(
+        current_user.id, doc_id, revision_id, workspace
+    )
 
 
 @router.post(
-    "/workspaces/default/documents/{doc_id}/revisions/{revision_id}/restore",
+    "/workspaces/{workspace}/documents/{doc_id}/revisions/{revision_id}/restore",
     response_model=DocumentOutput,
 )
-def post_restore_document_revision(request: Request, doc_id: str, revision_id: str):
-    """Restore a document to a previous revision (records a new checkpoint)."""
+def post_restore_document_revision(
+    request: Request, workspace: str, doc_id: str, revision_id: str
+):
     current_user: User = request.state.current_user
-    return restore_document_revision(current_user.id, doc_id, revision_id)
+    return restore_document_revision(current_user.id, doc_id, revision_id, workspace)
 
 
-@router.patch("/workspaces/default/documents/{doc_id}", response_model=DocumentOutput)
-def patch_document(request: Request, doc_id: str, doc_input: DocumentModifyInput):
-    """Rename / move / share (update allowed agents)."""
+@router.patch(
+    "/workspaces/{workspace}/documents/{doc_id}", response_model=DocumentOutput
+)
+def patch_document(
+    request: Request, workspace: str, doc_id: str, doc_input: DocumentModifyInput
+):
+    """Rename / move / favorite / share (update allowed agents)."""
     current_user: User = request.state.current_user
-    return modify_document(current_user.id, doc_id, doc_input)
+    return modify_document(current_user.id, doc_id, doc_input, workspace)
 
 
-@router.delete("/workspaces/default/documents/{doc_id}")
-def delete_single_document(request: Request, doc_id: str):
+@router.delete("/workspaces/{workspace}/documents/{doc_id}")
+def delete_single_document(request: Request, workspace: str, doc_id: str):
     current_user: User = request.state.current_user
-    delete_document(current_user.id, doc_id)
+    delete_document(current_user.id, doc_id, workspace)
     return {"status": "ok"}
 
 
@@ -138,36 +153,41 @@ def delete_single_document(request: Request, doc_id: str):
 
 
 @router.get(
-    "/workspaces/default/document-folders",
+    "/workspaces/{workspace}/document-folders",
     response_model=list[DocumentFolderOutput],
 )
-def get_document_folders(request: Request):
+def get_document_folders(request: Request, workspace: str):
     current_user: User = request.state.current_user
-    return list_document_folders(current_user.id)
+    return list_document_folders(current_user.id, workspace)
 
 
 @router.post(
-    "/workspaces/default/document-folders", response_model=DocumentFolderOutput
+    "/workspaces/{workspace}/document-folders", response_model=DocumentFolderOutput
 )
-def post_document_folder(request: Request, folder_input: DocumentFolderCreateInput):
+def post_document_folder(
+    request: Request, workspace: str, folder_input: DocumentFolderCreateInput
+):
     current_user: User = request.state.current_user
-    return create_document_folder(current_user.id, folder_input)
+    return create_document_folder(current_user.id, folder_input, workspace)
 
 
 @router.patch(
-    "/workspaces/default/document-folders/{folder_id}",
+    "/workspaces/{workspace}/document-folders/{folder_id}",
     response_model=DocumentFolderOutput,
 )
 def patch_document_folder(
-    request: Request, folder_id: str, folder_input: DocumentFolderModifyInput
+    request: Request,
+    workspace: str,
+    folder_id: str,
+    folder_input: DocumentFolderModifyInput,
 ):
     current_user: User = request.state.current_user
-    return modify_document_folder(current_user.id, folder_id, folder_input)
+    return modify_document_folder(current_user.id, folder_id, folder_input, workspace)
 
 
-@router.delete("/workspaces/default/document-folders/{folder_id}")
-def delete_single_document_folder(request: Request, folder_id: str):
+@router.delete("/workspaces/{workspace}/document-folders/{folder_id}")
+def delete_single_document_folder(request: Request, workspace: str, folder_id: str):
     """Delete a folder; its documents fall back to the library root."""
     current_user: User = request.state.current_user
-    delete_document_folder(current_user.id, folder_id)
+    delete_document_folder(current_user.id, folder_id, workspace)
     return {"status": "ok"}
