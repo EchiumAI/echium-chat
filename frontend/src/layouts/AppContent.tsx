@@ -6,6 +6,7 @@ import LazyOutputText from '../components/LazyOutputText';
 import { PiList, PiPlus } from 'react-icons/pi';
 import ButtonIcon from '../components/ButtonIcon';
 import SnackbarProvider from '../providers/SnackbarProvider';
+import FeedbackWidget from '../components/FeedbackWidget';
 import { Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -192,6 +193,7 @@ const AppContent: React.FC<Props> = (props) => {
           id="main">
           <SnackbarProvider>
             <Outlet />
+            <FeedbackWidget />
           </SnackbarProvider>
         </div>
       </main>

@@ -277,6 +277,12 @@ export class Api extends Construct {
         BRAVE_API_KEY: process.env.BRAVE_API_KEY ?? "",
         TAVILY_API_KEY: process.env.TAVILY_API_KEY ?? "",
         FIRECRAWL_API_KEY: process.env.FIRECRAWL_API_KEY ?? "",
+        // In-app Feedback widget -> GitHub Issues. A fine-grained token with
+        // "Issues: write" on the product repos (GitHub secret
+        // GITHUB_FEEDBACK_TOKEN). Empty => feedback is stored but no issue is
+        // opened. FEEDBACK_REPOS_JSON overrides the app-id -> repo map.
+        GITHUB_FEEDBACK_TOKEN: process.env.GITHUB_FEEDBACK_TOKEN ?? "",
+        FEEDBACK_REPOS_JSON: process.env.FEEDBACK_REPOS_JSON ?? "",
         // Base URL of the collaborative-docs app. Surfaced via GET
         // /config/global as docsAppUrl; enables the "Open in editor" action on
         // the Files page. Defaults to the live docs app; override via env.

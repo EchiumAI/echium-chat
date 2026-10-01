@@ -298,6 +298,18 @@ const translation = {
           'No se pudo extraer texto legible de este archivo, por lo que los agentes no pueden usar su contenido.',
       },
     },
+    feedbackWidget: {
+      button: 'Comentarios',
+      title: 'Enviar comentarios',
+      bug: 'Error',
+      idea: 'Idea',
+      placeholder: '¿Qué ha pasado, o qué te gustaría?',
+      notice: 'Se usa para mejorar Echium durante la alfa.',
+      send: 'Enviar',
+      sending: 'Enviando…',
+      thanks: '¡Gracias! Hemos recibido tus comentarios.',
+      failed: 'No se pudieron enviar los comentarios. Inténtalo de nuevo.',
+    },
     agent: {
       label: 'Agente',
       tab: 'Agentes',

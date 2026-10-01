@@ -394,6 +394,18 @@ const translation = {
           'No readable text could be extracted from this file, so agents cannot use its content.',
       },
     },
+    feedbackWidget: {
+      button: 'Feedback',
+      title: 'Send feedback',
+      bug: 'Bug',
+      idea: 'Idea',
+      placeholder: 'What happened, or what would you like?',
+      notice: 'Used to improve Echium during the alpha.',
+      send: 'Send',
+      sending: 'Sending…',
+      thanks: 'Thanks! Your feedback was sent.',
+      failed: "Couldn't send feedback. Please try again.",
+    },
     agent: {
       label: 'Agent',
       tab: 'Agents',

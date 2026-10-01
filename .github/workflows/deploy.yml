@@ -28,6 +28,9 @@ env:
   BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
   TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
   FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+  # In-app Feedback -> GitHub Issues. Fine-grained PAT with Issues:write on the
+  # product repos. Empty => feedback is stored but no issue is created.
+  GITHUB_FEEDBACK_TOKEN: ${{ secrets.GITHUB_FEEDBACK_TOKEN }}
   PYTHON_VERSION: '3.13'
 
 jobs:
