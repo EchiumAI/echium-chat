@@ -23,6 +23,7 @@ import {
   PiCheck,
   PiCompass,
   PiFiles,
+  PiUsersThree,
   PiFolder,
   PiFolderPlus,
   PiListBullets,
@@ -740,6 +741,13 @@ const Drawer: React.FC<Props> = (props) => {
                 to="/documents"
                 onClick={closeSmallDrawer}
                 labelComponent={t('document.pageTitle')}
+              />
+              <DrawerItem
+                isActive={location.pathname.startsWith('/teams')}
+                icon={<PiUsersThree />}
+                to="/teams"
+                onClick={closeSmallDrawer}
+                labelComponent={t('team.pageTitle')}
               />
               {/* Companion apps (docs.echium.ai / draw.echium.ai), grouped in a
                   subtle block. External launchers: each reuses a single named

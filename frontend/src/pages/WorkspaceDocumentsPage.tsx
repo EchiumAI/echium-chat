@@ -18,6 +18,7 @@ import {
   PiStarFill,
   PiTrash,
   PiUploadSimple,
+  PiUsersThree,
   PiX,
 } from 'react-icons/pi';
 import { WorkspaceDocument } from '../@types/workspaceDocument';
@@ -29,6 +30,7 @@ import InputText from '../components/InputText';
 import ModalDialog from '../components/ModalDialog';
 import DialogShareDocument from '../components/DialogShareDocument';
 import useGlobalConfig from '../hooks/useGlobalConfig';
+import useWorkspace, { workspaceParamOf } from '../hooks/useWorkspace';
 
 const formatSize = (bytes: number): string => {
   if (!bytes) {
@@ -68,6 +70,10 @@ const WorkspaceDocumentsPage: React.FC = () => {
   const { data: globalConfig } = getGlobalConfig();
   const docsAppUrl = globalConfig?.docsAppUrl ?? '';
   const drawAppUrl = globalConfig?.drawAppUrl ?? '';
+
+  // Which workspace (personal or a team) this page shows.
+  const { workspaces, current, selectedWorkspace, selectWorkspace } =
+    useWorkspace();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -464,9 +470,33 @@ const WorkspaceDocumentsPage: React.FC = () => {
       </ModalDialog>
 
       <ListPageLayout
-        pageTitle={t('document.pageTitle')}
+        pageTitle={
+          current && current.kind === 'team'
+            ? `${t('document.pageTitle')} · ${current.name}`
+            : t('document.pageTitle')
+        }
         pageTitleActions={
           <div className="flex flex-wrap items-center justify-end gap-2">
+            {/* Workspace switcher: personal Files or one of the user's teams.
+                Only shown once the user has at least one team. */}
+            {workspaces.length > 1 && (
+              <label className="flex items-center gap-1.5 text-xs text-gray">
+                <PiUsersThree className="text-base" />
+                <select
+                  value={selectedWorkspace}
+                  onChange={(e) => selectWorkspace(e.target.value)}
+                  className="h-8 max-w-48 truncate rounded border border-aws-font-color-light/30 bg-white px-2 text-sm text-aws-font-color-light dark:border-aws-font-color-dark/30 dark:bg-aws-ui-color-dark dark:text-aws-font-color-dark"
+                  title={t('document.workspace')}>
+                  {workspaces.map((ws) => (
+                    <option key={ws.workspaceId} value={workspaceParamOf(ws)}>
+                      {ws.kind === 'personal'
+                        ? t('document.personalWorkspace')
+                        : ws.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             <span
               className="mr-1 rounded-full bg-black/5 px-3 py-1 text-xs text-gray dark:bg-white/10"
               title={storageSummary}>

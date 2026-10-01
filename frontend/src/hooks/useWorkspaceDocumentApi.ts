@@ -10,11 +10,16 @@ import {
   WorkspaceDocument,
 } from '../@types/workspaceDocument';
 import useHttp from './useHttp';
+import useWorkspace from './useWorkspace';
 
-const BASE = 'workspaces/default';
-
-const useWorkspaceDocumentApi = () => {
+/**
+ * Documents API for the currently selected workspace (personal or a team).
+ * Pass `workspace` to target a specific one regardless of the selection.
+ */
+const useWorkspaceDocumentApi = (workspace?: string) => {
   const http = useHttp();
+  const { selectedWorkspace } = useWorkspace();
+  const BASE = `workspaces/${encodeURIComponent(workspace ?? selectedWorkspace)}`;
 
   return {
     documents: () => {

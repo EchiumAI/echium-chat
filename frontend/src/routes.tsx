@@ -27,6 +27,7 @@ import BotRecentlyUsedPage from './pages/BotRecentlyUsedPage.tsx';
 import BotStarredPage from './pages/BotStarredPage.tsx';
 import ConversationHistoryPage from './pages/ConversationHistoryPage.tsx';
 import WorkspaceDocumentsPage from './pages/WorkspaceDocumentsPage.tsx';
+import TeamsPage from './pages/TeamsPage.tsx';
 
 const rootChildren = [
   {
@@ -76,6 +77,10 @@ const rootChildren = [
   {
     path: '/documents',
     element: <WorkspaceDocumentsPage />,
+  },
+  {
+    path: '/teams',
+    element: <TeamsPage />,
   },
   {
     path: '/account',
