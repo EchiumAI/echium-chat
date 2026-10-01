@@ -80,31 +80,38 @@ const useConversation = () => {
       // allSettled means one failure can't abort the rest; we always
       // revalidate at the end so the UI reconciles with the server (anything
       // that failed to delete reappears, everything that succeeded stays gone).
-      const runBatchedDeletes = async () => {
+      const runBatchedDeletes = async (): Promise<string[]> => {
         const BATCH_SIZE = 5;
         const failedIds: string[] = [];
-        for (let i = 0; i < conversationIds.length; i += BATCH_SIZE) {
-          const batch = conversationIds.slice(i, i + BATCH_SIZE);
-          const results = await Promise.allSettled(
-            batch.map((id) => conversationApi.deleteConversation(id))
-          );
-          results.forEach((result, idx) => {
-            if (result.status === 'rejected') {
-              failedIds.push(batch[idx]);
-              console.error(
-                'Failed to delete conversation:',
-                batch[idx],
-                result.reason
-              );
-            }
-          });
+        try {
+          for (let i = 0; i < conversationIds.length; i += BATCH_SIZE) {
+            const batch = conversationIds.slice(i, i + BATCH_SIZE);
+            const results = await Promise.allSettled(
+              batch.map((id) => conversationApi.deleteConversation(id))
+            );
+            results.forEach((result, idx) => {
+              // A 404 means it was already gone — that's success for a delete.
+              if (
+                result.status === 'rejected' &&
+                result.reason?.response?.status !== 404
+              ) {
+                failedIds.push(batch[idx]);
+                console.error(
+                  'Failed to delete conversation:',
+                  batch[idx],
+                  result.reason
+                );
+              }
+            });
+            // Revalidate per batch so the list reflects real server state as
+            // we go (and a failure part-way doesn't leave stale optimistic rows).
+            await mutate();
+          }
+        } finally {
+          // Always reconcile with the server, even if something threw above.
+          await mutate();
         }
-        await mutate();
-        if (failedIds.length > 0) {
-          throw new Error(
-            `Failed to delete ${failedIds.length} conversation(s)`
-          );
-        }
+        return failedIds;
       };
 
       return runBatchedDeletes();

@@ -37,6 +37,7 @@ import ModalDialog from '../components/ModalDialog';
 import Button from '../components/Button';
 import ListPageLayout from '../layouts/ListPageLayout';
 import ConversationSearchResults from '../components/ConversationSearchResults';
+import useSnackbar from '../hooks/useSnackbar';
 
 // Custom drag-and-drop MIME type for moving a conversation into a folder.
 const CONV_DND_TYPE = 'application/x-echium-conversation-id';
@@ -56,6 +57,7 @@ const FOLDER_COLORS = [
 
 const ConversationHistoryPage: React.FC = () => {
   const { t } = useTranslation();
+  const { open: openSnackbar } = useSnackbar();
   const navigate = useNavigate();
   const [isOpenDeleteDialog, setIsOpenDeleteDialog] = useState(false);
   const [targetConversation, setTargetConversation] =
@@ -180,10 +182,26 @@ const ConversationHistoryPage: React.FC = () => {
       return;
     }
     setIsOpenBulkDeleteDialog(false);
-    deleteConversations(ids).catch(() => {});
+    deleteConversations(ids)
+      .then((failedIds) => {
+        if (failedIds.length > 0) {
+          openSnackbar(
+            t('conversationHistory.selection.deleteFailed', {
+              count: failedIds.length,
+            })
+          );
+        }
+      })
+      .catch(() => {
+        openSnackbar(
+          t('conversationHistory.selection.deleteFailed', {
+            count: ids.length,
+          })
+        );
+      });
     setSelectedIds(new Set());
     setSelectionMode(false);
-  }, [selectedIds, deleteConversations]);
+  }, [selectedIds, deleteConversations, openSnackbar, t]);
 
   const [isOpenClearDialog, setIsOpenClearDialog] = useState(false);
   const [dragOverFolderId, setDragOverFolderId] = useState<

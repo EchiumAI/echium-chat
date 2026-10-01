@@ -911,6 +911,8 @@ const translation: typeof en = {
         selectedCount: '{{count}}件を選択中',
         deleteConfirm:
           '選択した{{count}}件のチャットを削除しますか？この操作は取り消せません。',
+        deleteFailed:
+          '{{count}}件のチャットを削除できませんでした。もう一度お試しください。',
       },
       searchConversation: {
         placeholder: '会話を検索...',

@@ -8,6 +8,8 @@ const translation = {
         selectedCount: '{{count}} seleccionados',
         deleteConfirm:
           '¿Eliminar {{count}} chats seleccionados? Esta acción no se puede deshacer.',
+        deleteFailed:
+          'No se pudieron eliminar {{count}} chat(s). Inténtalo de nuevo.',
       },
     },
     signIn: {

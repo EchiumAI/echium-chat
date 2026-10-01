@@ -5,6 +5,11 @@ import useSWR, { SWRConfiguration } from 'swr';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_APP_API_ENDPOINT,
+  // Without a timeout a single stalled request hangs forever; callers that
+  // await many requests (e.g. bulk delete) then never reach their cleanup /
+  // revalidate step, leaving optimistic UI state stale until a reload.
+  // API Gateway caps REST integrations at 29s, so 30s never cuts off a live one.
+  timeout: 30_000,
 });
 
 // // HTTP Request Preprocessing

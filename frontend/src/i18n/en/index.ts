@@ -905,6 +905,8 @@ How would you categorize this email?`,
         deselectAll: 'Deselect all',
         selectedCount: '{{count}} selected',
         deleteConfirm: 'Delete {{count}} selected chats? This cannot be undone.',
+        deleteFailed:
+          '{{count}} chat(s) could not be deleted. Please try again.',
       },
       searchConversation: {
         placeholder: 'Search conversations...',
