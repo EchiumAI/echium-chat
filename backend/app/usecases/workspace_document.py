@@ -261,13 +261,22 @@ def create_document(user_id: str, doc_input: DocumentCreateInput) -> DocumentOut
     now = float(get_current_time())
     s3_key = _validate_owned_s3_key(workspace_id, doc_input.doc_id, doc_input.s3_key)
 
+    # Agents can only read a document through its text body. If the client did
+    # not supply one (the Files uploader doesn't), extract it from the uploaded
+    # file so that sharing the document with an agent actually gives it access.
+    extracted_text = doc_input.extracted_text or ""
+    if not extracted_text and s3_key:
+        extracted_text = _extract_text_from_s3(
+            s3_key, doc_input.filename, doc_input.content_type or ""
+        )
+
     text_s3_key = ""
-    if doc_input.extracted_text:
+    if extracted_text:
         text_s3_key = _text_key(workspace_id, doc_input.doc_id)
         s3_client.put_object(
             Bucket=DOCUMENT_BUCKET,
             Key=text_s3_key,
-            Body=doc_input.extracted_text.encode("utf-8"),
+            Body=extracted_text.encode("utf-8"),
         )
 
     doc = WorkspaceDocumentModel(
@@ -288,8 +297,21 @@ def create_document(user_id: str, doc_input: DocumentCreateInput) -> DocumentOut
         update_time=now,
     )
     store_document(user_id, doc)
-    _reindex_document_embeddings(user_id, doc, doc_input.extracted_text or "")
+    _reindex_document_embeddings(user_id, doc, extracted_text)
     return _to_output(doc)
+
+
+def _extract_text_from_s3(s3_key: str, filename: str, content_type: str) -> str:
+    """Best-effort: download an uploaded file and extract its plain text."""
+    from app.usecases.document_text import extract_text
+
+    try:
+        response = s3_client.get_object(Bucket=DOCUMENT_BUCKET, Key=s3_key)
+        body = response["Body"].read()
+    except Exception:
+        logger.warning(f"Could not read uploaded file {s3_key}", exc_info=True)
+        return ""
+    return extract_text(body, filename, content_type)
 
 
 def create_text_document(
@@ -541,12 +563,27 @@ def persist_uploaded_attachments(
             doc_id = str(ULID())
             s3_key = f"{_doc_prefix(workspace_id, doc_id)}/{filename}"
             s3_client.put_object(Bucket=DOCUMENT_BUCKET, Key=s3_key, Body=body)
+
+            # Give the saved attachment a text body so it stays usable by the
+            # agent in later chats (and by any agent it is shared with).
+            from app.usecases.document_text import extract_text
+
+            text = extract_text(body, filename)
+            text_s3_key = ""
+            if text:
+                text_s3_key = _text_key(workspace_id, doc_id)
+                s3_client.put_object(
+                    Bucket=DOCUMENT_BUCKET,
+                    Key=text_s3_key,
+                    Body=text.encode("utf-8"),
+                )
+
             doc = WorkspaceDocumentModel(
                 id=doc_id,
                 workspace_id=workspace_id,
                 filename=filename,
                 s3_key=s3_key,
-                text_s3_key="",
+                text_s3_key=text_s3_key,
                 content_type="",
                 size=len(body),
                 source="agent" if agent_id else "chat",
@@ -559,6 +596,8 @@ def persist_uploaded_attachments(
                 update_time=now,
             )
             store_document(user_id, doc)
+            if text:
+                _reindex_document_embeddings(user_id, doc, text)
         except Exception:
             logger.warning(
                 "Failed to persist chat attachment as workspace document",

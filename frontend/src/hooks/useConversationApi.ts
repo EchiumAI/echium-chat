@@ -64,6 +64,14 @@ const useConversationApi = () => {
         }
       );
     },
+    // One-shot (non-SWR) fetch, used to reconcile local state with the server
+    // after a dropped stream.
+    getConversationOnce: async (conversationId: string) => {
+      const res = await http.getOnce<Conversation>(
+        `conversation/${conversationId}`
+      );
+      return res.data;
+    },
     postMessage: (input: PostMessageRequest) => {
       return http.post<PostMessageResponse>('conversation', {
         ...input,

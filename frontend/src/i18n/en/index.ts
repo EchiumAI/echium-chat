@@ -388,6 +388,10 @@ const translation = {
         save: 'Save',
         private: 'Private',
         count: 'Shared with {{count}} agents',
+        button: 'Share with agents',
+        privateHint: 'Not shared — agents cannot use this file yet',
+        noText:
+          'No readable text could be extracted from this file, so agents cannot use its content.',
       },
     },
     agent: {

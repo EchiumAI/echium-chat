@@ -347,6 +347,43 @@ const useChat = () => {
     }
   }, [supportReasoning, setReasoningEnabled]);
 
+  /**
+   * After a dropped stream (tab switched, socket closed, network blip), the
+   * backend usually keeps generating and persists the full reply. Poll the
+   * server for a short while and return the conversation once it holds a new
+   * assistant message, so we can show the real result instead of an error.
+   *
+   * @param convId conversation to poll
+   * @param previousLastMessageId last message id before this turn started;
+   *   a reply exists once the server's lastMessageId differs and is assistant
+   */
+  const reconcileWithServer = async (
+    convId: string,
+    previousLastMessageId: string | null
+  ): Promise<Conversation | null> => {
+    // ~75s total; generation that is still running past this is treated as a
+    // real failure (the user can retry).
+    const delaysMs = [2000, 3000, 5000, 8000, 10000, 12000, 15000, 20000];
+    for (const delay of delaysMs) {
+      await new Promise((r) => setTimeout(r, delay));
+      try {
+        const conv = await conversationApi.getConversationOnce(convId);
+        const last = conv.messageMap[conv.lastMessageId];
+        if (
+          last &&
+          last.role === 'assistant' &&
+          conv.lastMessageId !== previousLastMessageId
+        ) {
+          return conv;
+        }
+      } catch {
+        // 404 while the first turn is still being written, or a transient
+        // network error: keep polling.
+      }
+    }
+    return null;
+  };
+
   // 画面に即時反映させるために、Stateを更新する処理
   const pushNewMessage = (
     parentMessageId: string | null,
@@ -452,9 +489,15 @@ const useChat = () => {
       agentId: agentId,
       enableReasoning: params.enableReasoning,
     };
-    const createNewConversation = () => {
-      // Copy State to prevent screen flicker
-      copyMessages('', newConversationId);
+    const createNewConversation = (serverConversation?: Conversation) => {
+      if (serverConversation) {
+        // Reconciled after a dropped stream: adopt the persisted messages.
+        setMessages(newConversationId, serverConversation.messageMap);
+        setCurrentMessageId(serverConversation.lastMessageId);
+      } else {
+        // Copy State to prevent screen flicker
+        copyMessages('', newConversationId);
+      }
 
       // If this chat was started from a folder, file it there now that the
       // conversation exists server-side.
@@ -552,8 +595,23 @@ const useChat = () => {
           // Non-critical; ignore failures.
         });
       })
-      .catch((e) => {
+      .catch(async (e) => {
         console.error(e);
+        // The stream dropped (tab switch / socket close) but the backend may
+        // have finished anyway. Check before declaring failure.
+        const convId = isNewChat ? newConversationId : conversationId;
+        const previousLastId = isNewChat ? null : parentMessageId;
+        const server = await reconcileWithServer(convId, previousLastId);
+        if (server) {
+          if (isNewChat) {
+            createNewConversation(server);
+          } else {
+            setMessages(conversationId, server.messageMap);
+            setCurrentMessageId(server.lastMessageId);
+            mutate();
+          }
+          return;
+        }
         removeMessage(conversationId, NEW_MESSAGE_ID.ASSISTANT);
       })
       .finally(() => {
@@ -610,8 +668,18 @@ const useChat = () => {
       .then(() => {
         mutate();
       })
-      .catch((e) => {
+      .catch(async (e) => {
         console.error(e);
+        // Dropped stream: the continuation may still have been persisted.
+        const server = await reconcileWithServer(
+          conversationId,
+          currentMessage.id
+        );
+        if (server) {
+          setMessages(conversationId, server.messageMap);
+          setCurrentMessageId(server.lastMessageId);
+        }
+        mutate();
       })
       .finally(() => {
         subscription.unsubscribe();
@@ -712,8 +780,19 @@ const useChat = () => {
       .then(() => {
         mutate();
       })
-      .catch((e) => {
+      .catch(async (e) => {
         console.error(e);
+        // Dropped stream: the regenerated reply may still have been persisted.
+        const server = await reconcileWithServer(
+          conversationId,
+          parentMessage.id
+        );
+        if (server) {
+          setMessages(conversationId, server.messageMap);
+          setCurrentMessageId(server.lastMessageId);
+          mutate();
+          return;
+        }
         setCurrentMessageId(NEW_MESSAGE_ID.USER);
         removeMessage(conversationId, NEW_MESSAGE_ID.ASSISTANT);
       })

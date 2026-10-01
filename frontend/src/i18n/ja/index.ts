@@ -388,6 +388,10 @@ const translation: typeof en = {
         save: '保存',
         private: '非公開',
         count: '{{count}}個のエージェントと共有中',
+        button: 'エージェントと共有',
+        privateHint: '未共有 — エージェントはまだこのファイルを使用できません',
+        noText:
+          'このファイルから読み取れるテキストを抽出できなかったため、エージェントは内容を使用できません。',
       },
     },
     agent: {

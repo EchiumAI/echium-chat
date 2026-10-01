@@ -290,6 +290,10 @@ const translation = {
         save: 'Guardar',
         private: 'Privado',
         count: 'Compartido con {{count}} agentes',
+        button: 'Compartir con agentes',
+        privateHint: 'No compartido — los agentes aún no pueden usar este archivo',
+        noText:
+          'No se pudo extraer texto legible de este archivo, por lo que los agentes no pueden usar su contenido.',
       },
     },
     agent: {

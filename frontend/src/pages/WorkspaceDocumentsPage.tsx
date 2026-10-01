@@ -157,6 +157,9 @@ const WorkspaceDocumentsPage: React.FC = () => {
     [shareTarget, updateDocument]
   );
 
+  const isShared = (doc: WorkspaceDocument) =>
+    doc.allAgents || doc.allowedAgentIds.length > 0;
+
   const shareSummary = useCallback(
     (doc: WorkspaceDocument): string => {
       if (doc.allAgents) {
@@ -200,22 +203,53 @@ const WorkspaceDocumentsPage: React.FC = () => {
               </span>
             )}
           </div>
-          <span className="text-xs text-gray">
-            {shareSummary(doc)}
-            {formatSize(doc.size) ? ` · ${formatSize(doc.size)}` : ''}
+          <span className="flex min-w-0 items-center gap-1.5 text-xs text-gray">
+            {/* Sharing state as a visible badge: green when agents can use the
+                file, amber when it's still private — so users see at a glance
+                why an agent "can't find" a file. */}
+            <button
+              type="button"
+              onClick={() => setShareTarget(doc)}
+              title={
+                isShared(doc)
+                  ? shareSummary(doc)
+                  : t('document.share.privateHint')
+              }
+              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                isShared(doc)
+                  ? 'bg-green-500/15 text-green-700 dark:text-green-400'
+                  : 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
+              }`}>
+              {shareSummary(doc)}
+            </button>
+            {formatSize(doc.size) ? (
+              <span className="truncate">{formatSize(doc.size)}</span>
+            ) : null}
           </span>
         </div>
       </div>
-      <div className="flex shrink-0 items-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
-        {docsAppUrl && (
-          <ButtonIcon onClick={() => onOpenInEditor(doc)}>
-            <PiArrowSquareOut />
-          </ButtonIcon>
-        )}
-        <ButtonIcon onClick={() => setShareTarget(doc)}>
+      <div className="flex shrink-0 items-center gap-1">
+        {/* Primary action is always visible (not hover-only): sharing is how a
+            file becomes usable by an agent, and it was too easy to miss. */}
+        <button
+          type="button"
+          onClick={() => setShareTarget(doc)}
+          className="hidden items-center gap-1 rounded-lg border border-aws-sea-blue-light/40 px-2 py-1 text-xs font-medium text-aws-sea-blue-light hover:bg-aws-sea-blue-light/10 sm:flex dark:border-aws-sea-blue-dark/60 dark:text-aws-sea-blue-dark">
           <PiShareNetwork />
-        </ButtonIcon>
-        <ButtonIcon onClick={() => setMoveTarget(doc)}>
+          {t('document.share.button')}
+        </button>
+        <div className="flex items-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
+          {docsAppUrl && (
+            <ButtonIcon onClick={() => onOpenInEditor(doc)}>
+              <PiArrowSquareOut />
+            </ButtonIcon>
+          )}
+          <ButtonIcon
+            className="sm:hidden"
+            onClick={() => setShareTarget(doc)}>
+            <PiShareNetwork />
+          </ButtonIcon>
+          <ButtonIcon onClick={() => setMoveTarget(doc)}>
           <PiFolder />
         </ButtonIcon>
         <ButtonIcon onClick={() => onRenameDoc(doc)}>
@@ -224,6 +258,7 @@ const WorkspaceDocumentsPage: React.FC = () => {
         <ButtonIcon onClick={() => onDeleteDoc(doc)}>
           <PiTrash />
         </ButtonIcon>
+        </div>
       </div>
     </div>
   );
