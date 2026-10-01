@@ -1,4 +1,5 @@
 import {
+  DocumentContent,
   DocumentCreateRequest,
   DocumentFolder,
   DocumentFolderCreateRequest,
@@ -42,6 +43,13 @@ const useWorkspaceDocumentApi = () => {
     },
     deleteDocument: (docId: string) => {
       return http.delete(`${BASE}/documents/${docId}`);
+    },
+    // One-shot: text body and/or a presigned download URL for the raw file.
+    getDocumentContent: async (docId: string) => {
+      const res = await http.getOnce<DocumentContent>(
+        `${BASE}/documents/${docId}/content`
+      );
+      return res.data;
     },
     createFolder: (params: DocumentFolderCreateRequest) => {
       return http.post<DocumentFolder, DocumentFolderCreateRequest>(

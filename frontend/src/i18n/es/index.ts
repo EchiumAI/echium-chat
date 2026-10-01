@@ -272,6 +272,12 @@ const translation = {
       searchPlaceholder: 'Buscar archivos…',
       searchResults: '{{count}} archivos coinciden',
       searchNoResults: 'Ningún archivo coincide con "{{query}}".',
+      favorites: 'Favoritos',
+      open: {
+        docs: 'Abrir en Docs',
+        draw: 'Abrir en Draw',
+        download: 'Descargar',
+      },
       upload: 'Subir',
       newFolder: 'Nueva carpeta',
       empty: 'Aún no hay documentos. Sube uno para empezar.',

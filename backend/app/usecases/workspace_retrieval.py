@@ -53,15 +53,23 @@ class WorkspaceRetriever(Protocol):
     ) -> list[RetrievedDoc]: ...
 
 
-def _load_text(text_s3_key: str) -> str:
+def _load_text(text_s3_key: str, content_type: str = "") -> str:
+    """Load a document body as readable text for prompt injection.
+
+    Bodies saved by the Docs editor are HTML; strip them to text so the model
+    sees content, not tags (which also wasted the per-item character budget).
+    """
     if not text_s3_key:
         return ""
     try:
         response = s3_client.get_object(Bucket=DOCUMENT_BUCKET, Key=text_s3_key)
-        return response["Body"].read().decode("utf-8")
+        raw = response["Body"].read().decode("utf-8")
     except Exception:
         logger.warning(f"Failed to load doc text {text_s3_key}", exc_info=True)
         return ""
+    from app.usecases.document_text import body_to_plain_text
+
+    return body_to_plain_text(raw, content_type)
 
 
 def _doc_visible(
@@ -116,7 +124,9 @@ class SimpleWorkspaceRetriever:
 
         results: list[RetrievedDoc] = []
         for doc in candidates[:limit]:
-            text = _load_text(doc.text_s3_key)[:MAX_ITEM_CHARS].strip()
+            text = _load_text(doc.text_s3_key, doc.content_type)[
+                :MAX_ITEM_CHARS
+            ].strip()
             if text:
                 results.append(
                     RetrievedDoc(title=doc.filename, text=text, source=doc.source)

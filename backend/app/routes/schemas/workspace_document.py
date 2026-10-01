@@ -47,6 +47,9 @@ class DocumentOutput(BaseSchema):
     content_type: str
     size: int
     source: str
+    # Conversation that produced this document (chat uploads / summaries), so
+    # clients can link back to the source chat. None for manual/agent docs.
+    source_conversation_id: Optional[str] = None
     folder_id: Optional[str]
     allowed_agent_ids: list[str]
     all_agents: bool
@@ -84,6 +87,13 @@ class DocumentContentOutput(BaseSchema):
     text: Optional[str] = None
     # Presigned GET URL for the raw file if present (for binary documents).
     download_url: Optional[str] = None
+    # Provenance, so editors can render system docs read-only and link back.
+    source: str = "manual"
+    source_conversation_id: Optional[str] = None
+    is_system: bool = False
+    # True when the raw file is a binary (pdf/image/office/board) rather than an
+    # editable text body. Editors should not overwrite such documents.
+    is_binary: bool = False
 
 
 class DocumentContentInput(BaseSchema):

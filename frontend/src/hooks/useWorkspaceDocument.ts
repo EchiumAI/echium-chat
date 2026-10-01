@@ -71,6 +71,13 @@ const useWorkspaceDocument = () => {
       await mutateDocuments();
     },
 
+    setFavorite: async (docId: string, isFavorite: boolean) => {
+      await api.updateDocument(docId, { isFavorite });
+      await mutateDocuments();
+    },
+
+    getDocumentContent: api.getDocumentContent,
+
     createFolder: async (params: DocumentFolderCreateRequest) => {
       const res = await api.createFolder(params);
       await mutateFolders();

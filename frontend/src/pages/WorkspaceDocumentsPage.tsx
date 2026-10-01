@@ -5,12 +5,17 @@ import {
   PiCaretDown,
   PiCaretRight,
   PiChatCircleText,
+  PiDownloadSimple,
   PiFolder,
   PiFolderPlus,
   PiFile,
+  PiFileText,
   PiMagnifyingGlass,
   PiPencilLine,
+  PiPenNib,
   PiShareNetwork,
+  PiStar,
+  PiStarFill,
   PiTrash,
   PiUploadSimple,
   PiX,
@@ -52,6 +57,8 @@ const WorkspaceDocumentsPage: React.FC = () => {
     updateDocument,
     deleteDocument,
     moveDocumentToFolder,
+    setFavorite,
+    getDocumentContent,
     createFolder,
     renameFolder,
     deleteFolder,
@@ -60,30 +67,69 @@ const WorkspaceDocumentsPage: React.FC = () => {
   const { getGlobalConfig } = useGlobalConfig();
   const { data: globalConfig } = getGlobalConfig();
   const docsAppUrl = globalConfig?.docsAppUrl ?? '';
+  const drawAppUrl = globalConfig?.drawAppUrl ?? '';
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [shareTarget, setShareTarget] = useState<WorkspaceDocument>();
   const [moveTarget, setMoveTarget] = useState<WorkspaceDocument>();
 
-  const onOpenInEditor = useCallback(
-    (doc: WorkspaceDocument) => {
-      if (!docsAppUrl) {
+  // What kind of thing a document is decides where "Open" takes you:
+  // Draw boards -> Echium Draw, text documents -> Echium Docs, everything
+  // else (pdf/images/office files) -> download the original.
+  type OpenTarget = 'draw' | 'docs' | 'download';
+  const openTargetOf = useCallback((doc: WorkspaceDocument): OpenTarget => {
+    const name = doc.filename.toLowerCase();
+    if (name.endsWith('.excalidraw')) {
+      return 'draw';
+    }
+    const ctype = (doc.contentType || '').toLowerCase();
+    const textLike =
+      ctype.startsWith('text/') ||
+      /\.(md|markdown|txt|html?)$/.test(name) ||
+      doc.source === 'agent' ||
+      doc.source === 'chat_summary' ||
+      // Created in Docs: no raw file, body is the document.
+      (!ctype && !/\.[a-z0-9]{2,5}$/.test(name));
+    return textLike ? 'docs' : 'download';
+  }, []);
+
+  const onOpenDoc = useCallback(
+    async (doc: WorkspaceDocument) => {
+      const target = openTargetOf(doc);
+      // Reuse a single tab per app: the stable window name navigates an already
+      // open tab to this document, otherwise opens one. `noopener` is omitted
+      // deliberately — it forces a fresh tab each time and would defeat reuse;
+      // the apps are first-party (shared Cognito pool). Encode the segments —
+      // the workspace id contains '#' (WS#…) which would otherwise be parsed as
+      // a URL fragment and break the path.
+      const ws = encodeURIComponent(doc.workspaceId);
+      const id = encodeURIComponent(doc.id);
+      if (target === 'draw' && drawAppUrl) {
+        window.open(
+          `${drawAppUrl.replace(/\/$/, '')}/w/${ws}/b/${id}`,
+          'echium-draw'
+        );
         return;
       }
-      const base = docsAppUrl.replace(/\/$/, '');
-      // Reuse a single docs tab: the stable window name navigates an already
-      // open docs tab to this document, otherwise opens one. `noopener` is
-      // omitted deliberately — it forces a fresh tab each time and would defeat
-      // reuse; docs.echium.ai is first-party (shares our Cognito pool).
-      // Encode the segments — the workspace id contains '#' (WS#…) which would
-      // otherwise be parsed as a URL fragment and break the path.
-      window.open(
-        `${base}/w/${encodeURIComponent(doc.workspaceId)}/d/${encodeURIComponent(doc.id)}`,
-        'echium-docs'
-      );
+      if (target === 'docs' && docsAppUrl) {
+        window.open(
+          `${docsAppUrl.replace(/\/$/, '')}/w/${ws}/d/${id}`,
+          'echium-docs'
+        );
+        return;
+      }
+      // Binary (or an app URL isn't configured): hand over the original file.
+      try {
+        const content = await getDocumentContent(doc.id);
+        if (content.downloadUrl) {
+          window.open(content.downloadUrl, '_blank', 'noopener');
+        }
+      } catch (e) {
+        console.error('Could not open document', e);
+      }
     },
-    [docsAppUrl]
+    [openTargetOf, drawAppUrl, docsAppUrl, getDocumentContent]
   );
 
   const onFilesSelected = useCallback(
@@ -218,6 +264,14 @@ const WorkspaceDocumentsPage: React.FC = () => {
       .sort((a, b) => b.updateTime - a.updateTime);
   }, [query, documents, folders]);
 
+  const favoriteDocs = useMemo(
+    () =>
+      (documents ?? [])
+        .filter((d) => d.isFavorite)
+        .sort((a, b) => b.updateTime - a.updateTime),
+    [documents]
+  );
+
   // Storage consumed by the workspace: sum of stored sizes across all files.
   const storageSummary = useMemo(() => {
     const docs = documents ?? [];
@@ -259,12 +313,22 @@ const WorkspaceDocumentsPage: React.FC = () => {
       <div className="flex min-w-0 items-center gap-2">
         {doc.source === 'chat_summary' ? (
           <PiChatCircleText className="shrink-0 text-aws-aqua" />
+        ) : openTargetOf(doc) === 'draw' ? (
+          <PiPenNib className="shrink-0 text-aws-sea-blue-light" />
+        ) : openTargetOf(doc) === 'download' ? (
+          <PiFile className="shrink-0 text-gray" />
         ) : (
-          <PiFile className="shrink-0 text-aws-sea-blue-light" />
+          <PiFileText className="shrink-0 text-aws-sea-blue-light" />
         )}
         <div className="flex min-w-0 flex-col">
           <div className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-sm font-medium">{doc.filename}</span>
+            <button
+              type="button"
+              onClick={() => onOpenDoc(doc)}
+              className="truncate text-left text-sm font-medium hover:underline"
+              title={t(`document.open.${openTargetOf(doc)}`)}>
+              {doc.filename}
+            </button>
             {doc.source === 'chat_summary' && (
               <span className="shrink-0 rounded-full bg-aws-aqua/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-aws-aqua">
                 {t('document.badge.summary')}
@@ -306,12 +370,21 @@ const WorkspaceDocumentsPage: React.FC = () => {
           <PiShareNetwork />
           {t('document.share.button')}
         </button>
+        <ButtonIcon
+          className={doc.isFavorite ? 'text-amber-500' : ''}
+          onClick={() =>
+            setFavorite(doc.id, !doc.isFavorite).catch(() => {})
+          }>
+          {doc.isFavorite ? <PiStarFill /> : <PiStar />}
+        </ButtonIcon>
         <div className="flex items-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
-          {docsAppUrl && (
-            <ButtonIcon onClick={() => onOpenInEditor(doc)}>
+          <ButtonIcon onClick={() => onOpenDoc(doc)}>
+            {openTargetOf(doc) === 'download' ? (
+              <PiDownloadSimple />
+            ) : (
               <PiArrowSquareOut />
-            </ButtonIcon>
-          )}
+            )}
+          </ButtonIcon>
           <ButtonIcon
             className="sm:hidden"
             onClick={() => setShareTarget(doc)}>
@@ -453,6 +526,21 @@ const WorkspaceDocumentsPage: React.FC = () => {
           </div>
         ) : (
         <div className="flex flex-col gap-4 pt-3">
+          {favoriteDocs.length > 0 && (
+            <div>
+              <div className="mb-1 flex items-center gap-2 text-sm font-semibold">
+                <PiStarFill className="text-amber-500" />
+                {t('document.favorites')}
+                <span className="text-xs text-gray">
+                  ({favoriteDocs.length})
+                </span>
+              </div>
+              <div className="rounded-lg border border-gray">
+                {favoriteDocs.map(renderDoc)}
+              </div>
+            </div>
+          )}
+
           {(folders ?? []).map((folder) => {
             const items = docsByFolder.get(folder.id) ?? [];
             const folded = isCollapsed(folder.id, folder.isSystem);

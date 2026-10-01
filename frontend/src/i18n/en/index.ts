@@ -368,6 +368,12 @@ const translation = {
       searchPlaceholder: 'Search files…',
       searchResults: '{{count}} matching files',
       searchNoResults: 'No files match "{{query}}".',
+      favorites: 'Favorites',
+      open: {
+        docs: 'Open in Docs',
+        draw: 'Open in Draw',
+        download: 'Download',
+      },
       upload: 'Upload',
       newFolder: 'New folder',
       empty: 'No documents yet. Upload one to get started.',

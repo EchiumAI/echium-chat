@@ -368,6 +368,12 @@ const translation: typeof en = {
       searchPlaceholder: 'ファイルを検索…',
       searchResults: '{{count}}件のファイルが一致',
       searchNoResults: '「{{query}}」に一致するファイルはありません。',
+      favorites: 'お気に入り',
+      open: {
+        docs: 'Docs で開く',
+        draw: 'Draw で開く',
+        download: 'ダウンロード',
+      },
       upload: 'アップロード',
       newFolder: '新しいフォルダ',
       empty: 'ドキュメントがまだありません。アップロードして始めましょう。',

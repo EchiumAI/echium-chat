@@ -202,6 +202,7 @@ def _to_output(doc: WorkspaceDocumentModel) -> DocumentOutput:
         content_type=doc.content_type,
         size=doc.size,
         source=doc.source,
+        source_conversation_id=doc.source_conversation_id,
         folder_id=doc.folder_id,
         allowed_agent_ids=doc.allowed_agent_ids,
         all_agents=doc.all_agents,
@@ -394,7 +395,35 @@ def get_document_content(user_id: str, doc_id: str) -> DocumentContentOutput:
         content_type=doc.content_type,
         text=text,
         download_url=download_url,
+        source=doc.source,
+        source_conversation_id=doc.source_conversation_id,
+        is_system=doc.is_system,
+        is_binary=_is_binary_document(doc),
     )
+
+
+# Text-like bodies the Docs editor may safely overwrite. Anything else with a raw
+# file (pdf, images, office files, Draw boards) must be treated as read-only by
+# editors: saving HTML over it would corrupt the original.
+_EDITABLE_CONTENT_TYPES = ("text/", "application/json")
+_EDITABLE_EXTENSIONS = (".md", ".markdown", ".txt", ".html", ".htm")
+
+
+def _is_binary_document(doc: WorkspaceDocumentModel) -> bool:
+    name = doc.filename.lower()
+    if name.endswith(".excalidraw"):
+        # Draw boards are JSON, but not editable as prose.
+        return True
+    if not doc.s3_key:
+        # No raw file: the text body IS the document (agent docs, summaries,
+        # docs created in the editor).
+        return False
+    ctype = (doc.content_type or "").lower()
+    if ctype.startswith(_EDITABLE_CONTENT_TYPES) and not ctype.startswith(
+        "application/json"
+    ):
+        return False
+    return not name.endswith(_EDITABLE_EXTENSIONS)
 
 
 def update_document_content(
@@ -407,6 +436,16 @@ def update_document_content(
     editor. Sharing/agent-visibility metadata is preserved.
     """
     doc = find_document_by_id(user_id, doc_id)
+    if _is_binary_document(doc) and (content_type or "").lower().startswith(
+        "text/html"
+    ):
+        # The editor opened a PDF/image/board and tried to autosave HTML over
+        # it. That would destroy the extracted text (and, for boards, the
+        # scene). Reject rather than corrupt.
+        raise ValueError(
+            "This file is not an editable document. Download it or open it in "
+            "the app that created it."
+        )
     workspace_id = doc.workspace_id or default_workspace_id(user_id)
     text_s3_key = doc.text_s3_key or _text_key(workspace_id, doc_id)
     body = text.encode("utf-8")
@@ -417,7 +456,12 @@ def update_document_content(
         doc.content_type = content_type
     doc.update_time = float(get_current_time())
     store_document(user_id, doc)
-    _reindex_document_embeddings(user_id, doc, text)
+    # The editor saves HTML; index readable text, not markup.
+    from app.usecases.document_text import body_to_plain_text
+
+    _reindex_document_embeddings(
+        user_id, doc, body_to_plain_text(text, doc.content_type)
+    )
     _snapshot_revision(user_id, doc, text)
     return _to_output(doc)
 

@@ -114,6 +114,27 @@ def _from_xlsx(body: bytes) -> str:
     return "\n".join(parts)
 
 
+def body_to_plain_text(text: str, content_type: str = "") -> str:
+    """Normalise a stored document body for the model.
+
+    The Docs editor saves HTML (``text/html``); agents should see readable
+    text, not markup, and embeddings should not be built from tags. Markdown
+    and plain text pass through unchanged.
+    """
+    if not text:
+        return ""
+    ctype = (content_type or "").lower()
+    looks_like_html = "html" in ctype or (
+        text.lstrip().startswith("<") and re.search(r"</(p|div|h[1-6]|li|ul|ol)>", text)
+    )
+    if not looks_like_html:
+        return text
+    try:
+        return _from_html(text.encode("utf-8")).strip()
+    except Exception:  # noqa: BLE001
+        return text
+
+
 def extract_text(body: bytes, filename: str, content_type: str = "") -> str:
     """Return plain text for a file, or "" if the format isn't supported."""
     if not body:

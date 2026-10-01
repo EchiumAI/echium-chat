@@ -9,9 +9,11 @@ export type WorkspaceDocument = {
   contentType: string;
   size: number;
   source: 'chat' | 'agent' | 'manual' | 'chat_summary';
+  sourceConversationId?: string | null;
   folderId: string | null;
   allowedAgentIds: string[];
   allAgents: boolean;
+  isFavorite?: boolean;
   isSystem: boolean;
   createTime: number;
   updateTime: number;
@@ -51,6 +53,19 @@ export type DocumentModifyRequest = {
   folderId?: string | null;
   allowedAgentIds?: string[];
   allAgents?: boolean;
+  isFavorite?: boolean;
+};
+
+export type DocumentContent = {
+  id: string;
+  filename: string;
+  contentType: string;
+  text?: string | null;
+  downloadUrl?: string | null;
+  source: string;
+  sourceConversationId?: string | null;
+  isSystem: boolean;
+  isBinary: boolean;
 };
 
 export type DocumentFolderCreateRequest = {
