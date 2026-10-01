@@ -12,7 +12,11 @@ import logging
 import os
 
 import boto3
-from app.repositories.common import RecordNotFoundError, default_workspace_id
+from app.repositories.common import (
+    RecordAccessNotAllowedError,
+    RecordNotFoundError,
+    default_workspace_id,
+)
 from app.repositories.models.workspace_document import (
     DocumentFolderModel,
     WorkspaceDocumentModel,
@@ -234,10 +238,28 @@ def create_presigned_upload(
     return PresignedUploadOutput(doc_id=doc_id, url=url, s3_key=s3_key)
 
 
+def _validate_owned_s3_key(workspace_id: str, doc_id: str, s3_key: str) -> str:
+    """Ensure a client-supplied raw-file key belongs to this document.
+
+    The key is later used to presign downloads and to delete the object, so an
+    unchecked value would let a caller read or destroy objects outside their
+    workspace. Empty is allowed (text-only documents have no raw file).
+    """
+    if not s3_key:
+        return ""
+    expected_prefix = f"{_doc_prefix(workspace_id, doc_id)}/"
+    if not s3_key.startswith(expected_prefix) or ".." in s3_key:
+        raise RecordAccessNotAllowedError(
+            "s3Key must point inside this document's own workspace prefix."
+        )
+    return s3_key
+
+
 def create_document(user_id: str, doc_input: DocumentCreateInput) -> DocumentOutput:
     """Finalize a manual upload: store extracted text + metadata."""
     workspace_id = default_workspace_id(user_id)
     now = float(get_current_time())
+    s3_key = _validate_owned_s3_key(workspace_id, doc_input.doc_id, doc_input.s3_key)
 
     text_s3_key = ""
     if doc_input.extracted_text:
@@ -252,7 +274,7 @@ def create_document(user_id: str, doc_input: DocumentCreateInput) -> DocumentOut
         id=doc_input.doc_id,
         workspace_id=workspace_id,
         filename=doc_input.filename,
-        s3_key=doc_input.s3_key,
+        s3_key=s3_key,
         text_s3_key=text_s3_key,
         content_type=doc_input.content_type or "",
         size=doc_input.size,

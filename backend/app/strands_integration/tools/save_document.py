@@ -23,6 +23,17 @@ def create_save_document_tool(user_id: str, agent_id: str | None):
         note, report, or file. The document is added to the workspace and made
         available to you in future conversations.
 
+        IMPORTANT — output budget: write the document ONLY inside the `content`
+        argument of this call. Do NOT also reproduce the document text in your
+        chat reply, and do not draft it in the reply before calling this tool.
+        Emitting the document twice can exceed the response limit, which cuts
+        off this call so nothing gets saved. After the tool returns, reply with
+        a one- or two-sentence confirmation and a short summary, not the text.
+
+        If you still need information from the user before you can write the
+        document, ask your questions and stop — do not call this tool until
+        they have answered.
+
         Args:
             title: A short, human-friendly title for the document.
             content: The full document content (Markdown is supported).

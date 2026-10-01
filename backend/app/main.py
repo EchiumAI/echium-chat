@@ -142,13 +142,13 @@ def add_current_user_to_request(request: Request, call_next: ASGIApp):
 
 @app.middleware("http")
 async def add_log_requests(request: Request, call_next: ASGIApp):
-    logger.info(f"Request path: {request.url.path}")
-    logger.info(f"Request method: {request.method}")
-    logger.info(f"Request headers: {request.headers}")
-
-    body = await request.body()
-    logger.info(f"Request body: {body.decode('utf-8')[:100]}...")
+    # Log only what is needed to trace a request. Never log headers (they carry
+    # the Authorization bearer token) or the body (user content / PII).
+    logger.info(f"Request: {request.method} {request.url.path}")
 
     response = await call_next(request)  # type: ignore
 
+    logger.info(
+        f"Response: {request.method} {request.url.path} -> {response.status_code}"
+    )
     return response
