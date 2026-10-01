@@ -148,7 +148,6 @@ async def add_log_requests(request: Request, call_next: ASGIApp):
 
     response = await call_next(request)  # type: ignore
 
-    logger.info(
-        f"Response: {request.method} {request.url.path} -> {response.status_code}"
-    )
+    status = getattr(response, "status_code", "")
+    logger.info(f"Response: {request.method} {request.url.path} -> {status}")
     return response
