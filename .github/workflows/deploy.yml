@@ -30,7 +30,8 @@ env:
   FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
   # In-app Feedback -> GitHub Issues. Fine-grained PAT with Issues:write on the
   # product repos. Empty => feedback is stored but no issue is created.
-  GITHUB_FEEDBACK_TOKEN: ${{ secrets.GITHUB_FEEDBACK_TOKEN }}
+  # (Secret is named FEEDBACK_GITHUB_TOKEN because GitHub reserves the GITHUB_ prefix.)
+  GITHUB_FEEDBACK_TOKEN: ${{ secrets.FEEDBACK_GITHUB_TOKEN }}
   PYTHON_VERSION: '3.13'
 
 jobs:
