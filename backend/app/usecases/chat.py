@@ -484,7 +484,16 @@ def chat(
             create_save_document_tool,
         )
 
-        agent_extra_tools = [create_save_document_tool(user.id, chat_input.agent_id)]
+        from app.strands_integration.tools.workspace_files import (
+            create_workspace_file_tools,
+        )
+
+        agent_extra_tools = [
+            create_save_document_tool(user.id, chat_input.agent_id),
+            # Read the full text of files shared with this agent (PDFs etc.):
+            # prompt injection only carries a short excerpt per file.
+            *create_workspace_file_tools(user.id, chat_input.agent_id),
+        ]
 
     if use_strands:
         from app.strands_integration.chat_strands import converse_with_strands

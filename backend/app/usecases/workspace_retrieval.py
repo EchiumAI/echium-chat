@@ -114,6 +114,30 @@ def _all_visible_documents(user_id: str) -> list[WorkspaceDocumentModel]:
     return docs
 
 
+def visible_documents_with_owner(
+    user_id: str,
+    agent_id: Optional[str],
+    exclude_conversation_id: Optional[str] = None,
+) -> list[tuple[str, WorkspaceDocumentModel]]:
+    """(storage owner key, document) for every document this agent may use,
+    newest first. Includes files that only have raw bytes so their text can be
+    extracted on demand."""
+    pairs: list[tuple[str, WorkspaceDocumentModel]] = []
+    for scope in all_scopes_for_user(user_id):
+        try:
+            for d in find_documents_by_user_id(scope.owner_key, scope.workspace_id):
+                if (d.text_s3_key or d.s3_key) and _doc_visible(
+                    d, agent_id, exclude_conversation_id
+                ):
+                    pairs.append((scope.owner_key, d))
+        except Exception:
+            logger.warning(
+                f"Document lookup failed for {scope.workspace_id}", exc_info=True
+            )
+    pairs.sort(key=lambda p: p[1].update_time, reverse=True)
+    return pairs
+
+
 class SimpleWorkspaceRetriever:
     """Phase A retriever: visibility-filtered, recency-ordered, no embeddings."""
 
@@ -125,23 +149,19 @@ class SimpleWorkspaceRetriever:
         query: Optional[str] = None,  # unused: recency, not relevance
         limit: int = MAX_ITEMS,
     ) -> list[RetrievedDoc]:
-        docs = _all_visible_documents(user_id)
+        from app.usecases.workspace_document import ensure_document_text
 
-        visible = [
-            d
-            for d in docs
-            if d.text_s3_key and _doc_visible(d, agent_id, exclude_conversation_id)
-        ]
+        pairs = visible_documents_with_owner(user_id, agent_id, exclude_conversation_id)
         # Documents first (agent's shared knowledge), then recent summaries.
-        usable_docs = [d for d in visible if d.source != "chat_summary"]
-        summaries = [d for d in visible if d.source == "chat_summary"]
+        usable_docs = [p for p in pairs if p[1].source != "chat_summary"]
+        summaries = [p for p in pairs if p[1].source == "chat_summary"]
         candidates = usable_docs + summaries
 
         results: list[RetrievedDoc] = []
-        for doc in candidates[:limit]:
-            text = _load_text(doc.text_s3_key, doc.content_type)[
-                :MAX_ITEM_CHARS
-            ].strip()
+        for owner_key, doc in candidates[:limit]:
+            # Extracts text on first use for files uploaded before extraction
+            # existed (they had raw bytes only, so agents never saw them).
+            text = ensure_document_text(owner_key, doc)[:MAX_ITEM_CHARS].strip()
             if text:
                 results.append(
                     RetrievedDoc(title=doc.filename, text=text, source=doc.source)
@@ -292,6 +312,8 @@ def build_workspace_context(
         "past conversations. You DO have access to prior conversations in this "
         "workspace through this context — use it naturally when relevant, and "
         "never tell the user you cannot see other chats or that conversations "
-        "are siloed. Do not repeat it verbatim.\n\n"
+        "are siloed. Do not repeat it verbatim. Each document below is only a "
+        "short excerpt: if you have the read_shared_file tool, use it to read "
+        "a file in full before answering questions about its contents.\n\n"
         f"{body}"
     )

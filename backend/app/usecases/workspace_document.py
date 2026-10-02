@@ -307,6 +307,44 @@ def create_document(
     return _to_output(doc)
 
 
+def ensure_document_text(owner_key: str, doc: WorkspaceDocumentModel) -> str:
+    """Return a document's readable text, extracting it on first use.
+
+    Files uploaded before server-side extraction existed have only their raw
+    bytes (``s3_key``) and no text body, so agents could never read them. On
+    first access we extract the text, store it, and index it, so later reads
+    are cheap. ``owner_key`` is the storage partition (user id or TEAM#{id}).
+    Best-effort: returns "" if nothing can be extracted.
+    """
+    from app.usecases.document_text import body_to_plain_text
+
+    if doc.text_s3_key:
+        try:
+            response = s3_client.get_object(Bucket=DOCUMENT_BUCKET, Key=doc.text_s3_key)
+            raw = response["Body"].read().decode("utf-8")
+        except Exception:
+            logger.warning(f"Failed to read doc text {doc.text_s3_key}", exc_info=True)
+            return ""
+        return body_to_plain_text(raw, doc.content_type)
+
+    if not doc.s3_key:
+        return ""
+    text = _extract_text_from_s3(doc.s3_key, doc.filename, doc.content_type)
+    if not text:
+        return ""
+    try:
+        doc.text_s3_key = _text_key(doc.workspace_id, doc.id)
+        s3_client.put_object(
+            Bucket=DOCUMENT_BUCKET, Key=doc.text_s3_key, Body=text.encode("utf-8")
+        )
+        store_document(owner_key, doc)
+        _reindex_document_embeddings(owner_key, doc, text)
+        logger.info(f"Backfilled extracted text for document {doc.id}")
+    except Exception:
+        logger.warning(f"Failed to persist backfilled text for {doc.id}", exc_info=True)
+    return text
+
+
 def _extract_text_from_s3(s3_key: str, filename: str, content_type: str) -> str:
     """Best-effort: download an uploaded file and extract its plain text."""
     from app.usecases.document_text import extract_text

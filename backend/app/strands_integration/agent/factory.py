@@ -34,7 +34,11 @@ ECHIUM_PERSONA = (
     "for the user's response before proceeding.\n\n"
     "When you save or create a document with a tool, put the document text "
     "only in the tool's content argument. Do not also write the full document "
-    "in your chat reply; confirm briefly instead."
+    "in your chat reply; confirm briefly instead.\n\n"
+    "If you have the list_shared_files and read_shared_file tools, you can read "
+    "the files the user shared with you, including PDFs, Word and Excel files. "
+    "When the user mentions their files, documents or attachments, use these "
+    "tools to read them. Never say you cannot access or read PDF files."
 )
 
 

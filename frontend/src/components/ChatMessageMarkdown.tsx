@@ -19,6 +19,7 @@ import remarkMath from 'remark-math';
 import 'katex/dist/katex.min.css';
 import { onlyText } from 'react-children-utilities';
 import RelatedDocumentViewer from './RelatedDocumentViewer';
+import { normalizeMarkdown } from '../utils/markdownNormalize';
 
 type Props = BaseProps & {
   children: string;
@@ -105,7 +106,10 @@ const ChatMessageMarkdown: React.FC<Props> = ({
 
   const chatWaitingSymbol = useMemo(() => t('app.chatWaitingSymbol'), [t]);
   const text = useMemo(() => {
-    const textRemovedIncompleteCitation = children.replace(/\[\^[^\]]*?$/, '[^');
+    const textRemovedIncompleteCitation = normalizeMarkdown(children).replace(
+      /\[\^[^\]]*?$/,
+      '[^'
+    );
     let textReplacedSourceId = textRemovedIncompleteCitation.replace(
       /\[\^(?<sourceId>[\w!?/+\-_~=;.,*&@#$%]+?)\]/g,
       (_, sourceId) => {
@@ -117,9 +121,9 @@ const ChatMessageMarkdown: React.FC<Props> = ({
       },
     );
 
-    // Note: We no longer escape single $ here because remark-math is configured
-    // to only recognize $$ for display math (singleDollarTextMath: false)
-    // This prevents conflicts with code containing $ (like PHP variables, shell scripts, etc.)
+    // Single $ is plain text: remark-math below is configured with
+    // singleDollarTextMath: false, so only $$...$$ is math. This keeps
+    // currency ($200K), shell/PHP variables and the like intact.
 
     if (isStreaming) {
       textReplacedSourceId += chatWaitingSymbol;
@@ -137,7 +141,11 @@ const ChatMessageMarkdown: React.FC<Props> = ({
   const remarkPlugins = useMemo((): RemarkPlugins => [
     remarkGfm,
     remarkBreaks,
-    remarkMath,
+    // Only $$...$$ is math. With single-dollar math on (the default), text
+    // between two prices ("$200K ... $150K") was rendered by KaTeX: spaces
+    // vanished, hyphens became minus signs, and multi-line spans swallowed
+    // tables.
+    [remarkMath, { singleDollarTextMath: false }],
   ], []);
 
   type RehypePlugins = Exclude<MarkdownOptions['rehypePlugins'], null | undefined>
