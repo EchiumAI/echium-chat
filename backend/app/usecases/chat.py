@@ -84,6 +84,12 @@ def prepare_conversation(
         # Fetch existing conversation
         conversation = find_conversation_by_id(user.id, chat_input.conversation_id)
         logger.info(f"Found conversation: {conversation}")
+        # The client only sends agent_id on the first message of an agent chat.
+        # Take it from the stored conversation so follow-up turns keep the
+        # agent's tools (save_document, file reading) and attachment sharing.
+        # The caller's chat() reads the same object, so it sees this too.
+        if not chat_input.agent_id and not chat_input.bot_id and conversation.agent_id:
+            chat_input.agent_id = conversation.agent_id
         parent_id = chat_input.message.parent_message_id
         if chat_input.message.parent_message_id == "system" and (
             chat_input.bot_id or chat_input.agent_id
