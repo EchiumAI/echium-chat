@@ -104,6 +104,10 @@ export class WebSocket extends Construct {
     database.subscriptionTable.grantReadWriteData(handlerRole);
     props.largeMessageBucket.grantReadWrite(handlerRole);
     props.documentBucket.grantRead(handlerRole);
+    // Agent tools run in this handler and write workspace documents: the
+    // save_document tool and the on-demand text extraction cache. Scope writes
+    // to the workspace prefix only (every key from usecases/workspace_document.py).
+    props.documentBucket.grantPut(handlerRole, "workspaces/*");
 
     const handler = new PythonFunction(this, "HandlerV2", {
       entry: path.join(__dirname, "../../../backend"),
