@@ -290,8 +290,25 @@ export class Auth extends Construct {
       index: "normalize_email.py",
       entry: path.join(__dirname, "../../../backend/auth/normalize_email"),
       timeout: Duration.minutes(1),
+      environment: {
+        // Cloudflare Turnstile CAPTCHA, verified server-side. Sourced from the
+        // deploy environment (GitHub secret). Empty => self sign-up rejected.
+        TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY ?? "",
+        TURNSTILE_ALLOWED_HOSTNAMES:
+          this.node.tryGetContext("alternateDomainName") ?? "",
+        // Owner is emailed about every sign-up attempt that passes the CAPTCHA.
+        OWNER_EMAIL: this.node.tryGetContext("ownerEmail") ?? "",
+        SES_REGION: "eu-west-1",
+        NOTIFY_FROM_EMAIL: "noreply@echium.ai",
+      },
       logRetention: logs.RetentionDays.THREE_MONTHS,
     });
+    normalizeEmailFunction.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ["ses:SendEmail"],
+        resources: ["*"],
+      })
+    );
     normalizeEmailFunction.addPermission("CognitoPreSignUp", {
       principal: new iam.ServicePrincipal("cognito-idp.amazonaws.com"),
       sourceArn: userPool.userPoolArn,

@@ -7,6 +7,8 @@ import { useAuthenticator } from '@aws-amplify/ui-react';
 import { PiArrowLeft } from 'react-icons/pi';
 import { SocialProvider } from '../@types/auth';
 import AuthLanding from './AuthLanding';
+import TurnstileWidget from './TurnstileWidget';
+import { takeTurnstileToken } from '../utils/turnstile';
 
 type Props = BaseProps & {
   socialProviders: SocialProvider[];
@@ -82,6 +84,18 @@ const AuthAmplify: React.FC<Props> = ({ socialProviders, children }) => {
           <div className="w-full">
             <Authenticator
               socialProviders={socialProviders}
+              components={{
+                SignUp: {
+                  FormFields() {
+                    return (
+                      <>
+                        <Authenticator.SignUp.FormFields />
+                        <TurnstileWidget />
+                      </>
+                    );
+                  },
+                },
+              }}
               // Normalize the email to lowercase before every auth call so an
               // account registered with any letter-case can always sign in.
               // This pool matches the email alias case-sensitively, so without
@@ -99,6 +113,11 @@ const AuthAmplify: React.FC<Props> = ({ socialProviders, children }) => {
                     username,
                     options: {
                       ...input.options,
+                      // CAPTCHA token, verified by the pre sign-up trigger.
+                      validationData: {
+                        ...input.options?.validationData,
+                        turnstileToken: takeTurnstileToken(),
+                      },
                       userAttributes: {
                         ...input.options?.userAttributes,
                         ...(input.options?.userAttributes?.email

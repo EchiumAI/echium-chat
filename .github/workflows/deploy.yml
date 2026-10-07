@@ -28,6 +28,11 @@ env:
   BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
   TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
   FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+  # Cloudflare Turnstile CAPTCHA on sign-up. The site key is public (built into
+  # the frontend); the secret key is only given to the pre sign-up Lambda.
+  # Without TURNSTILE_SECRET_KEY, self sign-up is rejected (fail closed).
+  TURNSTILE_SITE_KEY: ${{ secrets.TURNSTILE_SITE_KEY }}
+  TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
   # In-app Feedback -> GitHub Issues. Fine-grained PAT with Issues:write on the
   # product repos. Empty => feedback is stored but no issue is created.
   # (Secret is named FEEDBACK_GITHUB_TOKEN because GitHub reserves the GITHUB_ prefix.)

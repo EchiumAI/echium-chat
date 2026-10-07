@@ -261,6 +261,9 @@ export class Frontend extends Construct {
         VITE_APP_USER_POOL_CLIENT_ID: auth.client.userPoolClientId,
         VITE_APP_REGION: region,
         VITE_APP_USE_STREAMING: "true",
+        // Public Turnstile site key for the sign-up CAPTCHA (secret key is
+        // only in the pre sign-up Lambda). Empty => widget not rendered.
+        VITE_APP_TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY ?? "",
       };
 
       if (!idp.isExist()) return defaultProps;
