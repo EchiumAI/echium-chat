@@ -148,6 +148,11 @@ export class WebSocket extends Construct {
             ? "true"
             : "false",
         TABLE_ACCESS_ROLE_ARN: tableAccessRole.roleArn,
+        // Workspace documents bucket. Agent tools in this handler read and
+        // write it (save_document, read_shared_file, workspace context).
+        // Without it the code fell back to a bucket literally named
+        // "documents" (not ours) and every access was denied.
+        DOCUMENT_BUCKET: props.documentBucket.bucketName,
         LARGE_MESSAGE_BUCKET: props.largeMessageBucket.bucketName,
         LARGE_PAYLOAD_SUPPORT_BUCKET: largePayloadSupportBucket.bucketName,
         WEBSOCKET_SESSION_TABLE_NAME: database.websocketSessionTable.tableName,
