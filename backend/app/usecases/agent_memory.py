@@ -35,7 +35,7 @@ The agent's current memory (Markdown) is:
 {existing_memory}
 ---
 
-Extract only DURABLE, reusable facts, preferences, and context about the user or the task that would help the agent in FUTURE conversations. Merge them with the current memory: keep what is still relevant, add new durable facts, and remove duplicates. Ignore one-off chit-chat and ephemeral details. Keep it concise, organized, and in Markdown. Write in the same language as the conversation.
+Extract only DURABLE, reusable knowledge about this agent's work that would help it in FUTURE conversations: the task or domain, recurring requirements, and how the user wants THIS agent to work. Do NOT record personal facts about the user (name, job, location, languages, interests, family, health, beliefs, politics, sexuality, ethnicity): the user keeps those in their own profile. Remove any such personal facts already in the memory. Merge them with the current memory: keep what is still relevant, add new durable facts, and remove duplicates. Ignore one-off chit-chat and ephemeral details. Keep it concise, organized, and in Markdown. Write in the same language as the conversation.
 
 Return ONLY the updated memory content as Markdown, with no preamble, no code fences, and no explanation. If there is nothing worth remembering, return the current memory unchanged."""
 

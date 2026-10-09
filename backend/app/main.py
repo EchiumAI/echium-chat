@@ -21,6 +21,7 @@ from app.routes.subscription import router as subscription_router
 from app.routes.user import router as user_router
 from app.routes.team import router as team_router
 from app.routes.user_feedback import router as user_feedback_router
+from app.routes.user_profile import router as user_profile_router
 from app.routes.workspace import router as workspace_router
 from app.routes.workspace_document import router as workspace_document_router
 from app.routes.webhook_paddle import router as webhook_paddle_router
@@ -80,6 +81,7 @@ if not is_published_api:
     app.include_router(team_router)
     app.include_router(workspace_document_router)
     app.include_router(user_feedback_router)
+    app.include_router(user_profile_router)
     app.include_router(webhook_paddle_router)
 else:
     app.include_router(published_api_router)

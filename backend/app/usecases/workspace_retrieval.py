@@ -152,10 +152,11 @@ class SimpleWorkspaceRetriever:
         from app.usecases.workspace_document import ensure_document_text
 
         pairs = visible_documents_with_owner(user_id, agent_id, exclude_conversation_id)
-        # Documents first (agent's shared knowledge), then recent summaries.
-        usable_docs = [p for p in pairs if p[1].source != "chat_summary"]
-        summaries = [p for p in pairs if p[1].source == "chat_summary"]
-        candidates = usable_docs + summaries
+        # Shared documents only. Chat summaries are no longer injected: picked
+        # by recency, they pulled unrelated chats into every new conversation
+        # and the model mixed them up. Personal context now comes from the
+        # user's Profile & memory (usecases/user_profile.py).
+        candidates = [p for p in pairs if p[1].source != "chat_summary"]
 
         results: list[RetrievedDoc] = []
         for owner_key, doc in candidates[:limit]:
@@ -215,6 +216,7 @@ class EmbeddingWorkspaceRetriever:
                 chunk
                 for chunk in all_chunks
                 if chunk.doc_id in doc_by_id
+                and doc_by_id[chunk.doc_id].source != "chat_summary"
                 and _doc_visible(
                     doc_by_id[chunk.doc_id], agent_id, exclude_conversation_id
                 )
@@ -307,13 +309,11 @@ def build_workspace_context(
 
     body = "\n\n".join(sections)
     return (
-        "# Workspace knowledge\n"
-        "The following comes from this workspace's documents and summaries of "
-        "past conversations. You DO have access to prior conversations in this "
-        "workspace through this context — use it naturally when relevant, and "
-        "never tell the user you cannot see other chats or that conversations "
-        "are siloed. Do not repeat it verbatim. Each document below is only a "
-        "short excerpt: if you have the read_shared_file tool, use it to read "
-        "a file in full before answering questions about its contents.\n\n"
+        "# Shared files\n"
+        "The user shared these files with you. Each one below is only a short "
+        "excerpt: if you have the read_shared_file tool, use it to read a file "
+        "in full before answering questions about its contents. Only use them "
+        "when they are relevant to the user's request. Do not repeat them "
+        "verbatim.\n\n"
         f"{body}"
     )

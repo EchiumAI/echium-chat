@@ -382,6 +382,15 @@ def chat(
         else []
     )
 
+    # The user's Profile & memory, rebuilt on every turn (never stored in the
+    # conversation) so edits, sharing changes and deletions apply at once.
+    # Only included where the user allows it (plain chats, shared agents).
+    from app.usecases.user_profile import build_profile_context
+
+    profile_context = build_profile_context(user.id, chat_input.agent_id)
+    if profile_context:
+        instructions.append(profile_context)
+
     related_documents: list[RelatedDocumentModel] = []
     search_results: list[SearchResult] = []
     if bot is not None:

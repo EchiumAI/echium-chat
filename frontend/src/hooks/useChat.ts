@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import useConversationApi from './useConversationApi';
 import useAgentApi from './useAgentApi';
+import useProfileApi from './useProfileApi';
+import useSnackbar from './useSnackbar';
+import { useTranslation } from 'react-i18next';
 import { produce } from 'immer';
 import {
   MessageContent,
@@ -278,6 +281,9 @@ const useChat = () => {
 
   const conversationApi = useConversationApi();
   const agentApi = useAgentApi();
+  const profileApi = useProfileApi();
+  const { open: openSnackbar } = useSnackbar();
+  const { t } = useTranslation();
   const feedbackApi = useFeedbackApi();
   const {
     data,
@@ -589,6 +595,19 @@ const useChat = () => {
             // Non-critical; ignore failures.
           });
         }
+        // Profile & memory: record new facts the user stated about
+        // themselves. Fire-and-forget; tell the user when it changed so
+        // nothing is saved without them noticing.
+        profileApi
+          .reflect(convId)
+          .then((res) => {
+            if (res.data.changed) {
+              openSnackbar(t('profile.memoryUpdated'));
+            }
+          })
+          .catch(() => {
+            // Non-critical; ignore failures.
+          });
         // Workspace memory: refresh this conversation's rolling summary (all
         // chats, agent or not). Fire-and-forget.
         conversationApi.summarizeConversation(convId).catch(() => {

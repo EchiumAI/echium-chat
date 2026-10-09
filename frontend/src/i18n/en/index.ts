@@ -433,6 +433,43 @@ const translation = {
       role: { owner: 'Owner', admin: 'Admin', member: 'Member' },
       error: { generic: 'Something went wrong. Please try again.' },
     },
+    profile: {
+      pageTitle: 'Profile & memory',
+      help: 'What Echium knows about you, so answers fit you. It is updated after your chats and you can edit it anytime. It stays in your workspace.',
+      enabled: 'Use my profile in chats',
+      enabledHint:
+        'When off, your profile is not used in chats and is not updated.',
+      about: 'About you',
+      aboutHint:
+        'Your name, work, where you live, languages, interests and how you like answers. Echium only adds things you tell it about yourself.',
+      placeholder:
+        '## Name\n- \n## Work\n- \n## Location and languages\n- \n## Interests and hobbies\n- \n## How I like answers\n- ',
+      lastUpdated: 'Last updated {{date}}',
+      sharing: {
+        title: 'Which agents can see it',
+        hint: 'Plain chats always use your profile while it is on. Choose which agents can use it too.',
+        allAgents: 'All my agents',
+        noAgents: 'You have no agents yet.',
+      },
+      sensitive: {
+        title: 'Sensitive information',
+        explanation:
+          'Optional. If you allow it, Echium may also remember things you tell it about your health, religion or beliefs, political views, sexual orientation or ethnicity. They are kept separately, only used to personalise your answers, never shared outside your workspace, and you can withdraw at any time, which deletes them. Using Echium does not depend on this choice.',
+        consent: 'I allow Echium to keep sensitive information about me',
+        consentedOn: 'You allowed this on {{date}}',
+        placeholder: '- ',
+        withdrawConfirm:
+          'Withdraw your consent? Everything in the sensitive section will be deleted when you save.',
+      },
+      save: 'Save',
+      saved: 'Profile saved',
+      clear: 'Delete everything',
+      clearConfirm:
+        'Delete your whole profile, including sensitive information and sharing choices? This cannot be undone.',
+      cleared: 'Profile deleted',
+      error: "Couldn't save your profile. Please try again.",
+      memoryUpdated: 'Memory updated. Review it in Profile & memory.',
+    },
     feedbackWidget: {
       button: 'Feedback',
       title: 'Send feedback',

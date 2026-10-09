@@ -28,6 +28,7 @@ import BotStarredPage from './pages/BotStarredPage.tsx';
 import ConversationHistoryPage from './pages/ConversationHistoryPage.tsx';
 import WorkspaceDocumentsPage from './pages/WorkspaceDocumentsPage.tsx';
 import TeamsPage from './pages/TeamsPage.tsx';
+import ProfilePage from './pages/ProfilePage.tsx';
 
 const rootChildren = [
   {
@@ -81,6 +82,10 @@ const rootChildren = [
   {
     path: '/teams',
     element: <TeamsPage />,
+  },
+  {
+    path: '/profile',
+    element: <ProfilePage />,
   },
   {
     path: '/account',
