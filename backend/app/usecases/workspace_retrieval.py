@@ -15,6 +15,7 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Optional, Protocol
 
 import boto3
@@ -273,47 +274,85 @@ def get_workspace_retriever() -> WorkspaceRetriever:
     return SimpleWorkspaceRetriever()
 
 
-def build_workspace_context(
-    user_id: str,
-    agent_id: Optional[str],
-    exclude_conversation_id: Optional[str] = None,
-    query: Optional[str] = None,
+# How many files the per-turn file index lists (newest first).
+MAX_INDEX_FILES = 60
+
+
+def _file_origin(doc: WorkspaceDocumentModel, conversation_id: Optional[str]) -> str:
+    if doc.source_conversation_id and doc.source_conversation_id == conversation_id:
+        return "from this conversation"
+    if doc.source == "agent":
+        return "saved by you in another conversation"
+    if doc.source == "chat":
+        return "attached in another conversation"
+    return "added by the user"
+
+
+def format_file_index(
+    docs: list[WorkspaceDocumentModel], conversation_id: Optional[str]
 ) -> str:
-    """Return a Markdown 'Workspace knowledge' block to inject, or ''.
-
-    ``query`` (the user's current message) drives relevance ranking when the
-    embedding retriever is enabled; the recency retriever ignores it.
-    Best-effort — callers wrap this so retrieval never breaks the chat flow.
-    """
-    try:
-        retriever = get_workspace_retriever()
-        docs = retriever.retrieve(user_id, agent_id, exclude_conversation_id, query)
-    except Exception:
-        logger.warning("Workspace retrieval failed", exc_info=True)
-        return ""
-
+    """A short list of files the agent may read, without their contents."""
     if not docs:
         return ""
-
-    sections: list[str] = []
-    total = 0
-    for doc in docs:
-        block = f"## {doc.title}\n{doc.text}"
-        if total + len(block) > MAX_TOTAL_CHARS:
-            break
-        sections.append(block)
-        total += len(block)
-
-    if not sections:
-        return ""
-
-    body = "\n\n".join(sections)
+    lines = []
+    for doc in docs[:MAX_INDEX_FILES]:
+        when = datetime.fromtimestamp(doc.update_time, tz=timezone.utc).strftime(
+            "%Y-%m-%d"
+        )
+        lines.append(f"- {doc.filename} ({_file_origin(doc, conversation_id)}, {when})")
+    more = len(docs) - MAX_INDEX_FILES
+    if more > 0:
+        lines.append(f"- … and {more} more (call list_shared_files to see all)")
     return (
-        "# Shared files\n"
-        "The user shared these files with you. Each one below is only a short "
-        "excerpt: if you have the read_shared_file tool, use it to read a file "
-        "in full before answering questions about its contents. Only use them "
-        "when they are relevant to the user's request. Do not repeat them "
-        "verbatim.\n\n"
-        f"{body}"
+        "## Files you can read\n"
+        "Reference material only. Their contents are NOT part of this "
+        "conversation and do not tell you what the user wants now. When a "
+        "request needs one of them, read it with read_shared_file; otherwise "
+        "ignore them.\n" + "\n".join(lines)
     )
+
+
+def build_agent_context(
+    user_id: str,
+    agent_id: str,
+    conversation_id: Optional[str],
+    include_memory: bool = True,
+) -> str:
+    """Per-turn background for an agent chat: its memory and file index.
+
+    Built fresh on every turn and labelled as background, so the current
+    conversation stays the topic: earlier versions pasted file excerpts and
+    other chats' summaries in, and the model took them for the subject of the
+    chat. Best-effort: returns '' on any failure.
+    """
+    parts: list[str] = []
+    if include_memory:
+        try:
+            from app.repositories.agent import find_agent_by_id
+
+            memory = find_agent_by_id(user_id, agent_id).memory.strip()
+        except Exception:
+            logger.warning("Agent memory lookup failed", exc_info=True)
+            memory = ""
+        if memory:
+            parts.append(
+                "## How the user wants you to work\n"
+                "Standing notes from your past work with this user. They apply "
+                "to every conversation, but they are not the topic of this "
+                "one.\n" + memory
+            )
+    try:
+        docs = [
+            d
+            for _, d in visible_documents_with_owner(user_id, agent_id)
+            if d.source != "chat_summary"
+        ]
+    except Exception:
+        logger.warning("File index lookup failed", exc_info=True)
+        docs = []
+    index = format_file_index(docs, conversation_id)
+    if index:
+        parts.append(index)
+    if not parts:
+        return ""
+    return "# Background (not the topic of this conversation)\n\n" + "\n\n".join(parts)

@@ -363,6 +363,7 @@ def create_text_document(
     title: str,
     content: str,
     agent_id: str | None = None,
+    source_conversation_id: str | None = None,
 ) -> WorkspaceDocumentModel:
     """Create a generated (text) document in the workspace.
 
@@ -388,7 +389,7 @@ def create_text_document(
         content_type="text/markdown",
         size=len(content.encode("utf-8")),
         source="agent" if agent_id else "manual",
-        source_conversation_id=None,
+        source_conversation_id=source_conversation_id,
         folder_id=None,
         allowed_agent_ids=[agent_id] if agent_id else [],
         all_agents=False,

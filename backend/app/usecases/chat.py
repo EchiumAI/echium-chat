@@ -51,7 +51,6 @@ from app.stream import ConverseApiStreamHandler, OnStopInput, OnThinking
 from app.usecases.bot import fetch_bot, modify_bot_last_used_time, modify_bot_stats
 from app.usecases.global_config import get_title_model
 from app.usecases.workspace_document import persist_uploaded_attachments
-from app.usecases.workspace_retrieval import build_workspace_context
 from app.user import User
 from app.utils import get_current_time
 from app.vector_search import (
@@ -71,13 +70,6 @@ def prepare_conversation(
     chat_input: ChatInput,
 ) -> tuple[str, ConversationModel, BotModel | None]:
     current_time = get_current_time()
-    # The user's current message text — used to rank workspace knowledge by
-    # relevance when the embedding retriever is enabled (ignored otherwise).
-    query_text = " ".join(
-        getattr(c, "body", "")
-        for c in chat_input.message.content
-        if getattr(c, "content_type", None) == "text" and getattr(c, "body", None)
-    ).strip()
     bot = None
 
     try:
@@ -166,30 +158,11 @@ def prepare_conversation(
             logger.info("Agent id is provided. Fetching agent.")
             parent_id = "instruction"
             agent = find_agent_by_id(user.id, chat_input.agent_id)
-            # System prompt = the agent's instruction plus its durable memory /
-            # steering notes (if any), so the agent "remembers" across chats.
+            # Only the agent's instruction is stored with the conversation.
+            # Its memory and the list of files it can use are added on every
+            # turn in chat(), so they stay current and are clearly labelled as
+            # background rather than the topic of this chat.
             agent_system_prompt = agent.instruction
-            if agent.memory.strip():
-                agent_system_prompt = (
-                    f"{agent.instruction}\n\n"
-                    "# Your persistent memory\n"
-                    "This is what you already know from your past conversations "
-                    "with this user in this workspace. Treat it as your own "
-                    "memory: use it naturally to inform your answers, and never "
-                    "tell the user you cannot access previous chats or that each "
-                    "conversation starts fresh — you can, and this is it.\n\n"
-                    f"{agent.memory}"
-                )
-            # Inject workspace knowledge the agent may use (shared documents +
-            # workspace chat summaries). Best-effort (returns '' on any issue).
-            agent_ws_context = build_workspace_context(
-                user.id,
-                chat_input.agent_id,
-                chat_input.conversation_id,
-                query=query_text,
-            )
-            if agent_ws_context:
-                agent_system_prompt = f"{agent_system_prompt}\n\n{agent_ws_context}"
             initial_message_map["instruction"] = MessageModel(
                 role="instruction",
                 content=[
@@ -208,32 +181,9 @@ def prepare_conversation(
             )
             initial_message_map["system"].children.append("instruction")
 
-        else:
-            # General chat (no bot, no agent): inject workspace knowledge —
-            # recent chat summaries — so a new chat can build on what past
-            # chats discussed. Best-effort (empty string on any issue).
-            general_ws_context = build_workspace_context(
-                user.id, None, chat_input.conversation_id, query=query_text
-            )
-            if general_ws_context:
-                parent_id = "instruction"
-                initial_message_map["instruction"] = MessageModel(
-                    role="instruction",
-                    content=[
-                        TextContentModel(
-                            content_type="text",
-                            body=general_ws_context,
-                        )
-                    ],
-                    model=chat_input.message.model,
-                    children=[],
-                    parent="system",
-                    create_time=current_time,
-                    feedback=None,
-                    used_chunks=None,
-                    thinking_log=None,
-                )
-                initial_message_map["system"].children.append("instruction")
+        # General chats (no bot, no agent) get no stored instruction: other
+        # chats' summaries are no longer injected, and the user's profile is
+        # added per turn in chat().
 
         # Create new conversation
         conversation = ConversationModel(
@@ -391,6 +341,22 @@ def chat(
     if profile_context:
         instructions.append(profile_context)
 
+    # Agent chats: the agent's memory and the list of files it can use, built
+    # per turn. Conversations created before this change already carry the
+    # memory (and file excerpts) in their stored instruction; don't repeat it.
+    if chat_input.agent_id and bot is None:
+        from app.usecases.workspace_retrieval import build_agent_context
+
+        already_has_memory = any("# Your persistent memory" in i for i in instructions)
+        agent_context = build_agent_context(
+            user.id,
+            chat_input.agent_id,
+            chat_input.conversation_id,
+            include_memory=not already_has_memory,
+        )
+        if agent_context:
+            instructions.append(agent_context)
+
     related_documents: list[RelatedDocumentModel] = []
     search_results: list[SearchResult] = []
     if bot is not None:
@@ -504,7 +470,9 @@ def chat(
         )
 
         agent_extra_tools = [
-            create_save_document_tool(user.id, chat_input.agent_id),
+            create_save_document_tool(
+                user.id, chat_input.agent_id, chat_input.conversation_id
+            ),
             # Read the full text of files shared with this agent (PDFs etc.):
             # prompt injection only carries a short excerpt per file.
             *create_workspace_file_tools(user.id, chat_input.agent_id),

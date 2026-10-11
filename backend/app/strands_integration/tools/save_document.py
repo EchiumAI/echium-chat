@@ -12,8 +12,13 @@ from strands import tool
 logger = logging.getLogger(__name__)
 
 
-def create_save_document_tool(user_id: str, agent_id: str | None):
-    """Build a `save_document` tool bound to this user/agent."""
+def create_save_document_tool(
+    user_id: str, agent_id: str | None, conversation_id: str | None = None
+):
+    """Build a `save_document` tool bound to this user/agent/conversation.
+
+    The conversation is recorded on the document so later chats can tell a
+    file made in this chat from one made elsewhere."""
 
     @tool
     def save_document(title: str, content: str) -> dict:
@@ -44,6 +49,7 @@ def create_save_document_tool(user_id: str, agent_id: str | None):
                 title=title,
                 content=content,
                 agent_id=agent_id,
+                source_conversation_id=conversation_id,
             )
             return {
                 "status": "success",

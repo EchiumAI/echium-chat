@@ -1,10 +1,9 @@
 """Strands tools: let an agent list and read the files shared with it.
 
-Workspace knowledge is also injected into the system prompt, but only a short
-excerpt per document (to bound cost). For anything longer, such as a PDF of
-fund holdings, the agent needs to read the whole file. These tools give it that
-access, limited to the documents shared with this agent (same visibility rules
-as injection), across the user's personal workspace and their teams.
+Each agent turn only lists the files the agent can use (names, no contents),
+so files never take over the topic of a chat. These tools are how the agent
+reads a file when a request needs it, limited to the documents shared with
+this agent, across the user's personal workspace and their teams.
 """
 
 import logging
