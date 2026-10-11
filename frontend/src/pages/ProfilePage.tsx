@@ -136,7 +136,7 @@ const ProfilePage: React.FC = () => {
           {data && data.updateTime > 0 && (
             <div className="mt-2 text-xs text-gray">
               {t('profile.lastUpdated', {
-                date: new Date(data.updateTime * 1000).toLocaleString(),
+                date: new Date(data.updateTime).toLocaleString(),
               })}
             </div>
           )}
@@ -189,7 +189,7 @@ const ProfilePage: React.FC = () => {
           {data?.sensitiveConsent && data.consentTime && (
             <div className="mb-2 text-xs text-gray">
               {t('profile.sensitive.consentedOn', {
-                date: new Date(data.consentTime * 1000).toLocaleString(),
+                date: new Date(data.consentTime).toLocaleString(),
               })}
             </div>
           )}

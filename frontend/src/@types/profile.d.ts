@@ -9,6 +9,7 @@ export type UserProfile = {
   sensitiveConsent: boolean;
   consentTime: number | null;
   consentVersion: string | null;
+  // consentTime and updateTime are epoch milliseconds.
   // Version of the consent wording the UI shows.
   currentConsentVersion: string;
   shareAllAgents: boolean;

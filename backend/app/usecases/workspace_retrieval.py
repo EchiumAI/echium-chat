@@ -288,6 +288,16 @@ def _file_origin(doc: WorkspaceDocumentModel, conversation_id: Optional[str]) ->
     return "added by the user"
 
 
+def _format_day(timestamp: float) -> str:
+    """YYYY-MM-DD for a stored time. Times are epoch milliseconds
+    (utils.get_current_time); older items may be seconds. Never raises."""
+    try:
+        seconds = timestamp / 1000 if timestamp > 1e11 else timestamp
+        return datetime.fromtimestamp(seconds, tz=timezone.utc).strftime("%Y-%m-%d")
+    except (ValueError, OverflowError, OSError):
+        return "unknown date"
+
+
 def format_file_index(
     docs: list[WorkspaceDocumentModel], conversation_id: Optional[str]
 ) -> str:
@@ -296,9 +306,7 @@ def format_file_index(
         return ""
     lines = []
     for doc in docs[:MAX_INDEX_FILES]:
-        when = datetime.fromtimestamp(doc.update_time, tz=timezone.utc).strftime(
-            "%Y-%m-%d"
-        )
+        when = _format_day(doc.update_time)
         lines.append(f"- {doc.filename} ({_file_origin(doc, conversation_id)}, {when})")
     more = len(docs) - MAX_INDEX_FILES
     if more > 0:

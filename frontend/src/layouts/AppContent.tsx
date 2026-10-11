@@ -53,10 +53,18 @@ const AppContent: React.FC<Props> = (props) => {
     document.documentElement.className = theme;
   }, [theme]);
 
+  const { agentId: routeAgentId } = useParams();
   const onClickNewChat = useCallback(() => {
-    navigate('/');
+    // Stay inside the agent when the open chat belongs to one (or the user is
+    // on an agent's new-chat page); otherwise start a plain chat.
+    const agentId =
+      routeAgentId ??
+      conversations?.find((c) => c.id === conversationId)?.agentId ??
+      null;
+    newChat();
+    navigate(agentId ? `/agent/${agentId}` : '/');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [routeAgentId, conversationId, conversations]);
 
   const [isOpenDeleteChat, setIsOpenDeleteChat] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<
