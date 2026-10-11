@@ -77,6 +77,7 @@ def _doc_visible(
     doc: WorkspaceDocumentModel,
     agent_id: Optional[str],
     exclude_conversation_id: Optional[str],
+    agent_folder_ids: frozenset[str] = frozenset(),
 ) -> bool:
     """Whether a document (or its chunks) may be injected for this request.
 
@@ -86,17 +87,20 @@ def _doc_visible(
     only when shared with that agent. This is the single source of truth for
     both the recency and embedding retrievers.
     """
+    # Folder means access: anything in the agent's folder tree is visible.
+    in_agent_folder = agent_id is not None and doc.folder_id in agent_folder_ids
     if doc.source == "chat_summary":
         if doc.source_conversation_id == exclude_conversation_id:
             return False
         return (
             doc.all_agents
+            or in_agent_folder
             or (agent_id is not None and agent_id in doc.allowed_agent_ids)
             or (agent_id is None and not doc.allowed_agent_ids)
         )
     if agent_id is None:
         return False
-    return doc.all_agents or agent_id in doc.allowed_agent_ids
+    return doc.all_agents or in_agent_folder or agent_id in doc.allowed_agent_ids
 
 
 def _all_visible_documents(user_id: str) -> list[WorkspaceDocumentModel]:
