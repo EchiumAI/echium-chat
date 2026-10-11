@@ -130,9 +130,24 @@ def visible_documents_with_owner(
     pairs: list[tuple[str, WorkspaceDocumentModel]] = []
     for scope in all_scopes_for_user(user_id):
         try:
+            folder_ids: frozenset[str] = frozenset()
+            if agent_id is not None:
+                from app.repositories.workspace_document import (
+                    find_document_folders_by_user_id,
+                )
+                from app.usecases.agent_folders import agent_tree_folder_ids
+
+                folder_ids = frozenset(
+                    agent_tree_folder_ids(
+                        find_document_folders_by_user_id(
+                            scope.owner_key, scope.workspace_id
+                        ),
+                        agent_id,
+                    )
+                )
             for d in find_documents_by_user_id(scope.owner_key, scope.workspace_id):
                 if (d.text_s3_key or d.s3_key) and _doc_visible(
-                    d, agent_id, exclude_conversation_id
+                    d, agent_id, exclude_conversation_id, folder_ids
                 ):
                     pairs.append((scope.owner_key, d))
         except Exception:
